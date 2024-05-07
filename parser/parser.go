@@ -1,20 +1,48 @@
 package parser
 
-import "github.com/glass-cms/glasscms/item"
+import (
+	"bytes"
+	"errors"
+	"io"
 
-type Parser struct {
-	Config Config
-}
+	"github.com/glass-cms/glasscms/item"
+	"github.com/glass-cms/glasscms/sourcer"
+	"gopkg.in/yaml.v3"
+)
 
-func NewParser(config Config) *Parser {
-	return &Parser{
-		Config: config,
+const (
+	numParts = 3
+)
+
+// Parse reads the content of a source and returns an item.
+func Parse(src sourcer.Source) (*item.Item, error) {
+	c, err := io.ReadAll(src)
+	if err != nil {
+		return nil, err
 	}
-}
+	defer src.Close()
 
-type Config struct {
-}
+	// Split the content into front matter and markdown
+	parts := bytes.SplitN(c, []byte("---\n"), numParts)
+	if len(parts) < numParts {
+		return nil, errors.New("invalid content")
+	}
 
-func (p *Parser) Parse(_ string) (*item.Item, error) {
-	return &item.Item{}, nil
+	// Parse the YAML front matter
+	var properties map[string]any
+	err = yaml.Unmarshal(parts[1], &properties)
+	if err != nil {
+		return nil, err
+	}
+
+	// Keep the markdown content as is
+	content := string(parts[2])
+
+	return &item.Item{
+		Title:      src.Name(),
+		Content:    content,
+		CreateTime: src.CreatedAt(),
+		UpdateTime: src.ModifiedAt(),
+		Properties: properties,
+	}, nil
 }

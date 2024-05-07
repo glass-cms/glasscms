@@ -2,6 +2,7 @@ package sourcer_test
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"testing"
@@ -60,7 +61,6 @@ func TestFileSystemSourcer(t *testing.T) {
 		{content: "file 3", depth: 0, pattern: "*.md"},
 	}
 
-	// 0 depth to ensure ordering needed for testing.
 	tempDir, err := createTempDirWithFiles(fileData)
 	if err != nil {
 		t.Fatal(err)
@@ -74,14 +74,21 @@ func TestFileSystemSourcer(t *testing.T) {
 
 	// Walk until the end of the files.
 	for i := range src.Size() {
-		var data string
+		var data sourcer.Source
 		data, err = src.Next()
 		if err != nil {
 			t.Fatal(err)
 		}
 
+		// Read the data from the file.
+		var fileContent []byte
+		fileContent, err = io.ReadAll(data)
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		// Assert that data is the same as the fileData.
-		assert.Equal(t, fileData[i].content, data)
+		assert.Equal(t, fileData[i].content, string(fileContent))
 
 		// Assert that the remaining files is correct.
 		assert.Equal(t, src.Size()-i-1, src.Remaining())
