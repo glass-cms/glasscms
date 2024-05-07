@@ -1,6 +1,11 @@
 package parser
 
-import "github.com/glass-cms/glasscms/item"
+import (
+	"io"
+
+	"github.com/glass-cms/glasscms/item"
+	"github.com/glass-cms/glasscms/sourcer"
+)
 
 type Parser struct {
 	Config Config
@@ -15,6 +20,13 @@ func NewParser(config Config) *Parser {
 type Config struct {
 }
 
-func (p *Parser) Parse(_ string) (*item.Item, error) {
+func (p *Parser) Parse(src sourcer.Source) (*item.Item, error) {
+	_, err := io.ReadAll(src)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: Parse the yaml front matter and markdown content from the source.
+
 	return &item.Item{}, nil
 }

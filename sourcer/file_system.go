@@ -51,7 +51,7 @@ func (s *FileSystemSourcer) Next() (Source, error) {
 		return NilSource, err
 	}
 
-	return file, nil
+	return NewFileSource(file)
 }
 
 func (s *FileSystemSourcer) Remaining() int {
