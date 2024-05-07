@@ -38,19 +38,20 @@ func NewFileSystemSourcer(rootPath string) (*FileSystemSourcer, error) {
 	}, nil
 }
 
-func (s *FileSystemSourcer) Next() (string, error) {
+func (s *FileSystemSourcer) Next() (Source, error) {
 	if s.cursor >= len(s.files) {
-		return "", ErrDone
+		return NilSource, ErrDone
 	}
 
-	data, err := os.ReadFile(s.files[s.cursor])
+	// Get a ReadCloser for the file
+	file, err := os.Open(s.files[s.cursor])
 	s.cursor++
 
 	if err != nil {
-		return "", err
+		return NilSource, err
 	}
 
-	return string(data), nil
+	return file, nil
 }
 
 func (s *FileSystemSourcer) Remaining() int {
