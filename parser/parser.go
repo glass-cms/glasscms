@@ -3,18 +3,18 @@ package parser
 import "github.com/glass-cms/glasscms/item"
 
 type Parser struct {
-	Config ParserConfig
+	Config Config
 }
 
-func NewParser(config ParserConfig) *Parser {
+func NewParser(config Config) *Parser {
 	return &Parser{
 		Config: config,
 	}
 }
 
-type ParserConfig struct {
+type Config struct {
 }
 
-func (p *Parser) Parse(data string) (*item.Item, error) {
-	return nil, nil
+func (p *Parser) Parse(_ string) (*item.Item, error) {
+	return &item.Item{}, nil
 }

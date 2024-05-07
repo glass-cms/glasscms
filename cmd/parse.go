@@ -1,9 +1,6 @@
 package cmd
 
 import (
-	"fmt"
-
-	"github.com/glass-cms/glasscms/sourcer"
 	"github.com/spf13/cobra"
 )
 
@@ -24,11 +21,6 @@ func NewParseCommand() *ParseCommand {
 	return c
 }
 
-func (c *ParseCommand) Execute(cmd *cobra.Command, args []string) error {
-	path := args[0]
-
-	source, err := sourcer.NewFileSystemSourcer(path)
-	fmt.Println(source.Size())
-
-	return err
+func (c *ParseCommand) Execute(_ *cobra.Command, _ []string) error {
+	return nil
 }
