@@ -26,15 +26,16 @@ func createTempDirWithFiles(files []testFile) (string, error) {
 	for i, tf := range files {
 		dir := tempDir
 
-		for j := 0; j < tf.depth; j++ {
+		for j := range tf.depth {
 			dir = filepath.Join(dir, fmt.Sprintf("dir%d", j))
-			err := os.MkdirAll(dir, 0755)
+			err = os.MkdirAll(dir, 0755)
 			if err != nil {
 				return "", err
 			}
 		}
 
-		file, err := os.CreateTemp(dir, fmt.Sprintf("file%d", i)+tf.pattern)
+		var file *os.File
+		file, err = os.CreateTemp(dir, fmt.Sprintf("file%d", i)+tf.pattern)
 		if err != nil {
 			return "", err
 		}
@@ -72,8 +73,9 @@ func TestFileSystemSourcer(t *testing.T) {
 	}
 
 	// Walk until the end of the files.
-	for i := 0; i < src.Size(); i++ {
-		data, err := src.Next()
+	for i := range src.Size() {
+		var data string
+		data, err = src.Next()
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -140,8 +142,6 @@ func TestFileSystemSourcer_Size(t *testing.T) {
 	}
 
 	for name, tt := range tests {
-		tt := tt
-
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
