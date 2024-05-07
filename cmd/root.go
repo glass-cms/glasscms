@@ -19,4 +19,5 @@ func Execute() {
 
 func init() {
 	rootCmd.AddCommand(NewParseCommand().Command)
+	rootCmd.AddCommand(NewDocsCommand().Command)
 }
