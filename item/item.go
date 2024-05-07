@@ -7,5 +7,5 @@ type Item struct {
 	Content    string
 	CreateTime time.Time
 	UpdateTime time.Time
-	Properties any
+	Properties map[string]any
 }

@@ -61,7 +61,6 @@ func TestFileSystemSourcer(t *testing.T) {
 		{content: "file 3", depth: 0, pattern: "*.md"},
 	}
 
-	// 0 depth to ensure ordering needed for testing.
 	tempDir, err := createTempDirWithFiles(fileData)
 	if err != nil {
 		t.Fatal(err)

@@ -7,6 +7,7 @@ import (
 	"github.com/djherbis/times"
 	"github.com/glass-cms/glasscms/sourcer"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func createTempFile() (*os.File, error) {
@@ -31,7 +32,7 @@ func TestNewFileSource(t *testing.T) {
 	fileSource, err := sourcer.NewFileSource(tempFile)
 
 	// Assert
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, fileSource)
 
 	stats, err := times.StatFile(tempFile)
