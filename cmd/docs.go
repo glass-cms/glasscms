@@ -45,10 +45,11 @@ func (c *DocsCommand) Execute(_ *cobra.Command, _ []string) error {
 		}
 	}
 
-	return doc.GenMarkdownTreeCustom(rootCmd, DocsCommandsFolder, filePrepender, linkHandler)
+	return doc.GenMarkdownTreeCustom(rootCmd, DocsCommandsFolder, DocFilePrepender, linkHandler)
 }
 
-func filePrepender(filename string) string {
+// TODO: Consider moving this to package.
+func DocFilePrepender(filename string) string {
 	type FrontMatter struct {
 		Title           string `yaml:"title"`
 		CreateTimestamp int64  `yaml:"create_timestamp"`

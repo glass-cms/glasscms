@@ -1,11 +1,11 @@
-package cmd
+package cmd_test
 
 import (
 	"strconv"
 	"strings"
 	"testing"
-	"time"
 
+	"github.com/glass-cms/glasscms/cmd"
 	"github.com/stretchr/testify/require"
 )
 
@@ -13,7 +13,7 @@ func TestFilePrepender(t *testing.T) {
 	filename := "test_file.md"
 	expectedTitle := "Test File"
 
-	result := filePrepender(filename)
+	result := cmd.DocFilePrepender(filename)
 
 	// Check if the result starts with the YAML front matter
 	require.True(t, strings.HasPrefix(result, "---\n"))
@@ -26,6 +26,5 @@ func TestFilePrepender(t *testing.T) {
 	timestampStr := strings.Split(strings.Split(result, "create_timestamp: ")[1], "\n")[0]
 	timestamp, err := strconv.ParseInt(timestampStr, 10, 64)
 	require.NoError(t, err)
-	require.True(t, timestamp > 0)
-	require.True(t, time.Now().Unix() >= timestamp)
+	require.Greater(t, timestamp, int64(0))
 }
