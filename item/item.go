@@ -1,3 +1,11 @@
 package item
 
-type Item struct{}
+import "time"
+
+type Item struct {
+	Title      string
+	Content    string
+	CreateTime time.Time
+	UpdateTime time.Time
+	Properties any
+}
