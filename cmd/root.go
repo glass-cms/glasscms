@@ -7,8 +7,8 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "glcms <command>",
-	Short: "glcms is a CMS for mangaging content based on markdown files",
+	Use:   "glass <command>",
+	Short: "glass is a CMS for mangaging content based on markdown files",
 }
 
 func Execute() {
