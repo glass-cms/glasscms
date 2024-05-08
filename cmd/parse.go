@@ -1,7 +1,15 @@
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+)
+
+const (
+	ArgDestination          = "destination"
+	ArgDestinationShorthand = "d"
 )
 
 type ParseCommand struct {
@@ -18,9 +26,18 @@ func NewParseCommand() *ParseCommand {
 		Args:  cobra.ExactArgs(1),
 	}
 
+	parsePFlagSet := c.Command.Flags()
+
+	parsePFlagSet.StringP(ArgDestination, ArgDestinationShorthand, ".", "Destination to write the parsed files to")
+	viper.BindPFlag(ArgDestination, parsePFlagSet.Lookup(ArgDestination))
+
 	return c
 }
 
 func (c *ParseCommand) Execute(_ *cobra.Command, _ []string) error {
+	// Get the destination.
+	destination := viper.GetString(ArgDestination)
+	fmt.Println("Destination:", destination)
+
 	return nil
 }
