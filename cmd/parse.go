@@ -32,6 +32,8 @@ func NewParseCommand() *ParseCommand {
 	return c
 }
 
-func (c *ParseCommand) Execute(_ *cobra.Command, _ []string) error {
+func (c *ParseCommand) Execute(_ *cobra.Command, args []string) error {
+	_ = args[0]
+
 	return nil
 }
