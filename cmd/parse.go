@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -29,15 +27,11 @@ func NewParseCommand() *ParseCommand {
 	parsePFlagSet := c.Command.PersistentFlags()
 
 	parsePFlagSet.StringP(ArgOutput, ArgOutputShorthand, ".", "Output destination")
-	viper.BindPFlag(ArgOutput, parsePFlagSet.Lookup(ArgOutput))
+	_ = viper.BindPFlag(ArgOutput, parsePFlagSet.Lookup(ArgOutput))
 
 	return c
 }
 
 func (c *ParseCommand) Execute(_ *cobra.Command, _ []string) error {
-	// Get the destination.
-	destination := viper.GetString(ArgOutput)
-	fmt.Println("Destination:", destination)
-
 	return nil
 }
