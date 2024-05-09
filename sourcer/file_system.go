@@ -71,7 +71,7 @@ func IsValidFileSystemSource(fp string) error {
 	fileInfo, err := os.Stat(fp)
 	if err != nil {
 		// Wrap the error to provide more context.
-		return fmt.Errorf("%w: %s", ErrInvalidFileSystemSource, err)
+		return fmt.Errorf("%w: %w", ErrInvalidFileSystemSource, err)
 	}
 
 	if !fileInfo.IsDir() {

@@ -2,6 +2,7 @@ package cmd_test
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -21,7 +22,7 @@ func Test_ParseCommand(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	command := cmd.NewParseCommand()
-	command.SetArgs([]string{"../docs/commands", "--output", tempDir})
+	command.SetArgs([]string{"../docs/commands", fmt.Sprintf("--%s", cmd.ArgOutput), tempDir})
 
 	err = command.Command.Execute()
 	require.NoError(t, err)

@@ -12,6 +12,9 @@ import (
 )
 
 const (
+	ArgsVerbose          = "verbose"
+	ArgsVerboseShorthand = "v"
+
 	defaultConfigFilename = "config"
 	envPrefix             = "GLASS"
 )
@@ -31,8 +34,20 @@ func Execute() {
 }
 
 func init() {
+	//
+	// Add commands to the root command.
+	//
 	rootCmd.AddCommand(NewParseCommand().Command)
 	rootCmd.AddCommand(NewDocsCommand().Command)
+
+	//
+	// Register flags.
+	//
+
+	pflags := rootCmd.PersistentFlags()
+
+	pflags.BoolP(ArgsVerbose, ArgsVerboseShorthand, false, "Enable verbose output")
+	_ = viper.BindPFlag(ArgsVerbose, pflags.Lookup(ArgsVerbose))
 }
 
 func initializeConfig(cmd *cobra.Command) error {

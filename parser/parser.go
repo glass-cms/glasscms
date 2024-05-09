@@ -39,7 +39,7 @@ func Parse(src sourcer.Source) (*item.Item, error) {
 	content := string(parts[2])
 
 	return &item.Item{
-		Title:      src.Name(),
+		Name:       src.Name(),
 		Content:    content,
 		CreateTime: src.CreatedAt(),
 		UpdateTime: src.ModifiedAt(),

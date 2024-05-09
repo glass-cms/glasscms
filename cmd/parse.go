@@ -3,6 +3,7 @@ package cmd
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 
 	"github.com/glass-cms/glasscms/item"
@@ -10,6 +11,7 @@ import (
 	"github.com/glass-cms/glasscms/sourcer"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"github.com/tidwall/pretty"
 )
 
 const (
@@ -53,7 +55,8 @@ func (c *ParseCommand) Execute(_ *cobra.Command, args []string) error {
 	// Iterate over the source files and parse them.
 	var items []*item.Item
 	for {
-		src, err := fileSystemSourcer.Next()
+		var src sourcer.Source
+		src, err = fileSystemSourcer.Next()
 		if errors.Is(err, sourcer.ErrDone) {
 			break
 		}
@@ -62,7 +65,8 @@ func (c *ParseCommand) Execute(_ *cobra.Command, args []string) error {
 			return err
 		}
 
-		i, err := parser.Parse(src)
+		var i *item.Item
+		i, err = parser.Parse(src)
 		if err != nil {
 			return err
 		}
@@ -76,22 +80,28 @@ func (c *ParseCommand) Execute(_ *cobra.Command, args []string) error {
 }
 
 func writeItems(items []*item.Item, output string) error {
+	// TODO: Make configurable if all items should be written to a single file or multiple files.
 	// TODO: Make content type configurable.
+	// TODO: Make the filename configurable.
 	itemsJSON, err := json.Marshal(items)
 	if err != nil {
 		return err
 	}
 
-	// If the directory does not exist, create it.
-	if _, err := os.Stat(output); os.IsNotExist(err) {
-		if err := os.MkdirAll(output, 0755); err != nil {
+	// Print the JSON to the console if verbose mode is enabled.
+	if viper.GetBool(ArgsVerbose) {
+		j := pretty.Pretty(itemsJSON)
+		fmt.Println(string(pretty.Color(j, nil)))
+	}
+
+	// If the output directory does not exist, create it.
+	if _, err = os.Stat(output); os.IsNotExist(err) {
+		if err = os.MkdirAll(output, 0755); err != nil {
 			return err
 		}
 	}
 
 	// Combine the output path with the filename.
-	// TODO: Make the filename configurable.
-	output = output + "/output.json"
-
-	return os.WriteFile(output, itemsJSON, 0644)
+	fn := output + "/output.json"
+	return os.WriteFile(fn, itemsJSON, 0600)
 }

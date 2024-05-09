@@ -3,7 +3,7 @@ package item
 import "time"
 
 type Item struct {
-	Title      string         `json:"title"`
+	Name       string         `json:"name"`
 	Content    string         `json:"content"`
 	CreateTime time.Time      `json:"create_time"`
 	UpdateTime time.Time      `json:"update_time"`
