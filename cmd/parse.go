@@ -2,6 +2,12 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+)
+
+const (
+	ArgOutput          = "output"
+	ArgOutputShorthand = "o"
 )
 
 type ParseCommand struct {
@@ -17,6 +23,11 @@ func NewParseCommand() *ParseCommand {
 		RunE:  c.Execute,
 		Args:  cobra.ExactArgs(1),
 	}
+
+	parsePFlagSet := c.Command.PersistentFlags()
+
+	parsePFlagSet.StringP(ArgOutput, ArgOutputShorthand, ".", "Output destination")
+	_ = viper.BindPFlag(ArgOutput, parsePFlagSet.Lookup(ArgOutput))
 
 	return c
 }
