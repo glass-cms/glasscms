@@ -1,6 +1,13 @@
 package cmd
 
 import (
+	"encoding/json"
+	"errors"
+	"os"
+
+	"github.com/glass-cms/glasscms/item"
+	"github.com/glass-cms/glasscms/parser"
+	"github.com/glass-cms/glasscms/sourcer"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -33,7 +40,58 @@ func NewParseCommand() *ParseCommand {
 }
 
 func (c *ParseCommand) Execute(_ *cobra.Command, args []string) error {
-	_ = args[0]
+	sourcePath := args[0]
+	if err := sourcer.IsValidFileSystemSource(sourcePath); err != nil {
+		return err
+	}
 
-	return nil
+	fileSystemSourcer, err := sourcer.NewFileSystemSourcer(sourcePath)
+	if err != nil {
+		return err
+	}
+
+	// Iterate over the source files and parse them.
+	var items []*item.Item
+	for {
+		src, err := fileSystemSourcer.Next()
+		if errors.Is(err, sourcer.ErrDone) {
+			break
+		}
+
+		if err != nil {
+			return err
+		}
+
+		i, err := parser.Parse(src)
+		if err != nil {
+			return err
+		}
+
+		items = append(items, i)
+	}
+
+	// Write the parsed items to the output destination.
+	output := viper.GetString(ArgOutput)
+	return writeItems(items, output)
+}
+
+func writeItems(items []*item.Item, output string) error {
+	// TODO: Make content type configurable.
+	itemsJSON, err := json.Marshal(items)
+	if err != nil {
+		return err
+	}
+
+	// If the directory does not exist, create it.
+	if _, err := os.Stat(output); os.IsNotExist(err) {
+		if err := os.MkdirAll(output, 0755); err != nil {
+			return err
+		}
+	}
+
+	// Combine the output path with the filename.
+	// TODO: Make the filename configurable.
+	output = output + "/output.json"
+
+	return os.WriteFile(output, itemsJSON, 0644)
 }
