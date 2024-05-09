@@ -22,3 +22,8 @@ go.work
 
 # DS Store
 .DS_STORE
+
+glass
+
+# WIP
+docs/how_to_guides/*

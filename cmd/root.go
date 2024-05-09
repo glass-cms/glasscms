@@ -40,8 +40,6 @@ func initializeConfig(cmd *cobra.Command) error {
 	v.SetConfigName(defaultConfigFilename)
 	v.AddConfigPath(".")
 
-	// TODO: Add os.Config support.
-
 	if err := v.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
 			return err
