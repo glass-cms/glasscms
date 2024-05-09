@@ -3,9 +3,9 @@ package item
 import "time"
 
 type Item struct {
-	Title      string
-	Content    string
-	CreateTime time.Time
-	UpdateTime time.Time
-	Properties map[string]any
+	Name       string         `json:"name"`
+	Content    string         `json:"content"`
+	CreateTime time.Time      `json:"create_time"`
+	UpdateTime time.Time      `json:"update_time"`
+	Properties map[string]any `json:"properties"`
 }

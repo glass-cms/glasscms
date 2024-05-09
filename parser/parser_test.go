@@ -53,7 +53,7 @@ func TestParse(t *testing.T) {
 	// Assert
 	require.NoError(t, err)
 	assert.NotNil(t, item)
-	assert.Equal(t, "test", item.Title)
+	assert.Equal(t, "test", item.Name)
 	assert.Equal(t, "# Test\n", item.Content)
 	assert.Equal(t, map[string]interface{}{"title": "Test"}, item.Properties)
 }

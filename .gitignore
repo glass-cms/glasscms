@@ -27,3 +27,9 @@ glass
 
 # WIP
 docs/how_to_guides/*
+
+# Default parser output
+/out
+
+# Vscode
+.vscode

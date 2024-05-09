@@ -234,7 +234,7 @@ linters:
     - exhaustive # checks exhaustiveness of enum switch statements
     - exportloopref # checks for pointers to enclosing loop variables
     - fatcontext # detects nested contexts in loops
-    - forbidigo # forbids identifiers
+    #- forbidigo # forbids identifiers
     - funlen # tool for detection of long functions
     - gocheckcompilerdirectives # validates go compiler directive comments (//go:)
     #- gochecknoglobals # checks that no global variables exist

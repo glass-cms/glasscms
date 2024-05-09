@@ -9,6 +9,7 @@ import (
 
 	"github.com/glass-cms/glasscms/sourcer"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type testFile struct {
@@ -168,4 +169,17 @@ func TestFileSystemSourcer_Size(t *testing.T) {
 			assert.Equal(t, tt.want, sourcer.Size())
 		})
 	}
+}
+
+func TestIsValidFileSystemSource(t *testing.T) {
+	t.Parallel()
+
+	fp, err := createTempDirWithFiles([]testFile{{content: "file 1", depth: 0, pattern: "*.md"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(fp)
+
+	require.NoError(t, sourcer.IsValidFileSystemSource(fp))
+	require.Error(t, sourcer.IsValidFileSystemSource("non-existent"))
 }
