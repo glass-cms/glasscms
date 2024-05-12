@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path"
 
 	"github.com/glass-cms/glasscms/item"
 	"github.com/glass-cms/glasscms/parser"
@@ -15,8 +16,14 @@ import (
 )
 
 const (
-	ArgOutput          = "output"
-	ArgOutputShorthand = "o"
+	ArgOutput            = "output"
+	ArgOutputShorthand   = "o"
+	ArgFilename          = "filename"
+	ArgFilenameShorthand = "f"
+)
+
+var (
+	ErrArgumentInvalid = errors.New("argument is invalid")
 )
 
 type ParseCommand struct {
@@ -33,10 +40,13 @@ func NewParseCommand() *ParseCommand {
 		Args:  cobra.ExactArgs(1),
 	}
 
-	parsePFlagSet := c.Command.PersistentFlags()
+	flagset := c.Command.Flags()
 
-	parsePFlagSet.StringP(ArgOutput, ArgOutputShorthand, ".", "Output destination")
-	_ = viper.BindPFlag(ArgOutput, parsePFlagSet.Lookup(ArgOutput))
+	flagset.StringP(ArgOutput, ArgOutputShorthand, ".", "Output destination")
+	_ = viper.BindPFlag(ArgOutput, flagset.Lookup(ArgOutput))
+
+	flagset.StringP(ArgFilename, ArgFilenameShorthand, "output.json", "Output filename")
+	_ = viper.BindPFlag(ArgFilename, flagset.Lookup(ArgFilename))
 
 	return c
 }
@@ -75,33 +85,49 @@ func (c *ParseCommand) Execute(_ *cobra.Command, args []string) error {
 	}
 
 	// Write the parsed items to the output destination.
-	output := viper.GetString(ArgOutput)
-	return writeItems(items, output)
+	outputDir := viper.GetString(ArgOutput)
+	if err = createOutputDir(outputDir); err != nil {
+		return err
+	}
+
+	filename, err := filename()
+	if err != nil {
+		return err
+	}
+
+	path := path.Join(outputDir, filename)
+	return writeItems(items, path)
 }
 
-func writeItems(items []*item.Item, output string) error {
+func writeItems(items []*item.Item, filepath string) error {
 	// TODO: Make configurable if all items should be written to a single file or multiple files.
 	// TODO: Make content type configurable.
-	// TODO: Make the filename configurable.
 	itemsJSON, err := json.Marshal(items)
 	if err != nil {
 		return err
 	}
 
-	// Print the JSON to the console if verbose mode is enabled.
 	if viper.GetBool(ArgsVerbose) {
 		j := pretty.Pretty(itemsJSON)
 		fmt.Println(string(pretty.Color(j, nil)))
 	}
 
-	// If the output directory does not exist, create it.
-	if _, err = os.Stat(output); os.IsNotExist(err) {
-		if err = os.MkdirAll(output, 0755); err != nil {
-			return err
-		}
+	return os.WriteFile(filepath, itemsJSON, 0600)
+}
+
+func createOutputDir(dir string) error {
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		return os.MkdirAll(dir, 0755)
 	}
 
-	// Combine the output path with the filename.
-	fn := output + "/output.json"
-	return os.WriteFile(fn, itemsJSON, 0600)
+	return nil
+}
+
+func filename() (string, error) {
+	arg := viper.GetString(ArgFilename)
+	if path.Ext(arg) != "" {
+		return arg, fmt.Errorf("%w: %s", ErrArgumentInvalid, "filename must not contain an extension")
+	}
+
+	return arg, nil
 }
