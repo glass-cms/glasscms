@@ -22,8 +22,8 @@ func TestFilePrepender(t *testing.T) {
 	require.Contains(t, result, "title: "+expectedTitle)
 
 	// Check if the create timestamp is a valid Unix timestamp
-	require.Contains(t, result, "create_timestamp: ")
-	timestampStr := strings.Split(strings.Split(result, "create_timestamp: ")[1], "\n")[0]
+	require.Contains(t, result, "createTime: ")
+	timestampStr := strings.Split(strings.Split(result, "createTime: ")[1], "\n")[0]
 	timestamp, err := strconv.ParseInt(timestampStr, 10, 64)
 	require.NoError(t, err)
 	require.Greater(t, timestamp, int64(0))

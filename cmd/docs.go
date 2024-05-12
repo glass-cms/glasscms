@@ -52,7 +52,7 @@ func (c *DocsCommand) Execute(_ *cobra.Command, _ []string) error {
 func DocFilePrepender(filename string) string {
 	type FrontMatter struct {
 		Title           string `yaml:"title"`
-		CreateTimestamp int64  `yaml:"create_timestamp"`
+		CreateTimestamp int64  `yaml:"createTime"`
 	}
 
 	name := filepath.Base(filename)
