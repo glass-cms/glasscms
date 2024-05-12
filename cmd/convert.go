@@ -32,24 +32,24 @@ var (
 	ErrInvalidFormat   = errors.New("invalid format")
 )
 
-type ParseCommand struct {
+type ConvertCommand struct {
 	*cobra.Command
 }
 
-func NewParseCommand() *ParseCommand {
-	c := &ParseCommand{}
+func NewConvertCommand() *ConvertCommand {
+	c := &ConvertCommand{}
 	c.Command = &cobra.Command{
-		Use:   "parse <source>",
-		Short: "Parses source files",
-		Long:  "Parses source files and pumps them to the desired destination",
+		Use:   "convert <source>",
+		Short: "Convert source files",
+		Long:  "Convert source files to a structured format at the specified output directory.",
 		RunE:  c.Execute,
 		Args:  cobra.ExactArgs(1),
-		PreRunE: func(cmd *cobra.Command, args []string) error {
+		PreRunE: func(_ *cobra.Command, _ []string) error {
 			dir := viper.GetString(ArgOutput)
 
 			// Create the output directory if it doesn't exist.
 			if _, err := os.Stat(dir); os.IsNotExist(err) {
-				if err := os.MkdirAll(dir, 0755); err != nil {
+				if err = os.MkdirAll(dir, 0755); err != nil {
 					return err
 				}
 			}
@@ -74,7 +74,7 @@ func NewParseCommand() *ParseCommand {
 	return c
 }
 
-func (c *ParseCommand) Execute(_ *cobra.Command, args []string) error {
+func (c *ConvertCommand) Execute(_ *cobra.Command, args []string) error {
 	sourcePath := args[0]
 	if err := sourcer.IsValidFileSystemSource(sourcePath); err != nil {
 		return err
@@ -119,11 +119,11 @@ func writeItems(items []*item.Item, dir string, format string) error {
 
 		switch format {
 		case FormatJSON:
-			if err := writeItemJson(i, path.Join(dir, fn+".json")); err != nil {
+			if err := writeItemJSON(i, path.Join(dir, fn+".json")); err != nil {
 				return err
 			}
 		case FormatYAML:
-			if err := writeItemYaml(i, path.Join(dir, fn+".yaml")); err != nil {
+			if err := writeItemYAML(i, path.Join(dir, fn+".yaml")); err != nil {
 				return err
 			}
 		default:
@@ -134,7 +134,7 @@ func writeItems(items []*item.Item, dir string, format string) error {
 	return nil
 }
 
-func writeItemJson(i *item.Item, path string) error {
+func writeItemJSON(i *item.Item, path string) error {
 	b, err := json.Marshal(i)
 	if err != nil {
 		return err
@@ -143,7 +143,7 @@ func writeItemJson(i *item.Item, path string) error {
 	return os.WriteFile(path, b, 0600)
 }
 
-func writeItemYaml(i *item.Item, path string) error {
+func writeItemYAML(i *item.Item, path string) error {
 	b, err := yaml.Marshal(i)
 	if err != nil {
 		return err

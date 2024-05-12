@@ -20,8 +20,8 @@ const (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "glass <command>",
-	Short: "glass is a CMS for mangaging content based on markdown files",
+	Use:   "glasscms <command>",
+	Short: "glasscms is a CMS for mangaging content based on markdown files",
 	PersistentPreRunE: func(cmd *cobra.Command, _ []string) error {
 		return initializeConfig(cmd)
 	},
@@ -37,7 +37,7 @@ func init() {
 	//
 	// Add commands to the root command.
 	//
-	rootCmd.AddCommand(NewParseCommand().Command)
+	rootCmd.AddCommand(NewConvertCommand().Command)
 	rootCmd.AddCommand(NewDocsCommand().Command)
 
 	//
