@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -19,11 +20,14 @@ const (
 	ArgOutput            = "output"
 	ArgOutputShorthand   = "o"
 	ArgFilename          = "filename"
-	ArgFilenameShorthand = "f"
+	ArgFilenameShorthand = "n"
+	ArgFormat            = "format"
+	ArgFormatShorthand   = "f"
 )
 
 var (
 	ErrArgumentInvalid = errors.New("argument is invalid")
+	ErrInvalidFormat   = errors.New("invalid format")
 )
 
 type ParseCommand struct {
@@ -45,8 +49,11 @@ func NewParseCommand() *ParseCommand {
 	flagset.StringP(ArgOutput, ArgOutputShorthand, ".", "Output destination")
 	_ = viper.BindPFlag(ArgOutput, flagset.Lookup(ArgOutput))
 
-	flagset.StringP(ArgFilename, ArgFilenameShorthand, "output.json", "Output filename")
+	flagset.StringP(ArgFilename, ArgFilenameShorthand, "output", "Output filename")
 	_ = viper.BindPFlag(ArgFilename, flagset.Lookup(ArgFilename))
+
+	flagset.StringP(ArgFormat, ArgFormatShorthand, "json", "Output format (json, yaml)")
+	_ = viper.BindPFlag(ArgFormat, flagset.Lookup(ArgFormat))
 
 	return c
 }
@@ -95,24 +102,35 @@ func (c *ParseCommand) Execute(_ *cobra.Command, args []string) error {
 		return err
 	}
 
+	format := viper.GetString(ArgFormat)
+
 	path := path.Join(outputDir, filename)
-	return writeItems(items, path)
+	return writeItems(items, path, format)
 }
 
-func writeItems(items []*item.Item, filepath string) error {
-	// TODO: Make configurable if all items should be written to a single file or multiple files.
-	// TODO: Make content type configurable.
-	itemsJSON, err := json.Marshal(items)
-	if err != nil {
-		return err
+func writeItems(items []*item.Item, filepath string, format string) error {
+	verbose := viper.GetBool(ArgsVerbose)
+	content := bytes.Buffer{}
+
+	switch format {
+	case "json":
+		content, err := json.Marshal(items)
+		if err != nil {
+			return err
+		}
+
+		if verbose {
+			j := pretty.Pretty(content)
+			fmt.Println(string(pretty.Color(j, nil)))
+		}
+		filepath += ".json"
+	case "yaml":
+		// TODO.
+	default:
+		return fmt.Errorf("%w: %s", ErrInvalidFormat, format)
 	}
 
-	if viper.GetBool(ArgsVerbose) {
-		j := pretty.Pretty(itemsJSON)
-		fmt.Println(string(pretty.Color(j, nil)))
-	}
-
-	return os.WriteFile(filepath, itemsJSON, 0600)
+	return os.WriteFile(filepath, content.Bytes(), 0600)
 }
 
 func createOutputDir(dir string) error {
