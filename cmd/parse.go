@@ -1,28 +1,30 @@
 package cmd
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
 	"path"
+	"strings"
 
 	"github.com/glass-cms/glasscms/item"
 	"github.com/glass-cms/glasscms/parser"
 	"github.com/glass-cms/glasscms/sourcer"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/tidwall/pretty"
+	"gopkg.in/yaml.v3"
 )
 
 const (
-	ArgOutput            = "output"
-	ArgOutputShorthand   = "o"
-	ArgFilename          = "filename"
-	ArgFilenameShorthand = "n"
-	ArgFormat            = "format"
-	ArgFormatShorthand   = "f"
+	ArgOutput          = "output"
+	ArgOutputShorthand = "o"
+
+	ArgFormat          = "format"
+	ArgFormatShorthand = "f"
+
+	FormatJSON = "json"
+	FormatYAML = "yaml"
 )
 
 var (
@@ -42,15 +44,29 @@ func NewParseCommand() *ParseCommand {
 		Long:  "Parses source files and pumps them to the desired destination",
 		RunE:  c.Execute,
 		Args:  cobra.ExactArgs(1),
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			dir := viper.GetString(ArgOutput)
+
+			// Create the output directory if it doesn't exist.
+			if _, err := os.Stat(dir); os.IsNotExist(err) {
+				if err := os.MkdirAll(dir, 0755); err != nil {
+					return err
+				}
+			}
+
+			format := viper.GetString(ArgFormat)
+			if format != FormatJSON && format != FormatYAML {
+				return fmt.Errorf("%w: %s", ErrArgumentInvalid, format)
+			}
+
+			return nil
+		},
 	}
 
 	flagset := c.Command.Flags()
 
-	flagset.StringP(ArgOutput, ArgOutputShorthand, ".", "Output destination")
+	flagset.StringP(ArgOutput, ArgOutputShorthand, ".", "Output directory")
 	_ = viper.BindPFlag(ArgOutput, flagset.Lookup(ArgOutput))
-
-	flagset.StringP(ArgFilename, ArgFilenameShorthand, "output", "Output filename")
-	_ = viper.BindPFlag(ArgFilename, flagset.Lookup(ArgFilename))
 
 	flagset.StringP(ArgFormat, ArgFormatShorthand, "json", "Output format (json, yaml)")
 	_ = viper.BindPFlag(ArgFormat, flagset.Lookup(ArgFormat))
@@ -63,6 +79,9 @@ func (c *ParseCommand) Execute(_ *cobra.Command, args []string) error {
 	if err := sourcer.IsValidFileSystemSource(sourcePath); err != nil {
 		return err
 	}
+
+	dir := viper.GetString(ArgOutput)
+	format := viper.GetString(ArgFormat)
 
 	fileSystemSourcer, err := sourcer.NewFileSystemSourcer(sourcePath)
 	if err != nil {
@@ -91,61 +110,44 @@ func (c *ParseCommand) Execute(_ *cobra.Command, args []string) error {
 		items = append(items, i)
 	}
 
-	// Write the parsed items to the output destination.
-	outputDir := viper.GetString(ArgOutput)
-	if err = createOutputDir(outputDir); err != nil {
-		return err
-	}
-
-	filename, err := filename()
-	if err != nil {
-		return err
-	}
-
-	format := viper.GetString(ArgFormat)
-
-	path := path.Join(outputDir, filename)
-	return writeItems(items, path, format)
+	return writeItems(items, dir, format)
 }
 
-func writeItems(items []*item.Item, filepath string, format string) error {
-	verbose := viper.GetBool(ArgsVerbose)
-	content := bytes.Buffer{}
+func writeItems(items []*item.Item, dir string, format string) error {
+	for _, i := range items {
+		fn := strings.ReplaceAll(i.Name, "/", "_")
 
-	switch format {
-	case "json":
-		content, err := json.Marshal(items)
-		if err != nil {
-			return err
+		switch format {
+		case FormatJSON:
+			if err := writeItemJson(i, path.Join(dir, fn+".json")); err != nil {
+				return err
+			}
+		case FormatYAML:
+			if err := writeItemYaml(i, path.Join(dir, fn+".yaml")); err != nil {
+				return err
+			}
+		default:
+			return fmt.Errorf("%w: %s", ErrInvalidFormat, format)
 		}
-
-		if verbose {
-			j := pretty.Pretty(content)
-			fmt.Println(string(pretty.Color(j, nil)))
-		}
-		filepath += ".json"
-	case "yaml":
-		// TODO.
-	default:
-		return fmt.Errorf("%w: %s", ErrInvalidFormat, format)
-	}
-
-	return os.WriteFile(filepath, content.Bytes(), 0600)
-}
-
-func createOutputDir(dir string) error {
-	if _, err := os.Stat(dir); os.IsNotExist(err) {
-		return os.MkdirAll(dir, 0755)
 	}
 
 	return nil
 }
 
-func filename() (string, error) {
-	arg := viper.GetString(ArgFilename)
-	if path.Ext(arg) != "" {
-		return arg, fmt.Errorf("%w: %s", ErrArgumentInvalid, "filename must not contain an extension")
+func writeItemJson(i *item.Item, path string) error {
+	b, err := json.Marshal(i)
+	if err != nil {
+		return err
 	}
 
-	return arg, nil
+	return os.WriteFile(path, b, 0600)
+}
+
+func writeItemYaml(i *item.Item, path string) error {
+	b, err := yaml.Marshal(i)
+	if err != nil {
+		return err
+	}
+
+	return os.WriteFile(path, b, 0600)
 }

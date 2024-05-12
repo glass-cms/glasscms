@@ -1,14 +1,11 @@
 package cmd_test
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/glass-cms/glasscms/cmd"
-	"github.com/glass-cms/glasscms/item"
 	"github.com/stretchr/testify/require"
 )
 
@@ -19,28 +16,42 @@ func Test_ParseCommand(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(tempDir)
 
-	command := cmd.NewParseCommand()
-	command.SetArgs([]string{"../docs/commands", fmt.Sprintf("--%s", cmd.ArgOutput), tempDir})
+	t.Run("json files", func(t *testing.T) {
+		command := cmd.NewParseCommand()
+		command.SetArgs([]string{"../docs/commands", fmt.Sprintf("--%s", cmd.ArgOutput), tempDir})
 
-	err = command.Command.Execute()
-	require.NoError(t, err)
+		err = command.Command.Execute()
+		require.NoError(t, err)
 
-	// Assert that the output directory contains the expected JSON file.
-	// And that the file is not empty.
+		// Check that there are multiple json files in the output directory
+		files, err := os.ReadDir(tempDir)
+		require.NoError(t, err)
+		require.Greater(t, len(files), 0)
 
-	// Read the JSON file.
-	var items []*item.Item
-	file, err := os.Open(filepath.Join(tempDir, "output.json"))
-	if err != nil {
-		t.Fatal(err)
-	}
+		for _, file := range files {
+			require.Contains(t, file.Name(), ".json")
+		}
 
-	err = json.NewDecoder(file).Decode(&items)
-	if err != nil {
-		t.Fatal(err)
-	}
+		os.RemoveAll(tempDir)
+	})
 
-	require.NotEmpty(t, items)
+	t.Run("yaml files", func(t *testing.T) {
+		command := cmd.NewParseCommand()
+		command.SetArgs([]string{"../docs/commands", fmt.Sprintf("--%s", cmd.ArgOutput), tempDir, fmt.Sprintf("--%s", cmd.ArgFormat), cmd.FormatYAML})
+
+		err = command.Command.Execute()
+		require.NoError(t, err)
+
+		// Check that there are multiple yaml files in the output directory
+		files, err := os.ReadDir(tempDir)
+		require.NoError(t, err)
+		require.Greater(t, len(files), 0)
+
+		for _, file := range files {
+			require.Contains(t, file.Name(), ".yaml")
+		}
+
+		os.RemoveAll(tempDir)
+	})
 }
