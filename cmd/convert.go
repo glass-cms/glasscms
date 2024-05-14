@@ -4,13 +4,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 	"path"
 	"strings"
+	"time"
 
 	"github.com/glass-cms/glasscms/item"
 	"github.com/glass-cms/glasscms/parser"
 	"github.com/glass-cms/glasscms/sourcer"
+	"github.com/lmittmann/tint"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"gopkg.in/yaml.v3"
@@ -34,10 +37,20 @@ var (
 
 type ConvertCommand struct {
 	*cobra.Command
+
+	logger *slog.Logger
 }
 
 func NewConvertCommand() *ConvertCommand {
-	c := &ConvertCommand{}
+	c := &ConvertCommand{
+		logger: slog.New(
+			tint.NewHandler(os.Stdout, &tint.Options{
+				Level:      slog.LevelDebug,
+				TimeFormat: time.TimeOnly,
+			}),
+		),
+	}
+
 	c.Command = &cobra.Command{
 		Use:   "convert <source>",
 		Short: "Convert source files",
@@ -70,6 +83,8 @@ func NewConvertCommand() *ConvertCommand {
 
 	flagset.StringP(ArgFormat, ArgFormatShorthand, "json", "Output format (json, yaml)")
 	_ = viper.BindPFlag(ArgFormat, flagset.Lookup(ArgFormat))
+
+	// TODO: Add a flag to pretty print the output.
 
 	return c
 }
@@ -104,7 +119,8 @@ func (c *ConvertCommand) Execute(_ *cobra.Command, args []string) error {
 		var i *item.Item
 		i, err = parser.Parse(src)
 		if err != nil {
-			return err
+			c.logger.Warn(fmt.Sprintf("Failed to parse %s: %s", src.Name(), err))
+			continue
 		}
 
 		items = append(items, i)

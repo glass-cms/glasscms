@@ -10,6 +10,10 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+var (
+	ErrInvalidFrontMatter = errors.New("invalid front matter yaml")
+)
+
 const (
 	numParts = 3
 )
@@ -22,10 +26,12 @@ func Parse(src sourcer.Source) (*item.Item, error) {
 	}
 	defer src.Close()
 
+	// FIXME: This is a naive implementation that breaks if the content contains "---\n".
+
 	// Split the content into front matter and markdown
 	parts := bytes.SplitN(c, []byte("---\n"), numParts)
 	if len(parts) < numParts {
-		return nil, errors.New("invalid content")
+		return nil, ErrInvalidFrontMatter
 	}
 
 	// Parse the YAML front matter
