@@ -8,6 +8,8 @@ import (
 )
 
 func TestTitle(t *testing.T) {
+	t.Parallel()
+
 	t.Run("when properties is nil", func(t *testing.T) {
 		t.Parallel()
 		i := &item.Item{}

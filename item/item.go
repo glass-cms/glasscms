@@ -23,7 +23,8 @@ func (i *Item) Title() *string {
 	}
 
 	if v, ok := i.Properties[PropertyTitle]; ok {
-		if s, ok := v.(string); ok {
+		var s string
+		if s, ok = v.(string); ok {
 			return &s
 		}
 	}
