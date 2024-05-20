@@ -7,7 +7,6 @@ import (
 	"log/slog"
 	"os"
 	"path"
-	"strings"
 	"time"
 
 	"github.com/glass-cms/glasscms/item"
@@ -16,6 +15,7 @@ import (
 	"github.com/lmittmann/tint"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"github.com/tidwall/pretty"
 	"gopkg.in/yaml.v3"
 )
 
@@ -28,6 +28,8 @@ const (
 
 	FormatJSON = "json"
 	FormatYAML = "yaml"
+
+	TitleProperty = "title"
 )
 
 var (
@@ -84,7 +86,8 @@ func NewConvertCommand() *ConvertCommand {
 	flagset.StringP(ArgFormat, ArgFormatShorthand, "json", "Output format (json, yaml)")
 	_ = viper.BindPFlag(ArgFormat, flagset.Lookup(ArgFormat))
 
-	// TODO: Add a flag to pretty print the output.
+	flagset.BoolP("pretty", "p", false, "Pretty print the output")
+	_ = viper.BindPFlag("pretty", flagset.Lookup("pretty"))
 
 	return c
 }
@@ -97,6 +100,7 @@ func (c *ConvertCommand) Execute(_ *cobra.Command, args []string) error {
 
 	dir := viper.GetString(ArgOutput)
 	format := viper.GetString(ArgFormat)
+	pretty := viper.GetBool("pretty")
 
 	fileSystemSourcer, err := sourcer.NewFileSystemSourcer(sourcePath)
 	if err != nil {
@@ -126,16 +130,19 @@ func (c *ConvertCommand) Execute(_ *cobra.Command, args []string) error {
 		items = append(items, i)
 	}
 
-	return writeItems(items, dir, format)
+	return writeItems(items, dir, format, pretty)
 }
 
-func writeItems(items []*item.Item, dir string, format string) error {
+func writeItems(items []*item.Item, dir string, format string, pretty bool) error {
 	for _, i := range items {
-		fn := strings.ReplaceAll(i.Name, "/", "_")
+		fn := i.Name
+		if title := i.Title(); title != nil {
+			fn = *title
+		}
 
 		switch format {
 		case FormatJSON:
-			if err := writeItemJSON(i, path.Join(dir, fn+".json")); err != nil {
+			if err := writeItemJSON(i, path.Join(dir, fn+".json"), pretty); err != nil {
 				return err
 			}
 		case FormatYAML:
@@ -150,10 +157,14 @@ func writeItems(items []*item.Item, dir string, format string) error {
 	return nil
 }
 
-func writeItemJSON(i *item.Item, path string) error {
+func writeItemJSON(i *item.Item, path string, format bool) error {
 	b, err := json.Marshal(i)
 	if err != nil {
 		return err
+	}
+
+	if format {
+		b = pretty.Pretty(b)
 	}
 
 	return os.WriteFile(path, b, 0600)
