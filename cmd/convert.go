@@ -29,6 +29,8 @@ const (
 
 	FormatJSON = "json"
 	FormatYAML = "yaml"
+
+	TitleProperty = "title"
 )
 
 var (
