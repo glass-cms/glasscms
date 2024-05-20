@@ -15,10 +15,9 @@ var (
 )
 
 const (
-	numParts = 3
+	seperatorBytes = 4
 )
 
-// Parse reads the content of a source and returns an item.
 func Parse(src sourcer.Source) (*item.Item, error) {
 	c, err := io.ReadAll(src)
 	if err != nil {
@@ -26,29 +25,41 @@ func Parse(src sourcer.Source) (*item.Item, error) {
 	}
 	defer src.Close()
 
-	// FIXME: This is a naive implementation that breaks if the content contains "---\n".
-
-	// Split the content into front matter and markdown
-	parts := bytes.SplitN(c, []byte("---\n"), numParts)
-	if len(parts) < numParts {
-		return nil, ErrInvalidFrontMatter
-	}
-
-	// Parse the YAML front matter
-	var properties map[string]any
-	err = yaml.Unmarshal(parts[1], &properties)
+	frontMatter, content, err := extractFrontMatter(c)
 	if err != nil {
 		return nil, err
 	}
 
-	// Keep the markdown content as is
-	content := string(parts[2])
+	var properties map[string]any
+	if len(frontMatter) > 0 {
+		err = yaml.Unmarshal(frontMatter, &properties)
+		if err != nil {
+			return nil, err
+		}
+	}
 
 	return &item.Item{
 		Name:       src.Name(),
-		Content:    content,
+		Content:    string(content),
 		CreateTime: src.CreatedAt(),
 		UpdateTime: src.ModifiedAt(),
 		Properties: properties,
 	}, nil
+}
+
+func extractFrontMatter(content []byte) ([]byte, []byte, error) {
+	if !bytes.HasPrefix(content, []byte("---\n")) {
+		return nil, content, nil
+	}
+
+	frontMatterEnd := bytes.Index(content[seperatorBytes:], []byte("\n---\n"))
+	if frontMatterEnd == -1 {
+		return nil, nil, ErrInvalidFrontMatter
+	}
+
+	frontMatterEnd += seperatorBytes // Account for the initial "---\n"
+	frontMatter := content[seperatorBytes:frontMatterEnd]
+	markdown := content[frontMatterEnd+seperatorBytes:]
+
+	return frontMatter, markdown, nil
 }
