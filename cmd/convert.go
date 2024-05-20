@@ -7,7 +7,6 @@ import (
 	"log/slog"
 	"os"
 	"path"
-	"strings"
 	"time"
 
 	"github.com/glass-cms/glasscms/item"
@@ -136,7 +135,10 @@ func (c *ConvertCommand) Execute(_ *cobra.Command, args []string) error {
 
 func writeItems(items []*item.Item, dir string, format string, pretty bool) error {
 	for _, i := range items {
-		fn := strings.ReplaceAll(i.Name, "/", "_")
+		fn := i.Name
+		if title := i.Title(); title != nil {
+			fn = *title
+		}
 
 		switch format {
 		case FormatJSON:

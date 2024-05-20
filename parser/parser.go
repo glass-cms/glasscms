@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"errors"
 	"io"
+	"path/filepath"
+	"strings"
 
 	"github.com/glass-cms/glasscms/item"
 	"github.com/glass-cms/glasscms/sourcer"
@@ -39,12 +41,20 @@ func Parse(src sourcer.Source) (*item.Item, error) {
 	}
 
 	return &item.Item{
-		Name:       src.Name(),
+		Name:       nameFromPath(src.Name()),
+		Path:       src.Name(),
 		Content:    string(content),
 		CreateTime: src.CreatedAt(),
 		UpdateTime: src.ModifiedAt(),
 		Properties: properties,
 	}, nil
+}
+
+func nameFromPath(path string) string {
+	base := filepath.Base(path)
+	ext := filepath.Ext(base)
+	name := strings.TrimSuffix(base, ext)
+	return name
 }
 
 func extractFrontMatter(content []byte) ([]byte, []byte, error) {
