@@ -26,6 +26,12 @@ const (
 	ArgFormat          = "format"
 	ArgFormatShorthand = "f"
 
+	ArgPretty          = "pretty"
+	ArgPrettyShorthand = "p"
+
+	ArgSingleFile          = "single-file"
+	ArgSingleFileShorthand = "s"
+
 	FormatJSON = "json"
 	FormatYAML = "yaml"
 
@@ -41,6 +47,14 @@ type ConvertCommand struct {
 	*cobra.Command
 
 	logger *slog.Logger
+	opts   ConvertCommandOptions
+}
+
+type ConvertCommandOptions struct {
+	Output     string
+	Format     string
+	Pretty     bool
+	SingleFile bool
 }
 
 func NewConvertCommand() *ConvertCommand {
@@ -51,6 +65,7 @@ func NewConvertCommand() *ConvertCommand {
 				TimeFormat: time.TimeOnly,
 			}),
 		),
+		opts: ConvertCommandOptions{},
 	}
 
 	c.Command = &cobra.Command{
@@ -80,14 +95,17 @@ func NewConvertCommand() *ConvertCommand {
 
 	flagset := c.Command.Flags()
 
-	flagset.StringP(ArgOutput, ArgOutputShorthand, ".", "Output directory")
+	flagset.StringVarP(&c.opts.Output, ArgOutput, ArgOutputShorthand, ".", "Output directory")
 	_ = viper.BindPFlag(ArgOutput, flagset.Lookup(ArgOutput))
 
-	flagset.StringP(ArgFormat, ArgFormatShorthand, "json", "Output format (json, yaml)")
+	flagset.StringVarP(&c.opts.Format, ArgFormat, ArgFormatShorthand, "json", "Output format (json, yaml)")
 	_ = viper.BindPFlag(ArgFormat, flagset.Lookup(ArgFormat))
 
-	flagset.BoolP("pretty", "p", false, "Pretty print the output")
+	flagset.BoolVarP(&c.opts.Pretty, ArgPretty, ArgPrettyShorthand, false, "Pretty print output")
 	_ = viper.BindPFlag("pretty", flagset.Lookup("pretty"))
+
+	flagset.BoolVarP(&c.opts.SingleFile, ArgSingleFile, ArgSingleFileShorthand, false, "Write all items to a single file")
+	_ = viper.BindPFlag(ArgSingleFile, flagset.Lookup(ArgSingleFile))
 
 	return c
 }
@@ -97,10 +115,6 @@ func (c *ConvertCommand) Execute(_ *cobra.Command, args []string) error {
 	if err := sourcer.IsValidFileSystemSource(sourcePath); err != nil {
 		return err
 	}
-
-	dir := viper.GetString(ArgOutput)
-	format := viper.GetString(ArgFormat)
-	pretty := viper.GetBool("pretty")
 
 	fileSystemSourcer, err := sourcer.NewFileSystemSourcer(sourcePath)
 	if err != nil {
@@ -130,27 +144,40 @@ func (c *ConvertCommand) Execute(_ *cobra.Command, args []string) error {
 		items = append(items, i)
 	}
 
-	return writeItems(items, dir, format, pretty)
+	return writeItems(items, c.opts)
 }
 
-func writeItems(items []*item.Item, dir string, format string, pretty bool) error {
+func writeItems(items []*item.Item, opts ConvertCommandOptions) error {
+	// Write all items to a single file.
+	if opts.SingleFile {
+		switch opts.Format {
+		case FormatJSON:
+			return writeItemsJSON(items, path.Join(opts.Output, "items.json"), opts.Pretty)
+		case FormatYAML:
+			return writeItemsYAML(items, path.Join(opts.Output, "items.yaml"))
+		default:
+			return fmt.Errorf("%w: %s", ErrInvalidFormat, opts.Format)
+		}
+	}
+
+	// Write each item to a separate file.
 	for _, i := range items {
 		fn := i.Name
 		if title := i.Title(); title != nil {
 			fn = *title
 		}
 
-		switch format {
+		switch opts.Format {
 		case FormatJSON:
-			if err := writeItemJSON(i, path.Join(dir, fn+".json"), pretty); err != nil {
+			if err := writeItemJSON(i, path.Join(opts.Output, fn+".json"), opts.Pretty); err != nil {
 				return err
 			}
 		case FormatYAML:
-			if err := writeItemYAML(i, path.Join(dir, fn+".yaml")); err != nil {
+			if err := writeItemYAML(i, path.Join(opts.Output, fn+".yaml")); err != nil {
 				return err
 			}
 		default:
-			return fmt.Errorf("%w: %s", ErrInvalidFormat, format)
+			return fmt.Errorf("%w: %s", ErrInvalidFormat, opts.Format)
 		}
 	}
 
@@ -170,8 +197,30 @@ func writeItemJSON(i *item.Item, path string, format bool) error {
 	return os.WriteFile(path, b, 0600)
 }
 
+func writeItemsJSON(items []*item.Item, path string, format bool) error {
+	b, err := json.Marshal(items)
+	if err != nil {
+		return err
+	}
+
+	if format {
+		b = pretty.Pretty(b)
+	}
+
+	return os.WriteFile(path, b, 0600)
+}
+
 func writeItemYAML(i *item.Item, path string) error {
 	b, err := yaml.Marshal(i)
+	if err != nil {
+		return err
+	}
+
+	return os.WriteFile(path, b, 0600)
+}
+
+func writeItemsYAML(items []*item.Item, path string) error {
+	b, err := yaml.Marshal(items)
 	if err != nil {
 		return err
 	}

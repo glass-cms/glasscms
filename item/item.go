@@ -11,6 +11,7 @@ type Item struct {
 	Name       string         `json:"name" yaml:"name"`
 	Path       string         `json:"path" yaml:"path"`
 	Content    string         `json:"content" yaml:"content"`
+	Hash       string         `json:"hash" yaml:"hash"`
 	CreateTime time.Time      `json:"createTime" yaml:"createTime"`
 	UpdateTime time.Time      `json:"updateTime" yaml:"updateTime"`
 	Properties map[string]any `json:"properties" yaml:"properties"`

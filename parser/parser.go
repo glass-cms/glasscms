@@ -2,6 +2,8 @@ package parser
 
 import (
 	"bytes"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"io"
 	"path/filepath"
@@ -20,6 +22,7 @@ const (
 	seperatorBytes = 4
 )
 
+// Parse reads the content of a source and extracts the front matter and markdown content.
 func Parse(src sourcer.Source) (*item.Item, error) {
 	c, err := io.ReadAll(src)
 	if err != nil {
@@ -44,10 +47,17 @@ func Parse(src sourcer.Source) (*item.Item, error) {
 		Name:       nameFromPath(src.Name()),
 		Path:       src.Name(),
 		Content:    string(content),
+		Hash:       hashContent(content),
 		CreateTime: src.CreatedAt(),
 		UpdateTime: src.ModifiedAt(),
 		Properties: properties,
 	}, nil
+}
+
+func hashContent(content []byte) string {
+	hasher := sha256.New()
+	hasher.Write(content)
+	return hex.EncodeToString(hasher.Sum(nil))
 }
 
 func nameFromPath(path string) string {
