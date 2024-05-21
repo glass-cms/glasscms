@@ -148,6 +148,19 @@ func (c *ConvertCommand) Execute(_ *cobra.Command, args []string) error {
 }
 
 func writeItems(items []*item.Item, opts ConvertCommandOptions) error {
+	// Write all items to a single file.
+	if opts.SingleFile {
+		switch opts.Format {
+		case FormatJSON:
+			return writeItemsJSON(items, path.Join(opts.Output, "items.json"), opts.Pretty)
+		case FormatYAML:
+			return writeItemsYAML(items, path.Join(opts.Output, "items.yaml"))
+		default:
+			return fmt.Errorf("%w: %s", ErrInvalidFormat, opts.Format)
+		}
+	}
+
+	// Write each item to a separate file.
 	for _, i := range items {
 		fn := i.Name
 		if title := i.Title(); title != nil {
