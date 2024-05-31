@@ -7,7 +7,6 @@ import (
 	"log/slog"
 	"os"
 	"path"
-	"time"
 
 	"github.com/glass-cms/glasscms/item"
 	"github.com/glass-cms/glasscms/parser"
@@ -60,9 +59,10 @@ type ConvertCommandOptions struct {
 func NewConvertCommand() *ConvertCommand {
 	c := &ConvertCommand{
 		logger: slog.New(
+			// TODO: Make handler type configurable.
 			tint.NewHandler(os.Stdout, &tint.Options{
-				Level:      slog.LevelDebug,
-				TimeFormat: time.TimeOnly,
+				// TODO: Make configurable.
+				Level: slog.LevelDebug,
 			}),
 		),
 		opts: ConvertCommandOptions{},
