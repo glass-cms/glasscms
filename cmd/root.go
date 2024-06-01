@@ -40,6 +40,7 @@ func init() {
 	//
 	rootCmd.AddCommand(NewConvertCommand().Command)
 	rootCmd.AddCommand(NewDocsCommand().Command)
+	rootCmd.AddCommand(NewServerCommand().Command)
 
 	//
 	// Register flags.
