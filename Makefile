@@ -50,7 +50,7 @@ lint-fix: ## Run all available linters and fix the issues
 ## Type spec:
 spec: ### Run compilation of OpenAPI specification
 	@echo "Compiling OpenAPI spec"
-	tsp compile ./api/typespec --emit @typespec/openapi3 --option "@typespec/openapi3.emitter-output-dir={cwd}/api"
+	sh ./scripts/compile-spec.sh	
 
 ## Help:
 help: ## Show this help.

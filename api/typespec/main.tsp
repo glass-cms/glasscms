@@ -15,6 +15,7 @@ namespace Items {
     @get op list(): Item[];
 
     @post op create(...Item): {};
+    // TODO: Bulk create, list with pagination.
 }
 
 @doc("Item represents an individual content item.")
@@ -25,5 +26,5 @@ model Item {
     content: string;
     created_time: utcDateTime;
     update_time: utcDateTime;
-    properties: Record<unknown>;
+    props: Record<unknown>;
 }

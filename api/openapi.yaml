@@ -16,9 +16,7 @@ paths:
               schema:
                 type: array
                 items:
-                  value:
-                    $ref: '#/components/schemas/Item'
-                  kind: code
+                  $ref: '#/components/schemas/Item'
     post:
       operationId: Items_create
       parameters: []
@@ -42,44 +40,24 @@ components:
         - content
         - created_time
         - update_time
-        - properties
+        - props
       properties:
-        value:
-          id:
-            value:
-              type: integer
-              format: int64
-            kind: code
-          name:
-            value:
-              type: string
-            kind: code
-          path:
-            value:
-              type: string
-            kind: code
-          content:
-            value:
-              type: string
-            kind: code
-          created_time:
-            value:
-              type: string
-              format: date-time
-            kind: code
-          update_time:
-            value:
-              type: string
-              format: date-time
-            kind: code
-          properties:
-            value:
-              type: object
-              properties:
-                kind: none
-              additionalProperties:
-                value: {}
-                kind: code
-            kind: code
-        kind: code
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        path:
+          type: string
+        content:
+          type: string
+        created_time:
+          type: string
+          format: date-time
+        update_time:
+          type: string
+          format: date-time
+        props:
+          type: object
+          additionalProperties: {}
       description: Item represents an individual content item.
