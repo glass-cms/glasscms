@@ -46,6 +46,12 @@ lint: ## Run all available linters
 lint-fix: ## Run all available linters and fix the issues
 	golangci-lint run --timeout=5m --fix
 
+.PHONY: spec
+## Type spec:
+spec: ### Run compilation of OpenAPI specification
+	@echo "Compiling OpenAPI spec"
+	tsp compile ./api/typespec --emit @typespec/openapi3 --option "@typespec/openapi3.emitter-output-dir={cwd}/api"
+
 ## Help:
 help: ## Show this help.
 	@echo ''

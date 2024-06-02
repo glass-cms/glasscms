@@ -1,0 +1,85 @@
+openapi: 3.0.0
+info:
+  title: GlassCMS API
+  version: 0.0.0
+tags: []
+paths:
+  /items:
+    get:
+      operationId: Items_list
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  value:
+                    $ref: '#/components/schemas/Item'
+                  kind: code
+    post:
+      operationId: Items_create
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Item'
+components:
+  schemas:
+    Item:
+      type: object
+      required:
+        - id
+        - name
+        - path
+        - content
+        - created_time
+        - update_time
+        - properties
+      properties:
+        value:
+          id:
+            value:
+              type: integer
+              format: int64
+            kind: code
+          name:
+            value:
+              type: string
+            kind: code
+          path:
+            value:
+              type: string
+            kind: code
+          content:
+            value:
+              type: string
+            kind: code
+          created_time:
+            value:
+              type: string
+              format: date-time
+            kind: code
+          update_time:
+            value:
+              type: string
+              format: date-time
+            kind: code
+          properties:
+            value:
+              type: object
+              properties:
+                kind: none
+              additionalProperties:
+                value: {}
+                kind: code
+            kind: code
+        kind: code
+      description: Item represents an individual content item.
