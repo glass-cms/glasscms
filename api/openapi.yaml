@@ -17,6 +17,24 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Item'
+    delete:
+      operationId: Items_delete
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: integer
+                  format: int64
+              required:
+                - id
     post:
       operationId: Items_create
       parameters: []
