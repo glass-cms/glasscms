@@ -13,10 +13,12 @@ namespace GlassCMS;
 @route("/items")
 namespace Items {
     @get op list(): Item[];
-
+    @delete op delete(id: int64): {};
     @post op create(...Item): {};
-    // TODO: Bulk create, list with pagination.
 }
+
+@@listsResource(Items.list, Item);
+@@createsResource(Items.create, Item);
 
 @doc("Item represents an individual content item.")
 model Item {
