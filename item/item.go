@@ -3,18 +3,21 @@ package item
 import "time"
 
 const (
-	// PropertyTitle is the key for the title property.
 	PropertyTitle = "title"
 )
 
 type Item struct {
-	Name       string         `json:"name" yaml:"name"`
-	Path       string         `json:"path" yaml:"path"`
-	Content    string         `json:"content" yaml:"content"`
-	Hash       string         `json:"hash" yaml:"hash"`
-	CreateTime time.Time      `json:"createTime" yaml:"createTime"`
-	UpdateTime time.Time      `json:"updateTime" yaml:"updateTime"`
-	Properties map[string]any `json:"properties" yaml:"properties"`
+	UID string
+	// Name is the full resource name of the item.
+	// Format: collections/{collection}/items/{item}
+	Name        string
+	DisplayName string
+	Path        string
+	Content     string
+	Hash        string
+	CreateTime  time.Time
+	UpdateTime  time.Time
+	Properties  map[string]any
 }
 
 // Title returns the title property of the item if it exists.

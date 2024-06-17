@@ -15,7 +15,8 @@ import (
 type Item struct {
 	Content     string                 `json:"content"`
 	CreatedTime time.Time              `json:"created_time"`
-	Id          int64                  `json:"id"`
+	DisplayName string                 `json:"display_name"`
+	Id          string                 `json:"id"`
 	Name        string                 `json:"name"`
 	Path        string                 `json:"path"`
 	Props       map[string]interface{} `json:"props"`
