@@ -1,4 +1,3 @@
-# yaml-language-server: ...
 package: server
 generate:
   std-http-server: true
