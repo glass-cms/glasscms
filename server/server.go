@@ -20,7 +20,6 @@ type Server struct {
 	server *http.Server
 }
 
-// Enforce that Server implements ServerInterface.
 var _ ServerInterface = (*Server)(nil)
 
 func New(
@@ -59,24 +58,24 @@ func (s *Server) Shutdown() {
 	defer cancel()
 
 	if err := s.server.Shutdown(ctx); err != nil {
-		s.logger.Error("could not gracefully shutdown the server: %v", err)
+		s.logger.Error("could not gracefully shutdown the server: %v", err) // TODO: fix.
 		return
 	}
 
 	s.logger.Info("server stopped")
 }
 
-func (s *Server) ItemsDelete(w http.ResponseWriter, r *http.Request) {
+func (s *Server) ItemsDelete(w http.ResponseWriter, _ *http.Request) {
 	// TODO.
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-func (s *Server) ItemsList(w http.ResponseWriter, r *http.Request) {
+func (s *Server) ItemsList(w http.ResponseWriter, _ *http.Request) {
 	// TODO.
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-func (s *Server) ItemsCreate(w http.ResponseWriter, r *http.Request) {
+func (s *Server) ItemsCreate(w http.ResponseWriter, _ *http.Request) {
 	// TODO.
 	w.WriteHeader(http.StatusNotImplemented)
 }
