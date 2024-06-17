@@ -5,6 +5,6 @@
 # See: https://github.com/microsoft/typespec/issues/3397.
 
 current_dir=$(pwd)
-cd api/typespec || exit
-tsp compile . --emit @typespec/openapi3 --option "@typespec/openapi3.emitter-output-dir=${current_dir}/api"
+cd typespec || exit
+tsp compile . --emit @typespec/openapi3 --option "@typespec/openapi3.emitter-output-dir=${current_dir}"
 cd "$current_dir" || exit

@@ -1,6 +1,6 @@
 # yaml-language-server: ...
-package: api
+package: server
 generate:
   std-http-server: true
   models: true
-output: server.gen.go
+output: server/server.gen.go

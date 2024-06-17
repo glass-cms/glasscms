@@ -57,9 +57,9 @@ components:
         - display_name
         - path
         - content
-        - created_time
+        - create_time
         - update_time
-        - props
+        - properties
       properties:
         id:
           type: string
@@ -71,13 +71,13 @@ components:
           type: string
         content:
           type: string
-        created_time:
+        create_time:
           type: string
           format: date-time
         update_time:
           type: string
           format: date-time
-        props:
+        properties:
           type: object
           additionalProperties: {}
       description: Item represents an individual content item.

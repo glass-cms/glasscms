@@ -27,7 +27,7 @@ model Item {
     display_name: string;
     path: string;
     content: string;
-    created_time: utcDateTime;
+    create_time: utcDateTime;
     update_time: utcDateTime;
-    props: Record<unknown>;
+    properties: Record<unknown>;
 }
