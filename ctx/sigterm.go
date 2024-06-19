@@ -7,8 +7,9 @@ import (
 	"syscall"
 )
 
-// SigtermCacellationContext returns a new context that is canceled when an interrupt signal (SIGTERM or SIGINT) is received.
-// It also invokes the provided onCancel function before canceling the context.
+// SigtermCacellationContext returns a new context that is canceled when an
+// interrupt signal (SIGTERM or SIGINT) is received.
+// Additionaly invokes the provided onCancel function before canceling the context.
 func SigtermCacellationContext(ctx context.Context, onCancel func()) context.Context {
 	ctx, cancel := context.WithCancel(ctx)
 

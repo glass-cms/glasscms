@@ -58,7 +58,7 @@ func (s *Server) Shutdown() {
 	defer cancel()
 
 	if err := s.server.Shutdown(ctx); err != nil {
-		s.logger.Error("could not gracefully shutdown the server: %v", err) // TODO: fix.
+		s.logger.Error("could not gracefully shutdown the server:", "err", err)
 		return
 	}
 
