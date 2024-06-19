@@ -22,11 +22,12 @@ namespace Items {
 
 @doc("Item represents an individual content item.")
 model Item {
-    id: int64;
+    id: string;
     name: string;
+    display_name: string;
     path: string;
     content: string;
-    created_time: utcDateTime;
+    create_time: utcDateTime;
     update_time: utcDateTime;
-    props: Record<unknown>;
+    properties: Record<unknown>;
 }

@@ -4,6 +4,8 @@ import (
 	"log/slog"
 	"os"
 
+	"github.com/glass-cms/glasscms/ctx"
+	"github.com/glass-cms/glasscms/server"
 	"github.com/lmittmann/tint"
 	"github.com/spf13/cobra"
 )
@@ -36,7 +38,17 @@ func NewServerCommand() *ServerCommand {
 	return sc
 }
 
-func (c *ServerCommand) Execute(_ *cobra.Command, _ []string) error {
-	c.logger.Info("Starting server")
-	return nil
+func (c *ServerCommand) Execute(cmd *cobra.Command, _ []string) error {
+	server, err := server.New(c.logger)
+	if err != nil {
+		return err
+	}
+
+	_ = ctx.SigtermCacellationContext(cmd.Context(), func() {
+		c.logger.Info("shutting down server")
+		server.Shutdown()
+	})
+
+	c.logger.Info("starting server")
+	return server.ListenAndServer()
 }
