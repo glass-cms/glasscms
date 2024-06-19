@@ -46,14 +46,15 @@ type ConvertCommand struct {
 	*cobra.Command
 
 	logger *slog.Logger
-	opts   ConvertCommandOptions
+	opts   WriteItemsOption
 }
 
-type ConvertCommandOptions struct {
-	Output     string
-	Format     string
-	Pretty     bool
-	SingleFile bool
+// WriteItemsOption represents the options for writing items.
+type WriteItemsOption struct {
+	Output     string // Output specifies the output directory or file path.
+	Format     string // Format specifies the format of the output (e.g., JSON, XML).
+	Pretty     bool   // Pretty specifies whether to format the output in a human-readable way.
+	SingleFile bool   // SingleFile specifies whether to write all items into a single file.
 }
 
 func NewConvertCommand() *ConvertCommand {
@@ -65,7 +66,7 @@ func NewConvertCommand() *ConvertCommand {
 				Level: slog.LevelDebug,
 			}),
 		),
-		opts: ConvertCommandOptions{},
+		opts: WriteItemsOption{},
 	}
 
 	c.Command = &cobra.Command{
@@ -144,20 +145,28 @@ func (c *ConvertCommand) Execute(_ *cobra.Command, args []string) error {
 		items = append(items, i)
 	}
 
-	return writeItems(items, c.opts)
+	return WriteItems(items, c.opts)
 }
 
-func writeItems(items []*item.Item, opts ConvertCommandOptions) error {
+func WriteItems(items []*item.Item, opts WriteItemsOption) error {
+	marshalFuncs := map[string]marshalerFunc{
+		FormatJSON: json.Marshal,
+		FormatYAML: yaml.Marshal,
+	}
+
+	prettyFuncs := map[string]prettyFunc{
+		FormatJSON: pretty.Pretty,
+	}
+
+	marshalFunc, ok := marshalFuncs[opts.Format]
+	if !ok {
+		return fmt.Errorf("%w: %s", ErrInvalidFormat, opts.Format)
+	}
+	prettyFunc := prettyFuncs[opts.Format]
+
 	// Write all items to a single file.
 	if opts.SingleFile {
-		switch opts.Format {
-		case FormatJSON:
-			return writeItemsJSON(items, path.Join(opts.Output, "items.json"), opts.Pretty)
-		case FormatYAML:
-			return writeItemsYAML(items, path.Join(opts.Output, "items.yaml"))
-		default:
-			return fmt.Errorf("%w: %s", ErrInvalidFormat, opts.Format)
-		}
+		return writeItems(items, path.Join(opts.Output, "items."+opts.Format), marshalFunc, prettyFunc)
 	}
 
 	// Write each item to a separate file.
@@ -167,62 +176,37 @@ func writeItems(items []*item.Item, opts ConvertCommandOptions) error {
 			fn = *title
 		}
 
-		switch opts.Format {
-		case FormatJSON:
-			if err := writeItemJSON(i, path.Join(opts.Output, fn+".json"), opts.Pretty); err != nil {
-				return err
-			}
-		case FormatYAML:
-			if err := writeItemYAML(i, path.Join(opts.Output, fn+".yaml")); err != nil {
-				return err
-			}
-		default:
-			return fmt.Errorf("%w: %s", ErrInvalidFormat, opts.Format)
+		path := path.Join(opts.Output, fn+"."+opts.Format)
+		if err := writeItems([]*item.Item{i}, path, marshalFunc, prettyFunc); err != nil {
+			return err
 		}
 	}
 
 	return nil
 }
 
-func writeItemJSON(i *item.Item, path string, format bool) error {
-	b, err := json.Marshal(i)
+type marshalerFunc func(v any) ([]byte, error)
+type prettyFunc func(b []byte) []byte
+
+func writeItems(i []*item.Item, path string, marshal marshalerFunc, pretty prettyFunc) error {
+	var b []byte
+	var err error
+
+	// Marshal the item(s) to the specified format.
+	// If there is only one item, marshal it directly, otherwise marshal the slice.
+	if len(i) == 1 {
+		b, err = marshal(i[0])
+	} else {
+		b, err = marshal(i)
+	}
+
 	if err != nil {
 		return err
 	}
 
-	if format {
-		b = pretty.Pretty(b)
-	}
-
-	return os.WriteFile(path, b, 0600)
-}
-
-func writeItemsJSON(items []*item.Item, path string, format bool) error {
-	b, err := json.Marshal(items)
-	if err != nil {
-		return err
-	}
-
-	if format {
-		b = pretty.Pretty(b)
-	}
-
-	return os.WriteFile(path, b, 0600)
-}
-
-func writeItemYAML(i *item.Item, path string) error {
-	b, err := yaml.Marshal(i)
-	if err != nil {
-		return err
-	}
-
-	return os.WriteFile(path, b, 0600)
-}
-
-func writeItemsYAML(items []*item.Item, path string) error {
-	b, err := yaml.Marshal(items)
-	if err != nil {
-		return err
+	// Pretty print the output if requested.
+	if pretty != nil {
+		b = pretty(b)
 	}
 
 	return os.WriteFile(path, b, 0600)
