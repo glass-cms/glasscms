@@ -1,4 +1,4 @@
-package cmd
+package server
 
 import (
 	"log/slog"
@@ -10,35 +10,30 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type ServerCommand struct {
+type StartCommand struct {
 	Command *cobra.Command
-
-	logger *slog.Logger
+	logger  *slog.Logger
 }
 
-// NewServerCommand creates a new cobra.Command for
-// starting the CMS server.
-func NewServerCommand() *ServerCommand {
-	sc := &ServerCommand{
+func NewStartCommand() *StartCommand {
+	sc := &StartCommand{
 		logger: slog.New(
-			// TODO: Make handler type configurable.
 			tint.NewHandler(os.Stdout, &tint.Options{
-				// TODO: Make configurable.
 				Level: slog.LevelDebug,
 			}),
 		),
 	}
 
 	sc.Command = &cobra.Command{
-		Use:   "server",
-		Short: "Start the cms server",
+		Use:   "start",
+		Short: "Start the CMS server",
 		RunE:  sc.Execute,
 	}
 
 	return sc
 }
 
-func (c *ServerCommand) Execute(cmd *cobra.Command, _ []string) error {
+func (c *StartCommand) Execute(cmd *cobra.Command, _ []string) error {
 	server, err := server.New(c.logger)
 	if err != nil {
 		return err

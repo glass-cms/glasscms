@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/glass-cms/glasscms/cmd/server"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -40,7 +41,7 @@ func init() {
 	//
 	rootCmd.AddCommand(NewConvertCommand().Command)
 	rootCmd.AddCommand(NewDocsCommand().Command)
-	rootCmd.AddCommand(NewServerCommand().Command)
+	rootCmd.AddCommand(server.NewCommand().Command)
 
 	//
 	// Register flags.
