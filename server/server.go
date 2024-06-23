@@ -6,6 +6,8 @@ import (
 	"log/slog"
 	"net/http"
 	"time"
+
+	"github.com/glass-cms/glasscms/api"
 )
 
 const (
@@ -20,7 +22,7 @@ type Server struct {
 	server *http.Server
 }
 
-var _ ServerInterface = (*Server)(nil)
+var _ api.ServerInterface = (*Server)(nil)
 
 func New(
 	logger *slog.Logger,
@@ -31,7 +33,7 @@ func New(
 	}
 
 	server.server = &http.Server{
-		Handler:      HandlerFromMux(server, http.NewServeMux()),
+		Handler:      api.HandlerFromMux(server, http.NewServeMux()),
 		Addr:         fmt.Sprintf(":%v", DefaultPort),
 		ReadTimeout:  DefaultReadTimeout,
 		WriteTimeout: DefaultWriteTimeout,
@@ -63,19 +65,4 @@ func (s *Server) Shutdown() {
 	}
 
 	s.logger.Info("server stopped")
-}
-
-func (s *Server) ItemsDelete(w http.ResponseWriter, _ *http.Request) {
-	// TODO.
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-func (s *Server) ItemsList(w http.ResponseWriter, _ *http.Request) {
-	// TODO.
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-func (s *Server) ItemsCreate(w http.ResponseWriter, _ *http.Request) {
-	// TODO.
-	w.WriteHeader(http.StatusNotImplemented)
 }

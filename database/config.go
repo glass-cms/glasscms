@@ -33,18 +33,18 @@ var (
 // Config represents the configuration for a database connection.
 type Config struct {
 	// Driver is the name of the database driver.
-	Driver string
+	Driver string `mapstructure:"driver"`
 
 	// DSN is the Data Source Name. It specifies the username, password, and database name
 	// that are used to connect to the database.
-	DSN string
+	DSN string `mapstructure:"dsn"`
 
 	// MaxConnection is the maximum number of connections that can be opened to the database.
-	MaxConnections int
+	MaxConnections int `mapstructure:"max_connections"`
 
 	// MaxIdleConnections is the maximum number of idle connections that can be maintained.
 	// Idle connections are connections that are open but not in use.
-	MaxIdleConnections int
+	MaxIdleConnections int `mapstructure:"max_idle_connections"`
 }
 
 // NewConnection creates a new database connection using the provided configuration.

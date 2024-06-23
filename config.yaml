@@ -1,1 +1,4 @@
 output: ./out/
+database:
+  driver: sqlite3
+  

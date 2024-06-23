@@ -36,17 +36,11 @@ func Execute() {
 }
 
 func init() {
-	//
-	// Add commands to the root command.
-	//
 	rootCmd.AddCommand(NewConvertCommand().Command)
 	rootCmd.AddCommand(NewDocsCommand().Command)
 	rootCmd.AddCommand(server.NewCommand().Command)
 
-	//
 	// Register flags.
-	//
-
 	pflags := rootCmd.PersistentFlags()
 
 	pflags.BoolP(ArgsVerbose, ArgsVerboseShorthand, false, "Enable verbose output")
@@ -58,6 +52,7 @@ func initializeConfig(cmd *cobra.Command) error {
 
 	v.SetConfigName(defaultConfigFilename)
 	v.AddConfigPath(".")
+	// Add glasscms config directory to the search path.
 
 	var cfgNotFoundError viper.ConfigFileNotFoundError
 	if err := v.ReadInConfig(); err != nil {
