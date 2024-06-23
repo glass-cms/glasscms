@@ -1,8 +1,10 @@
 package server
 
 import (
+	"fmt"
 	"log/slog"
 	"os"
+	"os/user"
 
 	"github.com/glass-cms/glasscms/ctx"
 	"github.com/glass-cms/glasscms/server"
@@ -39,6 +41,10 @@ func (c *StartCommand) Execute(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 
+	if err = createServerRootFolder(); err != nil {
+		return err
+	}
+
 	_ = ctx.SigtermCacellationContext(cmd.Context(), func() {
 		c.logger.Info("shutting down server")
 		server.Shutdown()
@@ -46,4 +52,18 @@ func (c *StartCommand) Execute(cmd *cobra.Command, _ []string) error {
 
 	c.logger.Info("starting server")
 	return server.ListenAndServer()
+}
+
+func createServerRootFolder() error {
+	usr, err := user.Current()
+	if err != nil {
+		return err
+	}
+
+	path := fmt.Sprintf("%s/.glasscms", usr.HomeDir)
+	if _, err = os.Stat(path); os.IsNotExist(err) {
+		return os.Mkdir(path, 0755)
+	}
+
+	return nil
 }
