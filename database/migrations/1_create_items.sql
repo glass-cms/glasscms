@@ -1,3 +1,4 @@
+-- +goose Up
 CREATE TABLE items (
     uid TEXT PRIMARY KEY,
     create_time TIMESTAMP NOT NULL,
@@ -9,3 +10,6 @@ CREATE TABLE items (
     content TEXT,
     properties JSON
 );
+
+-- +goose Down
+DROP TABLE items;

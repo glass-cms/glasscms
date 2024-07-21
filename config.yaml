@@ -1,4 +1,5 @@
-output: ./out/
+output: './out'
 database:
-  driver: sqlite3
+  dsn: ':memory:'
+  driver: 'sqlite3'
   
