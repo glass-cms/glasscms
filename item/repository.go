@@ -18,12 +18,6 @@ func NewRepository(db *sql.DB) *Repository {
 
 // CreateItem creates a new item in the database.
 func (r *Repository) CreateItem(ctx context.Context, item *Item) error {
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	default:
-	}
-
 	query := `
         INSERT INTO items (uid, create_time, update_time, hash, display_name, name, path, content, properties)
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
@@ -61,13 +55,6 @@ func (r *Repository) CreateItem(ctx context.Context, item *Item) error {
 
 // GetItem retrieves an item from the database by its UID.
 func (r *Repository) GetItem(ctx context.Context, uid string) (*Item, error) {
-	// Check context first
-	select {
-	case <-ctx.Done():
-		return nil, ctx.Err()
-	default:
-	}
-
 	query := `
         SELECT uid, create_time, update_time, hash, display_name, name, path, content, properties
         FROM items
@@ -111,12 +98,6 @@ func (r *Repository) GetItem(ctx context.Context, uid string) (*Item, error) {
 
 // UpdateItem updates an existing item in the database.
 func (r *Repository) UpdateItem(ctx context.Context, item *Item) error {
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	default:
-	}
-
 	query := `
 		UPDATE items
 		SET update_time = $1, hash = $2, display_name = $3, name = $4, path = $5, content = $6, properties = $7
@@ -147,6 +128,33 @@ func (r *Repository) UpdateItem(ctx context.Context, item *Item) error {
 
 	if err != nil {
 		return fmt.Errorf("failed to update item: %w", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+
+	if rowsAffected == 0 {
+		return errors.New("item not found")
+	}
+
+	return nil
+}
+
+// DeleteItem deletes an item from the database by its UID.
+func (r *Repository) DeleteItem(ctx context.Context, uid string) error {
+	query := `DELETE FROM items WHERE uid = $1`
+
+	stmt, err := r.db.PrepareContext(ctx, query)
+	if err != nil {
+		return fmt.Errorf("failed to prepare statement: %w", err)
+	}
+	defer stmt.Close()
+
+	result, err := stmt.ExecContext(ctx, uid)
+	if err != nil {
+		return fmt.Errorf("failed to delete item: %w", err)
 	}
 
 	rowsAffected, err := result.RowsAffected()

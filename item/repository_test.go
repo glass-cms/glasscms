@@ -295,3 +295,78 @@ func TestRepository_UpdateItem(t *testing.T) {
 		})
 	}
 }
+
+func TestRepository_DeleteItem(t *testing.T) {
+	t.Parallel()
+
+	type fields struct {
+		db   *sql.DB
+		seed func(*sql.DB)
+	}
+	type args struct {
+		ctx context.Context
+		uid string
+	}
+	tests := map[string]struct {
+		fields  fields
+		args    args
+		wantErr bool
+	}{
+		"Successful deletion": {
+			fields: fields{
+				db: GetTestDatabase(),
+				seed: func(db *sql.DB) {
+					if err := SeedDatabase(db, getTestItem()); err != nil {
+						t.Error(err)
+					}
+				},
+			},
+			args: args{
+				ctx: context.Background(),
+				uid: "1234",
+			},
+			wantErr: false,
+		},
+		"Context canceled": {
+			fields: fields{
+				db: GetTestDatabase(),
+				seed: func(db *sql.DB) {
+					if err := SeedDatabase(db, getTestItem()); err != nil {
+						t.Error(err)
+					}
+				},
+			},
+			args: args{
+				ctx: func() context.Context {
+					ctx, cancel := context.WithCancel(context.Background())
+					cancel()
+					return ctx
+				}(),
+				uid: "1234",
+			},
+			wantErr: true,
+		},
+		"Item not found": {
+			fields: fields{
+				db: GetTestDatabase(),
+			},
+			args: args{
+				ctx: context.Background(),
+				uid: "nonexistent",
+			},
+			wantErr: true,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			r := item.NewRepository(tt.fields.db)
+			if tt.fields.seed != nil {
+				tt.fields.seed(tt.fields.db)
+			}
+			err := r.DeleteItem(tt.args.ctx, tt.args.uid)
+			assert.Equal(t, tt.wantErr, err != nil, "Repository.DeleteItem() error = %v, wantErr %v", err, tt.wantErr)
+		})
+	}
+}
