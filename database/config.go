@@ -2,12 +2,21 @@ package database
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
+
+	// Import the SQLite3 driver.
+	_ "github.com/mattn/go-sqlite3"
 )
 
 type Driver int32
 
 const (
+	ArgDriver             = "database.driver"
+	ArgDSN                = "database.dsn"
+	ArgMaxConnections     = "database.max_connections"
+	ArgMaxIdleConnections = "database.max_idle_connections"
+
 	DriverUnrecognized Driver = -1
 	DriverUnspecified  Driver = iota
 	DriverPostgres
@@ -52,6 +61,14 @@ type Config struct {
 // The sql.DB object represents a pool of zero or more underlying connections.
 // It's safe for concurrent use by multiple goroutines.
 func NewConnection(cfg Config) (*sql.DB, error) {
+	if _, ok := DriverValue[cfg.Driver]; !ok {
+		return nil, fmt.Errorf("unrecognized database driver: %s", cfg.Driver)
+	}
+
+	if cfg.DSN == "" {
+		return nil, errors.New("data source name (DSN) is required")
+	}
+
 	db, err := sql.Open(cfg.Driver, cfg.DSN)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open database connection: %w", err)

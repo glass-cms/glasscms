@@ -5,6 +5,7 @@ go 1.22.0
 require (
 	github.com/djherbis/times v1.6.0
 	github.com/lmittmann/tint v1.0.4
+	github.com/mattn/go-sqlite3 v1.14.22
 	github.com/oapi-codegen/oapi-codegen/v2 v2.3.0
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/pflag v1.0.5

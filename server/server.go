@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/glass-cms/glasscms/api"
+	"github.com/glass-cms/glasscms/item"
 )
 
 const (
@@ -20,16 +21,20 @@ const (
 type Server struct {
 	logger *slog.Logger
 	server *http.Server
+
+	repository *item.Repository
 }
 
 var _ api.ServerInterface = (*Server)(nil)
 
 func New(
 	logger *slog.Logger,
+	repo *item.Repository,
 	opts ...Option,
 ) (*Server, error) {
 	server := &Server{
-		logger: logger,
+		logger:     logger,
+		repository: repo,
 	}
 
 	server.server = &http.Server{
