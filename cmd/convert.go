@@ -171,12 +171,7 @@ func WriteItems(items []*item.Item, opts WriteItemsOption) error {
 
 	// Write each item to a separate file.
 	for _, i := range items {
-		fn := i.Name
-		if title := i.Title(); title != nil {
-			fn = *title
-		}
-
-		path := path.Join(opts.Output, fn+"."+opts.Format)
+		path := path.Join(opts.Output, i.Name+"."+opts.Format)
 		if err := writeItems([]*item.Item{i}, path, marshalFunc, prettyFunc); err != nil {
 			return err
 		}

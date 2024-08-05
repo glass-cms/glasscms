@@ -4,7 +4,6 @@ CREATE TABLE items (
     create_time TIMESTAMP NOT NULL,
     update_time TIMESTAMP NOT NULL,
     hash TEXT, 
-    display_name NOT NULL,
     name TEXT NOT NULL,
     path TEXT NOT NULL,
     content TEXT,

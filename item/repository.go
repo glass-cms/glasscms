@@ -19,8 +19,8 @@ func NewRepository(db *sql.DB) *Repository {
 // CreateItem creates a new item in the database.
 func (r *Repository) CreateItem(ctx context.Context, item *Item) error {
 	query := `
-        INSERT INTO items (uid, create_time, update_time, hash, display_name, name, path, content, properties)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        INSERT INTO items (uid, create_time, update_time, hash, name, path, content, properties)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
     `
 
 	propertiesJSON, err := json.Marshal(item.Properties)
@@ -39,7 +39,6 @@ func (r *Repository) CreateItem(ctx context.Context, item *Item) error {
 		item.CreateTime,
 		item.UpdateTime,
 		item.Hash,
-		item.DisplayName,
 		item.Name,
 		item.Path,
 		item.Content,
@@ -56,7 +55,7 @@ func (r *Repository) CreateItem(ctx context.Context, item *Item) error {
 // GetItem retrieves an item from the database by its UID.
 func (r *Repository) GetItem(ctx context.Context, uid string) (*Item, error) {
 	query := `
-        SELECT uid, create_time, update_time, hash, display_name, name, path, content, properties
+        SELECT uid, create_time, update_time, hash, name, path, content, properties
         FROM items
         WHERE uid = $1
     `
@@ -74,7 +73,6 @@ func (r *Repository) GetItem(ctx context.Context, uid string) (*Item, error) {
 		&item.CreateTime,
 		&item.UpdateTime,
 		&item.Hash,
-		&item.DisplayName,
 		&item.Name,
 		&item.Path,
 		&item.Content,
@@ -100,7 +98,7 @@ func (r *Repository) GetItem(ctx context.Context, uid string) (*Item, error) {
 func (r *Repository) UpdateItem(ctx context.Context, item *Item) error {
 	query := `
 		UPDATE items
-		SET update_time = $1, hash = $2, display_name = $3, name = $4, path = $5, content = $6, properties = $7
+		SET update_time = $1, hash = $2, name = $3, path = $4, content = $5, properties = $6
 		WHERE uid = $8
 	`
 
@@ -118,7 +116,6 @@ func (r *Repository) UpdateItem(ctx context.Context, item *Item) error {
 	result, err := stmt.ExecContext(ctx,
 		item.UpdateTime,
 		item.Hash,
-		item.DisplayName,
 		item.Name,
 		item.Path,
 		item.Content,
