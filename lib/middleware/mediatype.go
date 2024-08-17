@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"slices"
 
-	"github.com/glass-cms/glasscms/mediatype"
+	"github.com/glass-cms/glasscms/lib/mediatype"
 )
 
 // MediaType generates a handler that writes a 415 Unsupported Media Type header

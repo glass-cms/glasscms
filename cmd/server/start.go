@@ -6,9 +6,9 @@ import (
 	"os"
 	"os/user"
 
-	"github.com/glass-cms/glasscms/ctx"
 	"github.com/glass-cms/glasscms/database"
 	"github.com/glass-cms/glasscms/item"
+	ctx "github.com/glass-cms/glasscms/lib/context"
 	"github.com/glass-cms/glasscms/server"
 	"github.com/lmittmann/tint"
 	"github.com/spf13/cobra"

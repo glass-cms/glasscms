@@ -5,8 +5,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/glass-cms/glasscms/mediatype"
-	"github.com/glass-cms/glasscms/server/middleware"
+	"github.com/glass-cms/glasscms/lib/mediatype"
+	"github.com/glass-cms/glasscms/lib/middleware"
 )
 
 func Test_MediaType(t *testing.T) {
