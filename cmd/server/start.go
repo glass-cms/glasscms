@@ -76,8 +76,18 @@ func NewStartCommand() *StartCommand {
 }
 
 func (c *StartCommand) Execute(cmd *cobra.Command, _ []string) error {
+	c.logger.Debug("connecting to database",
+		slog.String("driver", c.databaseConfig.Driver),
+		slog.String("dsn", c.databaseConfig.DSN),
+	)
+
 	db, err := database.NewConnection(*c.databaseConfig)
 	if err != nil {
+		return err
+	}
+
+	// Ping the database to ensure the connection is valid.
+	if err = db.Ping(); err != nil {
 		return err
 	}
 
