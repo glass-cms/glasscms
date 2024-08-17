@@ -1,10 +1,9 @@
 package parser_test
 
 import (
+	"strings"
 	"testing"
 	"time"
-
-	"strings"
 
 	"github.com/glass-cms/glasscms/parser"
 	"github.com/stretchr/testify/assert"

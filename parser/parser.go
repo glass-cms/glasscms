@@ -47,14 +47,15 @@ func Parse(src sourcer.Source) (*item.Item, error) {
 		Name:       nameFromPath(src.Name()),
 		Path:       src.Name(),
 		Content:    string(content),
-		Hash:       hashContent(content),
+		Hash:       HashContent(content),
 		CreateTime: src.CreatedAt(),
 		UpdateTime: src.ModifiedAt(),
 		Properties: properties,
 	}, nil
 }
 
-func hashContent(content []byte) string {
+// HashContent generates a hash for the content.
+func HashContent(content []byte) string {
 	hasher := sha256.New()
 	hasher.Write(content)
 	return hex.EncodeToString(hasher.Sum(nil))

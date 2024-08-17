@@ -13,6 +13,5 @@ func (s *Server) ItemsList(w http.ResponseWriter, _ *http.Request) {
 }
 
 func (s *Server) ItemsCreate(w http.ResponseWriter, _ *http.Request) {
-	// TODO.
 	w.WriteHeader(http.StatusNotImplemented)
 }

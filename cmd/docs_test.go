@@ -26,5 +26,5 @@ func TestFilePrepender(t *testing.T) {
 	timestampStr := strings.Split(strings.Split(result, "createTime: ")[1], "\n")[0]
 	timestamp, err := strconv.ParseInt(timestampStr, 10, 64)
 	require.NoError(t, err)
-	require.Greater(t, timestamp, int64(0))
+	require.Positive(t, timestamp, int64(0))
 }
