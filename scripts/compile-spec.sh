@@ -6,5 +6,5 @@
 
 current_dir=$(pwd)
 cd typespec || exit
-tsp compile . --emit @typespec/openapi3 --option "@typespec/openapi3.emitter-output-dir=${current_dir}"
+tsp compile . --emit @typespec/openapi3 --option "@typespec/openapi3.emitter-output-dir=${current_dir}/openapi"
 cd "$current_dir" || exit

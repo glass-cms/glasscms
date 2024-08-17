@@ -10,6 +10,8 @@ import (
 	"github.com/glass-cms/glasscms/item"
 	ctx "github.com/glass-cms/glasscms/lib/context"
 	"github.com/glass-cms/glasscms/server"
+	"github.com/glass-cms/glasscms/server/handler"
+	v1 "github.com/glass-cms/glasscms/server/handler/v1"
 	"github.com/lmittmann/tint"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -91,7 +93,9 @@ func (c *StartCommand) Execute(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 
-	server, err := server.New(c.logger, item.NewRepository(db))
+	v1Handler := v1.NewAPIHandler(c.logger, item.NewRepository(db))
+
+	server, err := server.New(c.logger, []handler.VersionedHandler{v1Handler})
 	if err != nil {
 		return err
 	}

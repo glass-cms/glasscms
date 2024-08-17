@@ -1,6 +1,7 @@
 import "@typespec/http";
 import "@typespec/rest";
 import "@typespec/openapi3";
+import "@typespec/versioning";
 
 using TypeSpec.Http;
 using TypeSpec.Rest;
@@ -8,7 +9,12 @@ using TypeSpec.Rest;
 @service({
     title: "GlassCMS API",
 })
-namespace GlassCMS;
+@TypeSpec.Versioning.versioned(Versions)
+namespace GlassCMSCore;
+
+enum Versions {
+    v1,
+}
 
 @route("/items")
 namespace Items {

@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: GlassCMS API
-  version: 0.0.0
+  version: v1
 tags: []
 paths:
   /items:
@@ -81,3 +81,7 @@ components:
           type: object
           additionalProperties: {}
       description: Item represents an individual content item.
+    Versions:
+      type: string
+      enum:
+        - v1

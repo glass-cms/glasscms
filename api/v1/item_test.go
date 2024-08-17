@@ -1,10 +1,10 @@
-package api_test
+package v1_test
 
 import (
 	"testing"
 	"time"
 
-	"github.com/glass-cms/glasscms/api"
+	v1 "github.com/glass-cms/glasscms/api/v1"
 	"github.com/glass-cms/glasscms/item"
 	"github.com/glass-cms/glasscms/parser"
 	"github.com/stretchr/testify/assert"
@@ -104,7 +104,7 @@ func TestItem_MapToDomain(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			apiItem := &api.Item{
+			apiItem := &v1.Item{
 				Content:     tt.fields.Content,
 				CreateTime:  tt.fields.CreateTime,
 				DisplayName: tt.fields.DisplayName,

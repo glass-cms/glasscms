@@ -46,9 +46,9 @@ lint: ## Run all available linters
 lint-fix: ## Run all available linters and fix the issues
 	golangci-lint run --timeout=5m --fix
 
-.PHONY: spec
+.PHONY: typespec
 ## Type spec:
-spec: ### Run compilation of OpenAPI specification
+typespec: ### Run compilation of OpenAPI specification
 	@echo "Compiling OpenAPI spec"
 	sh ./scripts/compile-spec.sh	
 
