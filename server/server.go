@@ -9,6 +9,7 @@ import (
 
 	"github.com/glass-cms/glasscms/api"
 	"github.com/glass-cms/glasscms/item"
+	"github.com/glass-cms/glasscms/lib/middleware"
 )
 
 const (
@@ -37,8 +38,16 @@ func New(
 		repository: repo,
 	}
 
+	serverOpts := api.StdHTTPServerOptions{
+		Middlewares: []api.MiddlewareFunc{
+			middleware.MediaType("application/json"),
+		},
+	}
+
+	handler := api.HandlerWithOptions(server, serverOpts)
+
 	server.server = &http.Server{
-		Handler:      api.HandlerFromMux(server, http.NewServeMux()),
+		Handler:      handler,
 		Addr:         fmt.Sprintf(":%v", DefaultPort),
 		ReadTimeout:  DefaultReadTimeout,
 		WriteTimeout: DefaultWriteTimeout,

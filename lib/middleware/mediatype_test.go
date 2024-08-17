@@ -42,6 +42,11 @@ func Test_MediaType(t *testing.T) {
 			accepted:      []string{mediatype.ApplicationJSON},
 			expected:      http.StatusBadRequest,
 		},
+		"empty": {
+			contentHeader: "",
+			accepted:      []string{mediatype.ApplicationJSON},
+			expected:      http.StatusBadRequest,
+		},
 	}
 
 	for name, test := range tests {
