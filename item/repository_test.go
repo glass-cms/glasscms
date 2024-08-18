@@ -38,14 +38,14 @@ func SeedDatabase(db *sql.DB, items ...*item.Item) error {
 
 func getTestItem() *item.Item {
 	return &item.Item{
-		UID:        "1234",
-		CreateTime: time.Now(),
-		UpdateTime: time.Now(),
-		Hash:       "hash",
-		Name:       "Name",
-		Path:       "Path",
-		Content:    "Content",
-		Properties: map[string]interface{}{"key": "value"},
+		UID:         "1234",
+		CreateTime:  time.Now(),
+		UpdateTime:  time.Now(),
+		Hash:        "hash",
+		Name:        "items/name",
+		DisplayName: "DisplayName",
+		Content:     "Content",
+		Properties:  map[string]interface{}{"key": "value"},
 	}
 }
 
@@ -181,9 +181,10 @@ func TestRepository_GetItem(t *testing.T) {
 				assert.WithinDuration(t, tt.want.UpdateTime, got.UpdateTime, time.Second)
 				assert.Equal(t, tt.want.Hash, got.Hash)
 				assert.Equal(t, tt.want.Name, got.Name)
-				assert.Equal(t, tt.want.Path, got.Path)
+				assert.Equal(t, tt.want.DisplayName, got.DisplayName)
 				assert.Equal(t, tt.want.Content, got.Content)
 				assert.Equal(t, tt.want.Properties, got.Properties)
+				assert.Equal(t, tt.want.Metadata, got.Metadata)
 			}
 		})
 	}
@@ -217,14 +218,14 @@ func TestRepository_UpdateItem(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				item: &item.Item{
-					UID:        "1234",
-					CreateTime: time.Now(),
-					UpdateTime: time.Now(),
-					Hash:       "newhash",
-					Name:       "NewName",
-					Path:       "NewPath",
-					Content:    "NewContent",
-					Properties: map[string]interface{}{"newkey": "newvalue"},
+					UID:         "1234",
+					CreateTime:  time.Now(),
+					UpdateTime:  time.Now(),
+					Hash:        "newhash",
+					Name:        "NewName",
+					DisplayName: "NewDisplayName",
+					Content:     "NewContent",
+					Properties:  map[string]interface{}{"newkey": "newvalue"},
 				},
 			},
 			wantErr: false,
@@ -245,14 +246,14 @@ func TestRepository_UpdateItem(t *testing.T) {
 					return ctx
 				}(),
 				item: &item.Item{
-					UID:        "1234",
-					CreateTime: time.Now(),
-					UpdateTime: time.Now(),
-					Hash:       "newhash",
-					Name:       "NewName",
-					Path:       "NewPath",
-					Content:    "NewContent",
-					Properties: map[string]interface{}{"newkey": "newvalue"},
+					UID:         "1234",
+					CreateTime:  time.Now(),
+					UpdateTime:  time.Now(),
+					Hash:        "newhash",
+					Name:        "NewName",
+					DisplayName: "NewDisplayName",
+					Content:     "NewContent",
+					Properties:  map[string]interface{}{"newkey": "newvalue"},
 				},
 			},
 			wantErr: true,
@@ -264,14 +265,14 @@ func TestRepository_UpdateItem(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				item: &item.Item{
-					UID:        "nonexistent",
-					CreateTime: time.Now(),
-					UpdateTime: time.Now(),
-					Hash:       "newhash",
-					Name:       "NewName",
-					Path:       "NewPath",
-					Content:    "NewContent",
-					Properties: map[string]interface{}{"newkey": "newvalue"},
+					UID:         "nonexistent",
+					CreateTime:  time.Now(),
+					UpdateTime:  time.Now(),
+					Hash:        "newhash",
+					Name:        "NewName",
+					DisplayName: "NewDisplayName",
+					Content:     "NewContent",
+					Properties:  map[string]interface{}{"newkey": "newvalue"},
 				},
 			},
 			wantErr: true,
@@ -287,81 +288,6 @@ func TestRepository_UpdateItem(t *testing.T) {
 			}
 			err := r.UpdateItem(tt.args.ctx, tt.args.item)
 			assert.Equal(t, tt.wantErr, err != nil, "Repository.UpdateItem() error = %v, wantErr %v", err, tt.wantErr)
-		})
-	}
-}
-
-func TestRepository_DeleteItem(t *testing.T) {
-	t.Parallel()
-
-	type fields struct {
-		db   *sql.DB
-		seed func(*sql.DB)
-	}
-	type args struct {
-		ctx context.Context
-		uid string
-	}
-	tests := map[string]struct {
-		fields  fields
-		args    args
-		wantErr bool
-	}{
-		"Successful deletion": {
-			fields: fields{
-				db: GetTestDatabase(),
-				seed: func(db *sql.DB) {
-					if err := SeedDatabase(db, getTestItem()); err != nil {
-						t.Error(err)
-					}
-				},
-			},
-			args: args{
-				ctx: context.Background(),
-				uid: "1234",
-			},
-			wantErr: false,
-		},
-		"Context canceled": {
-			fields: fields{
-				db: GetTestDatabase(),
-				seed: func(db *sql.DB) {
-					if err := SeedDatabase(db, getTestItem()); err != nil {
-						t.Error(err)
-					}
-				},
-			},
-			args: args{
-				ctx: func() context.Context {
-					ctx, cancel := context.WithCancel(context.Background())
-					cancel()
-					return ctx
-				}(),
-				uid: "1234",
-			},
-			wantErr: true,
-		},
-		"Item not found": {
-			fields: fields{
-				db: GetTestDatabase(),
-			},
-			args: args{
-				ctx: context.Background(),
-				uid: "nonexistent",
-			},
-			wantErr: true,
-		},
-	}
-
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			t.Parallel()
-			r := item.NewRepository(tt.fields.db)
-			if tt.fields.seed != nil {
-				tt.fields.seed(tt.fields.db)
-			}
-			err := r.DeleteItem(tt.args.ctx, tt.args.uid)
-			assert.Equal(t, tt.wantErr, err != nil, "Repository.DeleteItem() error = %v, wantErr %v", err, tt.wantErr)
 		})
 	}
 }

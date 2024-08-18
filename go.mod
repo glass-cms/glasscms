@@ -4,6 +4,7 @@ go 1.22.0
 
 require (
 	github.com/djherbis/times v1.6.0
+	github.com/lib/pq v1.10.9
 	github.com/lmittmann/tint v1.0.4
 	github.com/mattn/go-sqlite3 v1.14.22
 	github.com/oapi-codegen/oapi-codegen/v2 v2.3.0

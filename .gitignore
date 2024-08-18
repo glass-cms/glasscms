@@ -38,3 +38,6 @@ docs/how_to_guides/*
 TODO.md
 
 profile.cov
+
+# Sqlite
+*.sqlite

@@ -15,11 +15,12 @@ import (
 type Item struct {
 	Content     string                 `json:"content"`
 	CreateTime  time.Time              `json:"create_time"`
+	DeleteTime  time.Time              `json:"delete_time"`
 	DisplayName string                 `json:"display_name"`
-	Id          string                 `json:"id"`
+	Metadata    map[string]interface{} `json:"metadata"`
 	Name        string                 `json:"name"`
-	Path        string                 `json:"path"`
 	Properties  map[string]interface{} `json:"properties"`
+	Uid         string                 `json:"uid"`
 	UpdateTime  time.Time              `json:"update_time"`
 }
 

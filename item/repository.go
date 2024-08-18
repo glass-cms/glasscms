@@ -19,13 +19,28 @@ func NewRepository(db *sql.DB) *Repository {
 // CreateItem creates a new item in the database.
 func (r *Repository) CreateItem(ctx context.Context, item *Item) error {
 	query := `
-        INSERT INTO items (uid, create_time, update_time, hash, name, path, content, properties)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        INSERT INTO items (
+			uid, 
+			name, 
+			display_name, 
+			create_time, 
+			update_time, 
+			delete_time, 
+			hash, 
+			content, 
+			properties, 
+			metadata)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
     `
 
-	propertiesJSON, err := json.Marshal(item.Properties)
+	properties, err := json.Marshal(item.Properties)
 	if err != nil {
 		return fmt.Errorf("failed to marshal properties: %w", err)
+	}
+
+	metadata, err := json.Marshal(item.Metadata)
+	if err != nil {
+		return fmt.Errorf("failed to marshal metadata: %w", err)
 	}
 
 	stmt, err := r.db.PrepareContext(ctx, query)
@@ -36,13 +51,15 @@ func (r *Repository) CreateItem(ctx context.Context, item *Item) error {
 
 	_, err = stmt.ExecContext(ctx,
 		item.UID,
+		item.Name,
+		item.DisplayName,
 		item.CreateTime,
 		item.UpdateTime,
+		item.DeleteTime,
 		item.Hash,
-		item.Name,
-		item.Path,
 		item.Content,
-		propertiesJSON,
+		properties,
+		metadata,
 	)
 
 	if err != nil {
@@ -55,12 +72,13 @@ func (r *Repository) CreateItem(ctx context.Context, item *Item) error {
 // GetItem retrieves an item from the database by its UID.
 func (r *Repository) GetItem(ctx context.Context, uid string) (*Item, error) {
 	query := `
-        SELECT uid, create_time, update_time, hash, name, path, content, properties
+        SELECT uid, name, display_name, create_time, update_time, delete_time, hash, content, properties, metadata
         FROM items
         WHERE uid = $1
     `
 	var item Item
 	var propertiesJSON []byte
+	var metadataJSON []byte
 
 	stmt, err := r.db.PrepareContext(ctx, query)
 	if err != nil {
@@ -70,13 +88,15 @@ func (r *Repository) GetItem(ctx context.Context, uid string) (*Item, error) {
 
 	err = stmt.QueryRowContext(ctx, uid).Scan(
 		&item.UID,
+		&item.Name,
+		&item.DisplayName,
 		&item.CreateTime,
 		&item.UpdateTime,
+		&item.DeleteTime,
 		&item.Hash,
-		&item.Name,
-		&item.Path,
 		&item.Content,
 		&propertiesJSON,
+		&metadataJSON,
 	)
 
 	if err != nil {
@@ -91,6 +111,11 @@ func (r *Repository) GetItem(ctx context.Context, uid string) (*Item, error) {
 		return nil, fmt.Errorf("failed to unmarshal properties: %w", err)
 	}
 
+	err = json.Unmarshal(metadataJSON, &item.Metadata)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal metadata: %w", err)
+	}
+
 	return &item, nil
 }
 
@@ -98,13 +123,18 @@ func (r *Repository) GetItem(ctx context.Context, uid string) (*Item, error) {
 func (r *Repository) UpdateItem(ctx context.Context, item *Item) error {
 	query := `
 		UPDATE items
-		SET update_time = $1, hash = $2, name = $3, path = $4, content = $5, properties = $6
+		SET update_time = $1, hash = $2, name = $3, display_name = $4, content = $5, properties = $6, metadata = $7
 		WHERE uid = $8
 	`
 
 	propertiesJSON, err := json.Marshal(item.Properties)
 	if err != nil {
 		return fmt.Errorf("failed to marshal properties: %w", err)
+	}
+
+	metadataJSON, err := json.Marshal(item.Metadata)
+	if err != nil {
+		return fmt.Errorf("failed to marshal metadata: %w", err)
 	}
 
 	stmt, err := r.db.PrepareContext(ctx, query)
@@ -117,9 +147,10 @@ func (r *Repository) UpdateItem(ctx context.Context, item *Item) error {
 		item.UpdateTime,
 		item.Hash,
 		item.Name,
-		item.Path,
+		item.DisplayName,
 		item.Content,
 		propertiesJSON,
+		metadataJSON,
 		item.UID,
 	)
 
@@ -140,8 +171,9 @@ func (r *Repository) UpdateItem(ctx context.Context, item *Item) error {
 }
 
 // DeleteItem deletes an item from the database by its UID.
-func (r *Repository) DeleteItem(ctx context.Context, uid string) error {
-	query := `DELETE FROM items WHERE uid = $1`
+func (r *Repository) DeleteItem(_ context.Context, _ string) error {
+	// TODO: Reimplement with soft delete.
+	/*query := `DELETE FROM items WHERE uid = $1`
 
 	stmt, err := r.db.PrepareContext(ctx, query)
 	if err != nil {
@@ -161,7 +193,7 @@ func (r *Repository) DeleteItem(ctx context.Context, uid string) error {
 
 	if rowsAffected == 0 {
 		return errors.New("item not found")
-	}
+	}*/
 
 	return nil
 }

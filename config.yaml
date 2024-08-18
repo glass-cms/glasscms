@@ -1,5 +1,5 @@
 output: './out'
 database:
-  dsn: 'file:test.db?cache=shared&mode=memory'
+  dsn: 'file:test.sqlite?cache=shared'
   driver: 'sqlite3'
   
