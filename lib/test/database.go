@@ -19,7 +19,7 @@ func NewDB() (*sql.DB, error) {
 		return nil, err
 	}
 
-	if err := database.MigrateDatabase(db, config); err != nil {
+	if err = database.MigrateDatabase(db, config); err != nil {
 		return nil, err
 	}
 
