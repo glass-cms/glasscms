@@ -36,5 +36,11 @@ func (s *APIHandler) ItemsCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusNotImplemented)
+	if err = s.repository.CreateItem(ctx, request.MapToDomain()); err != nil {
+		s.logger.ErrorContext(ctx, fmt.Errorf("failed to create item: %w", err).Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
 }
