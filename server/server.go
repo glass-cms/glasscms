@@ -7,9 +7,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/glass-cms/glasscms/api"
-	"github.com/glass-cms/glasscms/item"
 	"github.com/glass-cms/glasscms/lib/middleware"
+	"github.com/glass-cms/glasscms/server/handler"
 )
 
 const (
@@ -22,32 +21,27 @@ const (
 type Server struct {
 	logger *slog.Logger
 	server *http.Server
-
-	repository *item.Repository
 }
-
-var _ api.ServerInterface = (*Server)(nil)
 
 func New(
 	logger *slog.Logger,
-	repo *item.Repository,
+	handlers []handler.VersionedHandler,
 	opts ...Option,
 ) (*Server, error) {
 	server := &Server{
-		logger:     logger,
-		repository: repo,
+		logger: logger,
 	}
 
-	serverOpts := api.StdHTTPServerOptions{
-		Middlewares: []api.MiddlewareFunc{
+	serveMux := http.NewServeMux()
+
+	for _, h := range handlers {
+		_ = h.Handler(serveMux, []func(http.Handler) http.Handler{
 			middleware.MediaType("application/json"),
-		},
+		})
 	}
-
-	handler := api.HandlerWithOptions(server, serverOpts)
 
 	server.server = &http.Server{
-		Handler:      handler,
+		Handler:      serveMux,
 		Addr:         fmt.Sprintf(":%v", DefaultPort),
 		ReadTimeout:  DefaultReadTimeout,
 		WriteTimeout: DefaultWriteTimeout,
