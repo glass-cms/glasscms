@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 
+	// Import the PostgreSQL driver.
+	_ "github.com/lib/pq"
 	// Import the SQLite3 driver.
 	_ "github.com/mattn/go-sqlite3"
 )

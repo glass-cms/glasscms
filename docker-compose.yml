@@ -1,6 +1,7 @@
 services:
   postgres:
     container_name: database
+    command: ["postgres", "-c", "log_statement=all", "-c", "wal_level=logical"]
     image: postgres:16.4-alpine3.20
     ports:
       - "5432:5432"
