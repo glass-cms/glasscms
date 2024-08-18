@@ -52,22 +52,21 @@ components:
     Item:
       type: object
       required:
-        - id
+        - uid
         - name
         - display_name
-        - path
         - content
         - create_time
         - update_time
+        - delete_time
         - properties
+        - metadata
       properties:
-        id:
+        uid:
           type: string
         name:
           type: string
         display_name:
-          type: string
-        path:
           type: string
         content:
           type: string
@@ -77,7 +76,13 @@ components:
         update_time:
           type: string
           format: date-time
+        delete_time:
+          type: string
+          format: date-time
         properties:
+          type: object
+          additionalProperties: {}
+        metadata:
           type: object
           additionalProperties: {}
       description: Item represents an individual content item.

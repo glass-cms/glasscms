@@ -28,12 +28,13 @@ namespace Items {
 
 @doc("Item represents an individual content item.")
 model Item {
-    id: string;
+    uid: string;
     name: string;
     display_name: string;
-    path: string;
     content: string;
     create_time: utcDateTime;
     update_time: utcDateTime;
+    delete_time: utcDateTime;
     properties: Record<unknown>;
+    metadata: Record<unknown>;
 }

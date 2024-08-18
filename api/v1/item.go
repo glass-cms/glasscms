@@ -10,14 +10,16 @@ func (i *Item) MapToDomain() *item.Item {
 	if i == nil {
 		return nil
 	}
+
 	return &item.Item{
-		UID:        i.Id,
-		Name:       i.Name,
-		Path:       i.Path,
-		Content:    i.Content,
-		Hash:       parser.HashContent([]byte(i.Content)),
-		CreateTime: i.CreateTime,
-		UpdateTime: i.UpdateTime,
-		Properties: i.Properties,
+		UID:         i.Uid,
+		Name:        i.Name,
+		DisplayName: i.DisplayName,
+		Content:     i.Content,
+		Hash:        parser.HashContent([]byte(i.Content)),
+		CreateTime:  i.CreateTime,
+		UpdateTime:  i.UpdateTime,
+		Properties:  i.Properties,
+		Metadata:    i.Metadata,
 	}
 }

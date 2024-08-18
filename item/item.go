@@ -2,18 +2,17 @@ package item
 
 import "time"
 
-const (
-	PropertyTitle = "title"
-)
-
+// Item is the core data structure for the content management system.
+// An item represent a single piece of content. It is the structured version of a markdown file.
 type Item struct {
-	UID string `json:"uid" yaml:"uid"`
-	// Name is the full resource name of the item.
-	Name       string         `json:"name" yaml:"name"`
-	Path       string         `json:"path" yaml:"path"`
-	Content    string         `json:"content" yaml:"content"`
-	Hash       string         `json:"hash" yaml:"hash"`
-	CreateTime time.Time      `json:"create_time" yaml:"create_time"`
-	UpdateTime time.Time      `json:"update_time" yaml:"update_time"`
-	Properties map[string]any `json:"properties" yaml:"properties"`
+	UID         string         `mapstructure:"uid"`
+	Name        string         `mapstructure:"name"`
+	DisplayName string         `mapstructure:"display_name"`
+	Content     string         `mapstructure:"content"`
+	Hash        string         `mapstructure:"hash"`
+	CreateTime  time.Time      `mapstructure:"create_time"`
+	UpdateTime  time.Time      `mapstructure:"update_time"`
+	DeleteTime  *time.Time     `mapstructure:"delete_time"`
+	Properties  map[string]any `mapstructure:"properties"`
+	Metadata    map[string]any `mapstructure:"metadata"`
 }
