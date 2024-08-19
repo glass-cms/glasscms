@@ -2,6 +2,7 @@ import "@typespec/http";
 import "@typespec/rest";
 import "@typespec/openapi3";
 import "@typespec/versioning";
+import "./error.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.Rest;
@@ -18,12 +19,9 @@ enum Versions {
 
 @route("/items")
 namespace Items {
-    @get op list(): Item[];
-    @delete op delete(id: int64): {};
-    @post op create(...Item): {};
+    @post op create(...Item): Item | Error;
 }
 
-@@listsResource(Items.list, Item);
 @@createsResource(Items.create, Item);
 
 @doc("Item represents an individual content item.")

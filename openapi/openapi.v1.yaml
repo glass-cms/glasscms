@@ -5,8 +5,8 @@ info:
 tags: []
 paths:
   /items:
-    get:
-      operationId: Items_list
+    post:
+      operationId: Items_create
       parameters: []
       responses:
         '200':
@@ -14,33 +14,13 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Item'
-    delete:
-      operationId: Items_delete
-      parameters: []
-      responses:
-        '200':
-          description: The request has succeeded.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                id:
-                  type: integer
-                  format: int64
-              required:
-                - id
-    post:
-      operationId: Items_create
-      parameters: []
-      responses:
-        '200':
-          description: The request has succeeded.
+                $ref: '#/components/schemas/Item'
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
       requestBody:
         required: true
         content:
@@ -49,6 +29,38 @@ paths:
               $ref: '#/components/schemas/Item'
 components:
   schemas:
+    Error:
+      type: object
+      required:
+        - type
+        - code
+        - message
+        - details
+      properties:
+        type:
+          $ref: '#/components/schemas/ErrorType'
+        code:
+          $ref: '#/components/schemas/ErrorCode'
+        message:
+          type: string
+        details:
+          type: object
+          additionalProperties: {}
+      description: Error is the response model when an API call is unsuccessful.
+    ErrorCode:
+      type: string
+      enum:
+        - parameter_conflict
+        - parameter_invalid
+        - parameter_missing
+        - processing_error
+        - resource_already_exists
+        - resource_missing
+    ErrorType:
+      type: string
+      enum:
+        - api_error
+        - invalid_request_error
     Item:
       type: object
       required:
