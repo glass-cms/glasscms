@@ -36,13 +36,13 @@ func SeedDatabase(db *sql.DB, items ...*item.Item) error {
 	return nil
 }
 
-func getTestItem() *item.Item {
+func getTestItem(name string) *item.Item {
 	return &item.Item{
 		UID:         "1234",
 		CreateTime:  time.Now(),
 		UpdateTime:  time.Now(),
 		Hash:        "hash",
-		Name:        "items/name",
+		Name:        name,
 		DisplayName: "DisplayName",
 		Content:     "Content",
 		Properties:  map[string]interface{}{"key": "value"},
@@ -53,28 +53,33 @@ func TestRepository_CreateItem(t *testing.T) {
 	t.Parallel()
 
 	type fields struct {
-		db *sql.DB
+		db   *sql.DB
+		seed func(*sql.DB)
 	}
+
 	type args struct {
 		ctx  context.Context
 		item *item.Item
 	}
+
 	tests := map[string]struct {
 		fields  fields
 		args    args
 		wantErr bool
+		err     error
 	}{
-		"Successful creation": {
+		"successful creation": {
 			fields: fields{
 				db: GetTestDatabase(),
 			},
 			args: args{
 				ctx:  context.Background(),
-				item: getTestItem(),
+				item: getTestItem("items/name"),
 			},
 			wantErr: false,
+			err:     nil,
 		},
-		"Context canceled": {
+		"returns an err when context is canceled": {
 			fields: fields{
 				db: GetTestDatabase(),
 			},
@@ -84,18 +89,91 @@ func TestRepository_CreateItem(t *testing.T) {
 					cancel()
 					return ctx
 				}(),
-				item: getTestItem(),
+				item: getTestItem("items/name"),
 			},
 			wantErr: true,
+			err:     database.ErrOperationFailed,
+		},
+		"returns an error when properties cannot be marshalled": {
+			fields: fields{
+				db: GetTestDatabase(),
+			},
+			args: args{
+				ctx: context.Background(),
+				item: &item.Item{
+					UID:         "1234",
+					CreateTime:  time.Now(),
+					UpdateTime:  time.Now(),
+					Hash:        "hash",
+					Name:        "items/name",
+					DisplayName: "DisplayName",
+					Content:     "Content",
+					Properties:  map[string]interface{}{"key": make(chan int)},
+				},
+			},
+			wantErr: true,
+			err:     database.ErrOperationFailed,
+		},
+		"returns an error when metadata cannot be marshalled": {
+			fields: fields{
+				db: GetTestDatabase(),
+			},
+			args: args{
+				ctx: context.Background(),
+				item: &item.Item{
+					UID:         "1234",
+					CreateTime:  time.Now(),
+					UpdateTime:  time.Now(),
+					Hash:        "hash",
+					Name:        "items/name",
+					DisplayName: "DisplayName",
+					Content:     "Content",
+					Properties:  map[string]interface{}{"key": "value"},
+					Metadata:    map[string]interface{}{"key": make(chan int)},
+				},
+			},
+			wantErr: true,
+			err:     database.ErrOperationFailed,
+		},
+		"returns an error when key already exists": {
+			fields: fields{
+				db: GetTestDatabase(),
+				seed: func(db *sql.DB) {
+					if err := SeedDatabase(db, getTestItem("items/name")); err != nil {
+						t.Error(err)
+					}
+				},
+			},
+			args: args{
+				ctx:  context.Background(),
+				item: getTestItem("items/name2"),
+			},
+			wantErr: true,
+			err:     database.ErrDuplicatePrimaryKey,
 		},
 	}
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
+
+			// Arrange
+			if tt.fields.seed != nil {
+				tt.fields.seed(tt.fields.db)
+			}
 			r := item.NewRepository(tt.fields.db, &database.SqliteErrorHandler{})
+
+			// Act
 			err := r.CreateItem(tt.args.ctx, tt.args.item)
-			assert.Equal(t, tt.wantErr, err != nil, "Repository.CreateItem() error = %v, wantErr %v", err, tt.wantErr)
+
+			// Assert
+			if tt.wantErr {
+				assert.Error(t, err)
+				assert.ErrorIs(t, err, tt.err)
+				return
+			}
+
+			assert.NoError(t, err)
 		})
 	}
 }
@@ -121,7 +199,7 @@ func TestRepository_GetItem(t *testing.T) {
 			fields: fields{
 				db: GetTestDatabase(),
 				seed: func(db *sql.DB) {
-					if err := SeedDatabase(db, getTestItem()); err != nil {
+					if err := SeedDatabase(db, getTestItem("items/name")); err != nil {
 						t.Error(err)
 					}
 				},
@@ -130,14 +208,14 @@ func TestRepository_GetItem(t *testing.T) {
 				ctx: context.Background(),
 				uid: "1234",
 			},
-			want:    getTestItem(),
+			want:    getTestItem("items/name"),
 			wantErr: false,
 		},
 		"Context canceled": {
 			fields: fields{
 				db: GetTestDatabase(),
 				seed: func(db *sql.DB) {
-					if err := SeedDatabase(db, getTestItem()); err != nil {
+					if err := SeedDatabase(db, getTestItem("items/name")); err != nil {
 						t.Error(err)
 					}
 				},
@@ -210,7 +288,7 @@ func TestRepository_UpdateItem(t *testing.T) {
 			fields: fields{
 				db: GetTestDatabase(),
 				seed: func(db *sql.DB) {
-					if err := SeedDatabase(db, getTestItem()); err != nil {
+					if err := SeedDatabase(db, getTestItem("items/name")); err != nil {
 						t.Error(err)
 					}
 				},
@@ -234,7 +312,7 @@ func TestRepository_UpdateItem(t *testing.T) {
 			fields: fields{
 				db: GetTestDatabase(),
 				seed: func(db *sql.DB) {
-					if err := SeedDatabase(db, getTestItem()); err != nil {
+					if err := SeedDatabase(db, getTestItem("items/name")); err != nil {
 						t.Error(err)
 					}
 				},

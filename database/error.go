@@ -2,21 +2,27 @@ package database
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
+
+	"github.com/mattn/go-sqlite3"
 )
 
-// UniqueConstraintError is an error that occurs when a unique constraint is violated.
-type UniqueConstraintError struct {
-	Field string
-	Err   error
-}
+// ErrDuplicatePrimaryKey is returned when an insert operation fails because the primary key already exists.
+var ErrDuplicatePrimaryKey = errors.New("primary key constraint violated")
 
-func (e *UniqueConstraintError) Error() string {
-	return e.Err.Error()
-}
+// ErrUniqueConstraint is an error that occurs when a unique constraint is violated.
+var ErrUniqueConstraint = errors.New("unique constraint violated")
+
+// ErrNotFound is an error that occurs when a statement does not return any rows.
+var ErrNotFound = errors.New("not found")
+
+// ErrOperationFailed is a fallback error for when an operation fails.
+var ErrOperationFailed = errors.New("operation failed")
 
 // ErrorHandler is an interface for handling database errors.
-// Implementations of this interface should handle database-specific errors.
+// Implementations of this interface should handle database-driver specific errors.
 type ErrorHandler interface {
 	HandleError(ctx context.Context, err error) error
 }
@@ -41,8 +47,26 @@ func NewErrorHandler(cfg Config) (ErrorHandler, error) {
 type SqliteErrorHandler struct{}
 
 func (e *SqliteErrorHandler) HandleError(_ context.Context, err error) error {
-	// TODO: Implement error handling.
-	return err
+	if errors.Is(err, sql.ErrNoRows) {
+		return fmt.Errorf("not found: %w", ErrNotFound)
+	}
+
+	// Handle driver-specific errors.
+	var sqliteErr sqlite3.Error
+
+	if errors.As(err, &sqliteErr) {
+		// Check for constraint violations.
+		if sqliteErr.Code == sqlite3.ErrConstraint {
+			switch sqliteErr.ExtendedCode {
+			case sqlite3.ErrConstraintPrimaryKey:
+				return fmt.Errorf("primary key constraint violated: %w", ErrDuplicatePrimaryKey)
+			case sqlite3.ErrConstraintUnique:
+				return fmt.Errorf("unique constraint violated: %w", ErrUniqueConstraint)
+			}
+		}
+	}
+
+	return fmt.Errorf("operation failed: %w", ErrOperationFailed)
 }
 
 type PostgresErrorHandler struct{}

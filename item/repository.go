@@ -16,7 +16,10 @@ type Repository struct {
 }
 
 func NewRepository(db *sql.DB, errorHandler database.ErrorHandler) *Repository {
-	return &Repository{db: db}
+	return &Repository{
+		db:           db,
+		errorHandler: errorHandler,
+	}
 }
 
 // CreateItem creates a new item in the database.
@@ -38,18 +41,19 @@ func (r *Repository) CreateItem(ctx context.Context, item *Item) error {
 
 	properties, err := json.Marshal(item.Properties)
 	if err != nil {
-		return fmt.Errorf("failed to marshal properties: %w", err)
+		return r.errorHandler.HandleError(ctx, err)
 	}
 
 	metadata, err := json.Marshal(item.Metadata)
 	if err != nil {
-		return fmt.Errorf("failed to marshal metadata: %w", err)
+		return r.errorHandler.HandleError(ctx, err)
 	}
 
 	stmt, err := r.db.PrepareContext(ctx, query)
 	if err != nil {
-		return fmt.Errorf("failed to prepare statement: %w", err)
+		return r.errorHandler.HandleError(ctx, err)
 	}
+
 	defer stmt.Close()
 
 	_, err = stmt.ExecContext(ctx,
@@ -66,7 +70,7 @@ func (r *Repository) CreateItem(ctx context.Context, item *Item) error {
 	)
 
 	if err != nil {
-		return fmt.Errorf("failed to insert item: %w", err)
+		return r.errorHandler.HandleError(ctx, err)
 	}
 
 	return nil
@@ -103,10 +107,7 @@ func (r *Repository) GetItem(ctx context.Context, uid string) (*Item, error) {
 	)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("item not found: %w", err)
-		}
-		return nil, fmt.Errorf("failed to retrieve item: %w", err)
+		return nil, r.errorHandler.HandleError(ctx, err)
 	}
 
 	err = json.Unmarshal(propertiesJSON, &item.Properties)
@@ -158,7 +159,7 @@ func (r *Repository) UpdateItem(ctx context.Context, item *Item) error {
 	)
 
 	if err != nil {
-		return fmt.Errorf("failed to update item: %w", err)
+		return r.errorHandler.HandleError(ctx, err)
 	}
 
 	rowsAffected, err := result.RowsAffected()
