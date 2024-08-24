@@ -8,7 +8,6 @@ enum ErrorType {
 }
 
 enum ErrorCode {
-    PARAMETER_CONFLICT: "parameter_conflict",
     PARAMETER_INVALID: "parameter_invalid",
     PARAMETER_MISSING: "parameter_missing",
     PROCESSING_ERROR: "processing_error",

@@ -6,13 +6,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+
+	"github.com/glass-cms/glasscms/database"
 )
 
 type Repository struct {
-	db *sql.DB
+	db           *sql.DB
+	errorHandler database.ErrorHandler
 }
 
-func NewRepository(db *sql.DB) *Repository {
+func NewRepository(db *sql.DB, errorHandler database.ErrorHandler) *Repository {
 	return &Repository{db: db}
 }
 

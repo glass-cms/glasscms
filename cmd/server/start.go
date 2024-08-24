@@ -21,7 +21,7 @@ type StartCommand struct {
 	Command *cobra.Command
 	logger  *slog.Logger
 
-	databaseConfig *database.Config
+	databaseConfig database.Config
 }
 
 func NewStartCommand() *StartCommand {
@@ -31,7 +31,7 @@ func NewStartCommand() *StartCommand {
 				Level: slog.LevelDebug,
 			}),
 		),
-		databaseConfig: &database.Config{},
+		databaseConfig: database.Config{},
 	}
 
 	sc.Command = &cobra.Command{
@@ -83,17 +83,17 @@ func (c *StartCommand) Execute(cmd *cobra.Command, _ []string) error {
 		slog.String("dsn", c.databaseConfig.DSN),
 	)
 
-	db, err := database.NewConnection(*c.databaseConfig)
+	db, err := database.NewConnection(c.databaseConfig)
 	if err != nil {
 		return err
 	}
 
-	// Ping the database to ensure the connection is valid.
-	if err = db.Ping(); err != nil {
+	errHandler, err := database.NewErrorHandler(c.databaseConfig)
+	if err != nil {
 		return err
 	}
 
-	v1Handler := v1.NewAPIHandler(c.logger, item.NewRepository(db))
+	v1Handler := v1.NewAPIHandler(c.logger, item.NewRepository(db, errHandler))
 
 	server, err := server.New(c.logger, []handler.VersionedHandler{v1Handler})
 	if err != nil {

@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	api "github.com/glass-cms/glasscms/api/v1"
+	"github.com/glass-cms/glasscms/database"
 	"github.com/glass-cms/glasscms/item"
 	"github.com/glass-cms/glasscms/lib/log"
 	"github.com/glass-cms/glasscms/lib/test"
@@ -23,7 +24,7 @@ func TestAPIHandler_ItemsCreate(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	repo := item.NewRepository(testdb)
+	repo := item.NewRepository(testdb, &database.SqliteErrorHandler{})
 
 	tests := map[string]struct {
 		req      func() *http.Request

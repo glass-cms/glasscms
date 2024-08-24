@@ -50,7 +50,6 @@ components:
     ErrorCode:
       type: string
       enum:
-        - parameter_conflict
         - parameter_invalid
         - parameter_missing
         - processing_error

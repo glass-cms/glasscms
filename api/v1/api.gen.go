@@ -13,7 +13,6 @@ import (
 
 // Defines values for ErrorCode.
 const (
-	ParameterConflict     ErrorCode = "parameter_conflict"
 	ParameterInvalid      ErrorCode = "parameter_invalid"
 	ParameterMissing      ErrorCode = "parameter_missing"
 	ProcessingError       ErrorCode = "processing_error"
