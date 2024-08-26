@@ -11,18 +11,18 @@ import (
 )
 
 type APIHandler struct {
-	logger     *slog.Logger
-	repository *item.Repository
+	logger      *slog.Logger
+	itemService item.Service
 }
 
 // NewAPIHandler returns a new instance of ApiHandler.
 func NewAPIHandler(
 	logger *slog.Logger,
-	repo *item.Repository,
+	service item.Service,
 ) *APIHandler {
 	return &APIHandler{
-		logger:     logger,
-		repository: repo,
+		logger:      logger,
+		itemService: service,
 	}
 }
 

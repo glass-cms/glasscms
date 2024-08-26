@@ -63,7 +63,7 @@ func TestAPIHandler_ItemsCreate(t *testing.T) {
 
 			handler := v1.NewAPIHandler(
 				log.NoopLogger(),
-				repo,
+				item.NewService(repo),
 			)
 
 			rr := httptest.NewRecorder()

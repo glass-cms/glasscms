@@ -10,20 +10,29 @@ import (
 	"github.com/glass-cms/glasscms/database"
 )
 
-type Repository struct {
+type Repository interface {
+	CreateItem(ctx context.Context, item *Item) error
+	GetItem(ctx context.Context, uid string) (*Item, error)
+	UpdateItem(ctx context.Context, item *Item) error
+	DeleteItem(ctx context.Context, uid string) error
+}
+
+var _ Repository = &repository{}
+
+type repository struct {
 	db           *sql.DB
 	errorHandler database.ErrorHandler
 }
 
-func NewRepository(db *sql.DB, errorHandler database.ErrorHandler) *Repository {
-	return &Repository{
+func NewRepository(db *sql.DB, errorHandler database.ErrorHandler) Repository {
+	return &repository{
 		db:           db,
 		errorHandler: errorHandler,
 	}
 }
 
 // CreateItem creates a new item in the database.
-func (r *Repository) CreateItem(ctx context.Context, item *Item) error {
+func (r *repository) CreateItem(ctx context.Context, item *Item) error {
 	query := `
         INSERT INTO items (
 			uid, 
@@ -77,7 +86,7 @@ func (r *Repository) CreateItem(ctx context.Context, item *Item) error {
 }
 
 // GetItem retrieves an item from the database by its UID.
-func (r *Repository) GetItem(ctx context.Context, uid string) (*Item, error) {
+func (r *repository) GetItem(ctx context.Context, uid string) (*Item, error) {
 	query := `
         SELECT uid, name, display_name, create_time, update_time, delete_time, hash, content, properties, metadata
         FROM items
@@ -124,7 +133,7 @@ func (r *Repository) GetItem(ctx context.Context, uid string) (*Item, error) {
 }
 
 // UpdateItem updates an existing item in the database.
-func (r *Repository) UpdateItem(ctx context.Context, item *Item) error {
+func (r *repository) UpdateItem(ctx context.Context, item *Item) error {
 	query := `
 		UPDATE items
 		SET update_time = $1, hash = $2, name = $3, display_name = $4, content = $5, properties = $6, metadata = $7
@@ -175,7 +184,7 @@ func (r *Repository) UpdateItem(ctx context.Context, item *Item) error {
 }
 
 // DeleteItem deletes an item from the database by its UID.
-func (r *Repository) DeleteItem(_ context.Context, _ string) error {
+func (r *repository) DeleteItem(_ context.Context, _ string) error {
 	// TODO: Reimplement with soft delete.
 	/*query := `DELETE FROM items WHERE uid = $1`
 
