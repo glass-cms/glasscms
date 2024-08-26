@@ -10,6 +10,7 @@ import (
 	"github.com/glass-cms/glasscms/item"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func GetTestDatabase() *sql.DB {
@@ -168,7 +169,7 @@ func TestRepository_CreateItem(t *testing.T) {
 
 			// Assert
 			if tt.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.ErrorIs(t, err, tt.err)
 				return
 			}

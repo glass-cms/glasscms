@@ -2,6 +2,8 @@ package item
 
 import "time"
 
+const ItemResource = "item"
+
 // Item is the core data structure for the content management system.
 // An item represent a single piece of content. It is the structured version of a markdown file.
 type Item struct {
