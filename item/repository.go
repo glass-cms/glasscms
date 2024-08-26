@@ -11,13 +11,20 @@ import (
 )
 
 type Repository interface {
-	CreateItem(ctx context.Context, item *Item) error
+	CreateItem(ctx context.Context, tx *sql.Tx, item *Item) error
+
+	// TODO: Add transaction to all methods.
+	// TODO: Add method to get a transaction.
 	GetItem(ctx context.Context, uid string) (*Item, error)
 	UpdateItem(ctx context.Context, item *Item) error
 	DeleteItem(ctx context.Context, uid string) error
 }
 
 var _ Repository = &repository{}
+
+type executor interface {
+	PrepareContext(ctx context.Context, query string) (*sql.Stmt, error)
+}
 
 type repository struct {
 	db           *sql.DB
@@ -32,7 +39,15 @@ func NewRepository(db *sql.DB, errorHandler database.ErrorHandler) Repository {
 }
 
 // CreateItem creates a new item in the database.
-func (r *repository) CreateItem(ctx context.Context, item *Item) error {
+// If a transaction is provided, the item will be created within the transaction.
+func (r *repository) CreateItem(ctx context.Context, tx *sql.Tx, item *Item) error {
+	var exec executor
+	if tx != nil {
+		exec = tx
+	} else {
+		exec = r.db
+	}
+
 	query := `
         INSERT INTO items (
 			uid, 
@@ -58,7 +73,7 @@ func (r *repository) CreateItem(ctx context.Context, item *Item) error {
 		return r.errorHandler.HandleError(ctx, err)
 	}
 
-	stmt, err := r.db.PrepareContext(ctx, query)
+	stmt, err := exec.PrepareContext(ctx, query)
 	if err != nil {
 		return r.errorHandler.HandleError(ctx, err)
 	}

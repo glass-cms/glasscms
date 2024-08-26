@@ -30,7 +30,7 @@ func GetTestDatabase() *sql.DB {
 func SeedDatabase(db *sql.DB, items ...*item.Item) error {
 	repo := item.NewRepository(db, &database.SqliteErrorHandler{})
 	for _, i := range items {
-		if err := repo.CreateItem(context.Background(), i); err != nil {
+		if err := repo.CreateItem(context.Background(), nil, i); err != nil {
 			return err
 		}
 	}
@@ -67,6 +67,7 @@ func TestRepository_CreateItem(t *testing.T) {
 		fields  fields
 		args    args
 		wantErr bool
+		withTx  bool
 		err     error
 	}{
 		"successful creation": {
@@ -78,6 +79,18 @@ func TestRepository_CreateItem(t *testing.T) {
 				item: getTestItem("items/name"),
 			},
 			wantErr: false,
+			err:     nil,
+		},
+		"successful creation with transaction": {
+			fields: fields{
+				db: GetTestDatabase(),
+			},
+			args: args{
+				ctx:  context.Background(),
+				item: getTestItem("items/name"),
+			},
+			wantErr: false,
+			withTx:  true,
 			err:     nil,
 		},
 		"returns an err when context is canceled": {
@@ -164,8 +177,21 @@ func TestRepository_CreateItem(t *testing.T) {
 			}
 			r := item.NewRepository(tt.fields.db, &database.SqliteErrorHandler{})
 
+			var tx *sql.Tx
+			if tt.withTx {
+				var err error
+				tx, err = tt.fields.db.Begin()
+				require.NoError(t, err)
+			}
+
+			defer func() {
+				if tx != nil {
+					require.NoError(t, tx.Rollback())
+				}
+			}()
+
 			// Act
-			err := r.CreateItem(tt.args.ctx, tt.args.item)
+			err := r.CreateItem(tt.args.ctx, tx, tt.args.item)
 
 			// Assert
 			if tt.wantErr {

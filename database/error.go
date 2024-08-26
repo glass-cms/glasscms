@@ -38,13 +38,17 @@ func NewErrorHandler(cfg Config) (ErrorHandler, error) {
 	case int32(DriverPostgres):
 		return &PostgresErrorHandler{}, nil
 	case int32(DriverSqlite):
-		return &SqliteErrorHandler{}, nil
+		return NewSqliteErrorHandler(), nil
 	default:
 		return nil, fmt.Errorf("unsupported database driver: %s", cfg.Driver)
 	}
 }
 
 type SqliteErrorHandler struct{}
+
+func NewSqliteErrorHandler() *SqliteErrorHandler {
+	return &SqliteErrorHandler{}
+}
 
 func (e *SqliteErrorHandler) HandleError(_ context.Context, err error) error {
 	if errors.Is(err, sql.ErrNoRows) {
@@ -59,14 +63,14 @@ func (e *SqliteErrorHandler) HandleError(_ context.Context, err error) error {
 		if sqliteErr.Code == sqlite3.ErrConstraint {
 			switch sqliteErr.ExtendedCode {
 			case sqlite3.ErrConstraintPrimaryKey:
-				return fmt.Errorf("primary key constraint violated: %w", ErrDuplicatePrimaryKey)
+				return fmt.Errorf("%w : %w", ErrDuplicatePrimaryKey, err)
 			case sqlite3.ErrConstraintUnique:
-				return fmt.Errorf("unique constraint violated: %w", ErrUniqueConstraint)
+				return fmt.Errorf("%w : %w", ErrUniqueConstraint, err)
 			}
 		}
 	}
 
-	return fmt.Errorf("operation failed: %w", ErrOperationFailed)
+	return fmt.Errorf("%w : %w", ErrOperationFailed, err)
 }
 
 type PostgresErrorHandler struct{}

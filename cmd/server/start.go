@@ -93,7 +93,9 @@ func (c *StartCommand) Execute(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 
-	v1Handler := v1.NewAPIHandler(c.logger, item.NewRepository(db, errHandler))
+	repo := item.NewRepository(db, errHandler)
+	service := item.NewService(repo)
+	v1Handler := v1.NewAPIHandler(c.logger, service)
 
 	server, err := server.New(c.logger, []handler.VersionedHandler{v1Handler})
 	if err != nil {
