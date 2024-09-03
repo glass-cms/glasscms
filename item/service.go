@@ -1,24 +1,29 @@
 package item
 
-import "context"
+import (
+	"context"
+	"errors"
 
-type Service interface {
-	CreateItem(ctx context.Context, item *Item) error
-}
+	"github.com/glass-cms/glasscms/database"
+	"github.com/glass-cms/glasscms/lib/resource"
+)
 
-var _ Service = &service{}
-
-type service struct {
+type Service struct {
 	repo Repository
 }
 
 // NewService returns a new instance of Service.
-func NewService(repo Repository) *service {
-	return &service{
+func NewService(repo Repository) *Service {
+	return &Service{
 		repo: repo,
 	}
 }
 
-func (s *service) CreateItem(ctx context.Context, item *Item) error {
-	return nil
+func (s *Service) CreateItem(ctx context.Context, item *Item) error {
+	err := s.repo.CreateItem(ctx, nil, item)
+	if errors.Is(err, database.ErrDuplicatePrimaryKey) {
+		return resource.NewAlreadyExistsError(item.UID, ItemResource, err)
+	}
+
+	return err
 }

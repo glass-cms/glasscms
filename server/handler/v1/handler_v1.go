@@ -12,13 +12,13 @@ import (
 
 type APIHandler struct {
 	logger      *slog.Logger
-	itemService item.Service
+	itemService *item.Service
 }
 
 // NewAPIHandler returns a new instance of ApiHandler.
 func NewAPIHandler(
 	logger *slog.Logger,
-	service item.Service,
+	service *item.Service,
 ) *APIHandler {
 	return &APIHandler{
 		logger:      logger,
