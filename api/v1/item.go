@@ -6,13 +6,12 @@ import (
 )
 
 // MapToDomain converts an api.Item to an item.Item.
-func (i *Item) MapToDomain() *item.Item {
+func (i *ItemCreate) MapToDomain() *item.Item {
 	if i == nil {
 		return nil
 	}
 
 	return &item.Item{
-		UID:         i.Uid,
 		Name:        i.Name,
 		DisplayName: i.DisplayName,
 		Content:     i.Content,

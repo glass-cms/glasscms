@@ -39,7 +39,6 @@ func SeedDatabase(db *sql.DB, items ...*item.Item) error {
 
 func getTestItem(name string) *item.Item {
 	return &item.Item{
-		UID:         "1234",
 		CreateTime:  time.Now(),
 		UpdateTime:  time.Now(),
 		Hash:        "hash",
@@ -76,7 +75,7 @@ func TestRepository_CreateItem(t *testing.T) {
 			},
 			args: args{
 				ctx:  context.Background(),
-				item: getTestItem("items/name"),
+				item: getTestItem("items/name2"),
 			},
 			wantErr: false,
 			err:     nil,
@@ -115,7 +114,6 @@ func TestRepository_CreateItem(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				item: &item.Item{
-					UID:         "1234",
 					CreateTime:  time.Now(),
 					UpdateTime:  time.Now(),
 					Hash:        "hash",
@@ -135,7 +133,6 @@ func TestRepository_CreateItem(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				item: &item.Item{
-					UID:         "1234",
 					CreateTime:  time.Now(),
 					UpdateTime:  time.Now(),
 					Hash:        "hash",
@@ -149,7 +146,7 @@ func TestRepository_CreateItem(t *testing.T) {
 			wantErr: true,
 			err:     database.ErrOperationFailed,
 		},
-		"returns an error when key already exists": {
+		"returns an error when name already exists": {
 			fields: fields{
 				db: GetTestDatabase(),
 				seed: func(db *sql.DB) {
@@ -160,7 +157,7 @@ func TestRepository_CreateItem(t *testing.T) {
 			},
 			args: args{
 				ctx:  context.Background(),
-				item: getTestItem("items/name2"),
+				item: getTestItem("items/name"),
 			},
 			wantErr: true,
 			err:     database.ErrDuplicatePrimaryKey,
@@ -213,8 +210,8 @@ func TestRepository_GetItem(t *testing.T) {
 		seed func(*sql.DB)
 	}
 	type args struct {
-		ctx context.Context
-		uid string
+		ctx  context.Context
+		name string
 	}
 	tests := map[string]struct {
 		fields  fields
@@ -232,8 +229,8 @@ func TestRepository_GetItem(t *testing.T) {
 				},
 			},
 			args: args{
-				ctx: context.Background(),
-				uid: "1234",
+				ctx:  context.Background(),
+				name: "items/name",
 			},
 			want:    getTestItem("items/name"),
 			wantErr: false,
@@ -253,7 +250,7 @@ func TestRepository_GetItem(t *testing.T) {
 					cancel()
 					return ctx
 				}(),
-				uid: "1234",
+				name: "1234",
 			},
 			want:    nil,
 			wantErr: true,
@@ -263,8 +260,8 @@ func TestRepository_GetItem(t *testing.T) {
 				db: GetTestDatabase(),
 			},
 			args: args{
-				ctx: context.Background(),
-				uid: "nonexistent",
+				ctx:  context.Background(),
+				name: "nonexistent",
 			},
 			want:    nil,
 			wantErr: true,
@@ -278,10 +275,9 @@ func TestRepository_GetItem(t *testing.T) {
 			if tt.fields.seed != nil {
 				tt.fields.seed(tt.fields.db)
 			}
-			got, err := r.GetItem(tt.args.ctx, tt.args.uid)
+			got, err := r.GetItem(tt.args.ctx, tt.args.name)
 			assert.Equal(t, tt.wantErr, err != nil, "Repository.GetItem() error = %v, wantErr %v", err, tt.wantErr)
 			if tt.want != nil && got != nil {
-				assert.Equal(t, tt.want.UID, got.UID)
 				assert.WithinDuration(t, tt.want.CreateTime, got.CreateTime, time.Second)
 				assert.WithinDuration(t, tt.want.UpdateTime, got.UpdateTime, time.Second)
 				assert.Equal(t, tt.want.Hash, got.Hash)
@@ -323,11 +319,10 @@ func TestRepository_UpdateItem(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				item: &item.Item{
-					UID:         "1234",
 					CreateTime:  time.Now(),
 					UpdateTime:  time.Now(),
 					Hash:        "newhash",
-					Name:        "NewName",
+					Name:        "items/name",
 					DisplayName: "NewDisplayName",
 					Content:     "NewContent",
 					Properties:  map[string]interface{}{"newkey": "newvalue"},
@@ -351,7 +346,6 @@ func TestRepository_UpdateItem(t *testing.T) {
 					return ctx
 				}(),
 				item: &item.Item{
-					UID:         "1234",
 					CreateTime:  time.Now(),
 					UpdateTime:  time.Now(),
 					Hash:        "newhash",
@@ -370,7 +364,6 @@ func TestRepository_UpdateItem(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				item: &item.Item{
-					UID:         "nonexistent",
 					CreateTime:  time.Now(),
 					UpdateTime:  time.Now(),
 					Hash:        "newhash",

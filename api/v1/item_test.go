@@ -40,7 +40,6 @@ func TestItem_MapToDomain(t *testing.T) {
 				UpdateTime:  time.Now(),
 			},
 			want: &item.Item{
-				UID:         "1234",
 				Name:        "Test Name",
 				DisplayName: "Test Display Name",
 				Content:     "Test Content",
@@ -62,7 +61,6 @@ func TestItem_MapToDomain(t *testing.T) {
 				UpdateTime:  time.Time{},
 			},
 			want: &item.Item{
-				UID:         "",
 				Name:        "",
 				DisplayName: "",
 				Content:     "",
@@ -84,7 +82,6 @@ func TestItem_MapToDomain(t *testing.T) {
 				UpdateTime:  time.Now(),
 			},
 			want: &item.Item{
-				UID:         "5678",
 				Name:        "Test Name 2",
 				Content:     "Test Content",
 				DisplayName: "Test Display Name",
@@ -100,11 +97,10 @@ func TestItem_MapToDomain(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			apiItem := &v1.Item{
+			apiItem := &v1.ItemCreate{
 				Content:     tt.fields.Content,
 				CreateTime:  tt.fields.CreateTime,
 				DisplayName: tt.fields.DisplayName,
-				Uid:         tt.fields.ID,
 				Name:        tt.fields.Name,
 				Properties:  tt.fields.Properties,
 				UpdateTime:  tt.fields.UpdateTime,

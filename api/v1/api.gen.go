@@ -60,6 +60,7 @@ type ItemCreate struct {
 	CreateTime  time.Time              `json:"create_time"`
 	DisplayName string                 `json:"display_name"`
 	Metadata    map[string]interface{} `json:"metadata"`
+	Name        string                 `json:"name"`
 	Properties  map[string]interface{} `json:"properties"`
 	UpdateTime  time.Time              `json:"update_time"`
 }

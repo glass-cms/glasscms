@@ -1,7 +1,6 @@
 -- +goose Up
 CREATE TABLE items (
-    uid TEXT PRIMARY KEY,
-    name TEXT NOT NULL UNIQUE,
+    name TEXT PRIMARY KEY, 
     display_name TEXT NOT NULL,
     create_time TIMESTAMP NOT NULL,
     update_time TIMESTAMP NOT NULL,
@@ -12,7 +11,6 @@ CREATE TABLE items (
     metadata JSON
 );
 
-CREATE INDEX items_name ON items(name);
 CREATE INDEX items_delete_time ON items(delete_time);
 
 -- +goose Down

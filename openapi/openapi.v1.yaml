@@ -131,6 +131,7 @@ components:
     ItemCreate:
       type: object
       required:
+        - name
         - display_name
         - content
         - create_time
@@ -138,6 +139,8 @@ components:
         - properties
         - metadata
       properties:
+        name:
+          type: string
         display_name:
           type: string
         content:

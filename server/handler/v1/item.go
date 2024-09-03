@@ -9,16 +9,6 @@ import (
 	v1 "github.com/glass-cms/glasscms/api/v1"
 )
 
-func (s *APIHandler) ItemsDelete(w http.ResponseWriter, _ *http.Request) {
-	// TODO.
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-func (s *APIHandler) ItemsList(w http.ResponseWriter, _ *http.Request) {
-	// TODO.
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
 func (s *APIHandler) ItemsCreate(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
@@ -43,4 +33,8 @@ func (s *APIHandler) ItemsCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
+}
+
+func (s *APIHandler) ItemsGet(w http.ResponseWriter, _ *http.Request, _ v1.ItemKey) {
+	w.WriteHeader(http.StatusTeapot)
 }

@@ -50,7 +50,6 @@ func (r *repository) CreateItem(ctx context.Context, tx *sql.Tx, item *Item) err
 
 	query := `
         INSERT INTO items (
-			uid, 
 			name, 
 			display_name, 
 			create_time, 
@@ -60,7 +59,7 @@ func (r *repository) CreateItem(ctx context.Context, tx *sql.Tx, item *Item) err
 			content, 
 			properties, 
 			metadata)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
     `
 
 	properties, err := json.Marshal(item.Properties)
@@ -81,7 +80,6 @@ func (r *repository) CreateItem(ctx context.Context, tx *sql.Tx, item *Item) err
 	defer stmt.Close()
 
 	_, err = stmt.ExecContext(ctx,
-		item.UID,
 		item.Name,
 		item.DisplayName,
 		item.CreateTime,
@@ -100,12 +98,14 @@ func (r *repository) CreateItem(ctx context.Context, tx *sql.Tx, item *Item) err
 	return nil
 }
 
-// GetItem retrieves an item from the database by its UID.
-func (r *repository) GetItem(ctx context.Context, uid string) (*Item, error) {
+// TODO: Where delete time is null.
+
+// GetItem retrieves an item from the database by its resource name.
+func (r *repository) GetItem(ctx context.Context, name string) (*Item, error) {
 	query := `
-        SELECT uid, name, display_name, create_time, update_time, delete_time, hash, content, properties, metadata
+        SELECT name, display_name, create_time, update_time, delete_time, hash, content, properties, metadata
         FROM items
-        WHERE uid = $1
+        WHERE name = $1
     `
 	var item Item
 	var propertiesJSON []byte
@@ -117,8 +117,7 @@ func (r *repository) GetItem(ctx context.Context, uid string) (*Item, error) {
 	}
 	defer stmt.Close()
 
-	err = stmt.QueryRowContext(ctx, uid).Scan(
-		&item.UID,
+	err = stmt.QueryRowContext(ctx, name).Scan(
 		&item.Name,
 		&item.DisplayName,
 		&item.CreateTime,
@@ -152,7 +151,7 @@ func (r *repository) UpdateItem(ctx context.Context, item *Item) error {
 	query := `
 		UPDATE items
 		SET update_time = $1, hash = $2, name = $3, display_name = $4, content = $5, properties = $6, metadata = $7
-		WHERE uid = $8
+		WHERE name = $8
 	`
 
 	propertiesJSON, err := json.Marshal(item.Properties)
@@ -179,7 +178,7 @@ func (r *repository) UpdateItem(ctx context.Context, item *Item) error {
 		item.Content,
 		propertiesJSON,
 		metadataJSON,
-		item.UID,
+		item.Name,
 	)
 
 	if err != nil {

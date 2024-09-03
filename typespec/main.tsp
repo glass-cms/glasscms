@@ -32,6 +32,7 @@ interface Items {
 @resource("items")
 model Item {
     @key
+    @visibility("create", "read")
     name: string;
     display_name: string;
     content: string;

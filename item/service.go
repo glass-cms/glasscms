@@ -22,7 +22,7 @@ func NewService(repo Repository) *Service {
 func (s *Service) CreateItem(ctx context.Context, item *Item) error {
 	err := s.repo.CreateItem(ctx, nil, item)
 	if errors.Is(err, database.ErrDuplicatePrimaryKey) {
-		return resource.NewAlreadyExistsError(item.UID, ItemResource, err)
+		return resource.NewAlreadyExistsError(item.Name, ItemResource, err)
 	}
 
 	return err
