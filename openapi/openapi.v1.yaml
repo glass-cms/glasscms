@@ -7,10 +7,17 @@ paths:
   /items:
     post:
       operationId: Items_create
+      description: Creates a new item.
       parameters: []
       responses:
         '200':
           description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Item'
+        '201':
+          description: Resource create operation completed successfully.
           content:
             application/json:
               schema:
@@ -26,8 +33,34 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Item'
+              $ref: '#/components/schemas/ItemCreate'
+  /items/{name}:
+    get:
+      operationId: Items_get
+      description: Retrieve an item by its unique identifier.
+      parameters:
+        - $ref: '#/components/parameters/ItemKey'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Item'
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 components:
+  parameters:
+    ItemKey:
+      name: name
+      in: path
+      required: true
+      schema:
+        type: string
   schemas:
     Error:
       type: object
@@ -63,7 +96,6 @@ components:
     Item:
       type: object
       required:
-        - uid
         - name
         - display_name
         - content
@@ -73,8 +105,6 @@ components:
         - properties
         - metadata
       properties:
-        uid:
-          type: string
         name:
           type: string
         display_name:
@@ -90,6 +120,7 @@ components:
         delete_time:
           type: string
           format: date-time
+          readOnly: true
         properties:
           type: object
           additionalProperties: {}
@@ -97,6 +128,33 @@ components:
           type: object
           additionalProperties: {}
       description: Item represents an individual content item.
+    ItemCreate:
+      type: object
+      required:
+        - display_name
+        - content
+        - create_time
+        - update_time
+        - properties
+        - metadata
+      properties:
+        display_name:
+          type: string
+        content:
+          type: string
+        create_time:
+          type: string
+          format: date-time
+        update_time:
+          type: string
+          format: date-time
+        properties:
+          type: object
+          additionalProperties: {}
+        metadata:
+          type: object
+          additionalProperties: {}
+      description: Resource create operation model.
     Versions:
       type: string
       enum:

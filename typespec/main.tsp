@@ -17,21 +17,27 @@ enum Versions {
     v1,
 }
 
-@route("/items")
-namespace Items {
-    @post op create(...Item): Item | Error;
+alias CreateItem = TypeSpec.Rest.Resource.ResourceCreate<Item, Error>;
+alias GetItems = TypeSpec.Rest.Resource.ResourceRead<Item, Error>;
+
+interface Items {
+    @doc("Creates a new item.")
+    op create is CreateItem.create;
+
+    @doc("Retrieve an item by its unique identifier.")
+    op get is GetItems.get;
 }
 
-@@createsResource(Items.create, Item);
-
 @doc("Item represents an individual content item.")
+@resource("items")
 model Item {
-    uid: string;
+    @key
     name: string;
     display_name: string;
     content: string;
     create_time: utcDateTime;
     update_time: utcDateTime;
+    @visibility("read")
     delete_time: utcDateTime;
     properties: Record<unknown>;
     metadata: Record<unknown>;

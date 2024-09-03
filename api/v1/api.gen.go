@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"net/http"
 	"time"
+
+	"github.com/oapi-codegen/runtime"
 )
 
 // Defines values for ErrorCode.
@@ -44,23 +46,38 @@ type ErrorType string
 type Item struct {
 	Content     string                 `json:"content"`
 	CreateTime  time.Time              `json:"create_time"`
-	DeleteTime  time.Time              `json:"delete_time"`
+	DeleteTime  *time.Time             `json:"delete_time,omitempty"`
 	DisplayName string                 `json:"display_name"`
 	Metadata    map[string]interface{} `json:"metadata"`
 	Name        string                 `json:"name"`
 	Properties  map[string]interface{} `json:"properties"`
-	Uid         string                 `json:"uid"`
 	UpdateTime  time.Time              `json:"update_time"`
 }
 
+// ItemCreate Resource create operation model.
+type ItemCreate struct {
+	Content     string                 `json:"content"`
+	CreateTime  time.Time              `json:"create_time"`
+	DisplayName string                 `json:"display_name"`
+	Metadata    map[string]interface{} `json:"metadata"`
+	Properties  map[string]interface{} `json:"properties"`
+	UpdateTime  time.Time              `json:"update_time"`
+}
+
+// ItemKey defines model for ItemKey.
+type ItemKey = string
+
 // ItemsCreateJSONRequestBody defines body for ItemsCreate for application/json ContentType.
-type ItemsCreateJSONRequestBody = Item
+type ItemsCreateJSONRequestBody = ItemCreate
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 
 	// (POST /items)
 	ItemsCreate(w http.ResponseWriter, r *http.Request)
+
+	// (GET /items/{name})
+	ItemsGet(w http.ResponseWriter, r *http.Request, name ItemKey)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -78,6 +95,32 @@ func (siw *ServerInterfaceWrapper) ItemsCreate(w http.ResponseWriter, r *http.Re
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ItemsCreate(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// ItemsGet operation middleware
+func (siw *ServerInterfaceWrapper) ItemsGet(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var err error
+
+	// ------------- Path parameter "name" -------------
+	var name ItemKey
+
+	err = runtime.BindStyledParameterWithOptions("simple", "name", r.PathValue("name"), &name, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "name", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ItemsGet(w, r, name)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -202,6 +245,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	}
 
 	m.HandleFunc("POST "+options.BaseURL+"/items", wrapper.ItemsCreate)
+	m.HandleFunc("GET "+options.BaseURL+"/items/{name}", wrapper.ItemsGet)
 
 	return m
 }
