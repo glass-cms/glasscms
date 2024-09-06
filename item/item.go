@@ -17,24 +17,3 @@ type Item struct {
 	Properties  map[string]any `mapstructure:"properties"`
 	Metadata    map[string]any `mapstructure:"metadata"`
 }
-
-// New creates a new Item instance with the given parameters.
-func New(
-	name string,
-	displayName string,
-	content string,
-	createTime time.Time,
-	updateTime time.Time,
-	properties map[string]any,
-	metadata map[string]any,
-) *Item {
-	return &Item{
-		Name:        name,
-		DisplayName: displayName,
-		Content:     content,
-		CreateTime:  createTime,
-		UpdateTime:  updateTime,
-		Properties:  properties,
-		Metadata:    metadata,
-	}
-}

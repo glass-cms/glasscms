@@ -2,7 +2,7 @@ package resource
 
 // AlreadyExistsError represents an error when a resource already exists.
 type AlreadyExistsError struct {
-	UID      string
+	Name     string
 	Resource string
 	err      error
 }
@@ -12,9 +12,9 @@ func (e *AlreadyExistsError) Error() string {
 }
 
 // NewAlreadyExistsError creates a new ResourceAlreadyExistsError.
-func NewAlreadyExistsError(uid, resource string, err error) *AlreadyExistsError {
+func NewAlreadyExistsError(name, resource string, err error) *AlreadyExistsError {
 	return &AlreadyExistsError{
-		UID:      uid,
+		Name:     name,
 		Resource: resource,
 		err:      err,
 	}

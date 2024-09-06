@@ -105,7 +105,7 @@ func TestItem_MapToDomain(t *testing.T) {
 				Properties:  tt.fields.Properties,
 				UpdateTime:  tt.fields.UpdateTime,
 			}
-			got := apiItem.MapToDomain()
+			got := apiItem.ToItem()
 
 			// Adjust for potential differences in time (e.g., slight differences due to test execution timing)
 			if !got.CreateTime.IsZero() && !tt.want.CreateTime.IsZero() {

@@ -5,8 +5,8 @@ import (
 	"github.com/glass-cms/glasscms/parser"
 )
 
-// MapToDomain converts an api.Item to an item.Item.
-func (i *ItemCreate) MapToDomain() *item.Item {
+// ToItem converts an api.ItemCreate to an item.Item.
+func (i *ItemCreate) ToItem() *item.Item {
 	if i == nil {
 		return nil
 	}
