@@ -49,5 +49,5 @@ func (s *APIHandler) ItemsGet(w http.ResponseWriter, r *http.Request, name v1.It
 		return
 	}
 
-	handler.RespondWithJSON(w, http.StatusOK, item)
+	handler.SerializeResponse(w, r, http.StatusOK, item)
 }

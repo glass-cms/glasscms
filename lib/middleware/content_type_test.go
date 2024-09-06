@@ -65,7 +65,7 @@ func Test_MediaType(t *testing.T) {
 			})
 
 			w := httptest.NewRecorder()
-			middleware.MediaType(test.accepted...)(handler).ServeHTTP(w, req)
+			middleware.ContentType(test.accepted...)(handler).ServeHTTP(w, req)
 
 			if w.Code != test.expected {
 				t.Errorf("expected %d, got %d", test.expected, w.Code)

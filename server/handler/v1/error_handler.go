@@ -28,7 +28,7 @@ func (h *ErrorHandler) RegisterErrorMapper(errType reflect.Type, mapper ErrorMap
 }
 
 // HandleError handles an error by writing an appropriate response to the client.
-func (h *ErrorHandler) HandleError(w http.ResponseWriter, _ *http.Request, err error) {
+func (h *ErrorHandler) HandleError(w http.ResponseWriter, r *http.Request, err error) {
 	if err == nil {
 		return
 	}
@@ -42,7 +42,7 @@ func (h *ErrorHandler) HandleError(w http.ResponseWriter, _ *http.Request, err e
 			statusCode = http.StatusInternalServerError
 		}
 
-		handler.RespondWithJSON(w, statusCode, errResp)
+		handler.SerializeResponse(w, r, statusCode, errResp)
 	}
 
 	// TODO: Default error handling.
