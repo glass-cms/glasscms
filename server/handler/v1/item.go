@@ -16,14 +16,14 @@ func (s *APIHandler) ItemsCreate(w http.ResponseWriter, r *http.Request) {
 	reqBody, err := io.ReadAll(r.Body)
 	if err != nil {
 		s.logger.ErrorContext(ctx, fmt.Errorf("failed to read request body: %w", err).Error())
-		w.WriteHeader(http.StatusInternalServerError)
+		s.errorHandler.HandleError(w, r, err)
 		return
 	}
 
 	var request *v1.ItemsCreateJSONRequestBody
 	if err = json.Unmarshal(reqBody, &request); err != nil {
 		s.logger.ErrorContext(ctx, fmt.Errorf("failed to unmarshal request body: %w", err).Error())
-		w.WriteHeader(http.StatusBadRequest)
+		s.errorHandler.HandleError(w, r, err)
 		return
 	}
 

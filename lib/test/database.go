@@ -2,8 +2,10 @@ package test
 
 import (
 	"database/sql"
+	"fmt"
 
 	"github.com/glass-cms/glasscms/database"
+	"github.com/google/uuid"
 )
 
 // NewDB creates a new in-memory SQLite database with the necessary schema
@@ -11,7 +13,7 @@ import (
 func NewDB() (*sql.DB, error) {
 	config := database.Config{
 		Driver: database.DriverName[int32(database.DriverSqlite)],
-		DSN:    "file::memory:?cache=shared",
+		DSN:    fmt.Sprintf("file:%s?mode=memory&cache=shared", uuid.New().String()),
 	}
 
 	db, err := database.NewConnection(config)

@@ -8,7 +8,8 @@ import (
 	"github.com/glass-cms/glasscms/lib/mediatype"
 )
 
-// SerializeResponse writes a JSON response to the response.
+// SerializeResponse writes the provided data to the response writer in the
+// appropriate media type based on the request's Accept header.
 func SerializeResponse[T any](w http.ResponseWriter, r *http.Request, statusCode int, data T) {
 	w.WriteHeader(statusCode)
 
