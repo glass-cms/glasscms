@@ -37,7 +37,8 @@ func New(
 
 	for _, h := range handlers {
 		_ = h.Handler(serveMux, []func(http.Handler) http.Handler{
-			middleware.ContentType(mediatype.ApplicationJSON, mediatype.ApplicationXML),
+			middleware.ContentType(mediatype.ApplicationJSON),
+			middleware.Accept(mediatype.ApplicationJSON),
 		})
 	}
 

@@ -9,7 +9,7 @@ import (
 	"github.com/glass-cms/glasscms/lib/middleware"
 )
 
-func Test_MediaType(t *testing.T) {
+func Test_ContentType(t *testing.T) {
 	t.Parallel()
 
 	tests := map[string]struct {
