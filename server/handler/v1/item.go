@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	v1 "github.com/glass-cms/glasscms/api/v1"
+	"github.com/glass-cms/glasscms/server/handler"
 )
 
 func (s *APIHandler) ItemsCreate(w http.ResponseWriter, r *http.Request) {
@@ -33,9 +34,20 @@ func (s *APIHandler) ItemsCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// TODO: Write response.
+
 	w.WriteHeader(http.StatusCreated)
 }
 
-func (s *APIHandler) ItemsGet(w http.ResponseWriter, _ *http.Request, _ v1.ItemKey) {
-	w.WriteHeader(http.StatusTeapot)
+func (s *APIHandler) ItemsGet(w http.ResponseWriter, r *http.Request, name v1.ItemKey) {
+	ctx := r.Context()
+
+	item, err := s.itemService.GetItem(ctx, name)
+	if err != nil {
+		s.logger.ErrorContext(ctx, fmt.Errorf("failed to get item: %w", err).Error())
+		s.errorHandler.HandleError(w, r, err)
+		return
+	}
+
+	handler.RespondWithJSON(w, http.StatusOK, item)
 }

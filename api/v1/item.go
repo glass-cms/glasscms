@@ -22,3 +22,19 @@ func (i *ItemCreate) ToItem() *item.Item {
 		Metadata:    i.Metadata,
 	}
 }
+
+func FromItem(item *item.Item) *Item {
+	if item == nil {
+		return nil
+	}
+
+	return &Item{
+		Name:        item.Name,
+		DisplayName: item.DisplayName,
+		Content:     item.Content,
+		CreateTime:  item.CreateTime,
+		UpdateTime:  item.UpdateTime,
+		Properties:  item.Properties,
+		Metadata:    item.Metadata,
+	}
+}
