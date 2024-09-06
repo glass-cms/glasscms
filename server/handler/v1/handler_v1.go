@@ -4,25 +4,30 @@ package v1
 import (
 	"log/slog"
 	"net/http"
+	"reflect"
 
 	v1 "github.com/glass-cms/glasscms/api/v1"
 	"github.com/glass-cms/glasscms/item"
+	"github.com/glass-cms/glasscms/lib/resource"
 	"github.com/glass-cms/glasscms/server/handler"
 )
 
 type APIHandler struct {
-	logger     *slog.Logger
-	repository *item.Repository
+	logger      *slog.Logger
+	itemService *item.Service
+
+	errorHandler *ErrorHandler
 }
 
 // NewAPIHandler returns a new instance of ApiHandler.
 func NewAPIHandler(
 	logger *slog.Logger,
-	repo *item.Repository,
+	service *item.Service,
 ) *APIHandler {
 	return &APIHandler{
-		logger:     logger,
-		repository: repo,
+		logger:       logger,
+		itemService:  service,
+		errorHandler: NewErrorHandler(),
 	}
 }
 
@@ -36,11 +41,21 @@ func (s *APIHandler) Handler(
 		convertedMiddlewares[i] = v1.MiddlewareFunc(mw)
 	}
 
+	s.registerErrorMappers()
+
 	return v1.HandlerWithOptions(s, v1.StdHTTPServerOptions{
-		BaseURL:     "/v1",
-		BaseRouter:  baseRouter,
-		Middlewares: convertedMiddlewares,
+		BaseURL:          "/v1",
+		BaseRouter:       baseRouter,
+		Middlewares:      convertedMiddlewares,
+		ErrorHandlerFunc: s.errorHandler.HandleError,
 	})
+}
+
+func (s *APIHandler) registerErrorMappers() {
+	s.errorHandler.RegisterErrorMapper(
+		reflect.TypeOf(&resource.AlreadyExistsError{}),
+		ErrorMapperAlreadyExistsError,
+	)
 }
 
 var _ v1.ServerInterface = (*APIHandler)(nil)

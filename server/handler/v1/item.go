@@ -9,16 +9,6 @@ import (
 	v1 "github.com/glass-cms/glasscms/api/v1"
 )
 
-func (s *APIHandler) ItemsDelete(w http.ResponseWriter, _ *http.Request) {
-	// TODO.
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-func (s *APIHandler) ItemsList(w http.ResponseWriter, _ *http.Request) {
-	// TODO.
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
 func (s *APIHandler) ItemsCreate(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
@@ -36,11 +26,16 @@ func (s *APIHandler) ItemsCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err = s.repository.CreateItem(ctx, request.MapToDomain()); err != nil {
+	err = s.itemService.CreateItem(ctx, request.ToItem())
+	if err != nil {
 		s.logger.ErrorContext(ctx, fmt.Errorf("failed to create item: %w", err).Error())
-		w.WriteHeader(http.StatusInternalServerError)
+		s.errorHandler.HandleError(w, r, err)
 		return
 	}
 
 	w.WriteHeader(http.StatusCreated)
+}
+
+func (s *APIHandler) ItemsGet(w http.ResponseWriter, _ *http.Request, _ v1.ItemKey) {
+	w.WriteHeader(http.StatusTeapot)
 }

@@ -6,21 +6,50 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+
+	"github.com/glass-cms/glasscms/database"
 )
 
-type Repository struct {
-	db *sql.DB
+type Repository interface {
+	CreateItem(ctx context.Context, tx *sql.Tx, item *Item) error
+
+	// TODO: Add transaction to all methods.
+	// TODO: Add method to get a transaction.
+	GetItem(ctx context.Context, uid string) (*Item, error)
+	UpdateItem(ctx context.Context, item *Item) error
+	DeleteItem(ctx context.Context, uid string) error
 }
 
-func NewRepository(db *sql.DB) *Repository {
-	return &Repository{db: db}
+var _ Repository = &repository{}
+
+type executor interface {
+	PrepareContext(ctx context.Context, query string) (*sql.Stmt, error)
+}
+
+type repository struct {
+	db           *sql.DB
+	errorHandler database.ErrorHandler
+}
+
+func NewRepository(db *sql.DB, errorHandler database.ErrorHandler) Repository {
+	return &repository{
+		db:           db,
+		errorHandler: errorHandler,
+	}
 }
 
 // CreateItem creates a new item in the database.
-func (r *Repository) CreateItem(ctx context.Context, item *Item) error {
+// If a transaction is provided, the item will be created within the transaction.
+func (r *repository) CreateItem(ctx context.Context, tx *sql.Tx, item *Item) error {
+	var exec executor
+	if tx != nil {
+		exec = tx
+	} else {
+		exec = r.db
+	}
+
 	query := `
         INSERT INTO items (
-			uid, 
 			name, 
 			display_name, 
 			create_time, 
@@ -30,27 +59,27 @@ func (r *Repository) CreateItem(ctx context.Context, item *Item) error {
 			content, 
 			properties, 
 			metadata)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
     `
 
 	properties, err := json.Marshal(item.Properties)
 	if err != nil {
-		return fmt.Errorf("failed to marshal properties: %w", err)
+		return r.errorHandler.HandleError(ctx, err)
 	}
 
 	metadata, err := json.Marshal(item.Metadata)
 	if err != nil {
-		return fmt.Errorf("failed to marshal metadata: %w", err)
+		return r.errorHandler.HandleError(ctx, err)
 	}
 
-	stmt, err := r.db.PrepareContext(ctx, query)
+	stmt, err := exec.PrepareContext(ctx, query)
 	if err != nil {
-		return fmt.Errorf("failed to prepare statement: %w", err)
+		return r.errorHandler.HandleError(ctx, err)
 	}
+
 	defer stmt.Close()
 
 	_, err = stmt.ExecContext(ctx,
-		item.UID,
 		item.Name,
 		item.DisplayName,
 		item.CreateTime,
@@ -63,18 +92,20 @@ func (r *Repository) CreateItem(ctx context.Context, item *Item) error {
 	)
 
 	if err != nil {
-		return fmt.Errorf("failed to insert item: %w", err)
+		return r.errorHandler.HandleError(ctx, err)
 	}
 
 	return nil
 }
 
-// GetItem retrieves an item from the database by its UID.
-func (r *Repository) GetItem(ctx context.Context, uid string) (*Item, error) {
+// TODO: Where delete time is null.
+
+// GetItem retrieves an item from the database by its resource name.
+func (r *repository) GetItem(ctx context.Context, name string) (*Item, error) {
 	query := `
-        SELECT uid, name, display_name, create_time, update_time, delete_time, hash, content, properties, metadata
+        SELECT name, display_name, create_time, update_time, delete_time, hash, content, properties, metadata
         FROM items
-        WHERE uid = $1
+        WHERE name = $1
     `
 	var item Item
 	var propertiesJSON []byte
@@ -86,8 +117,7 @@ func (r *Repository) GetItem(ctx context.Context, uid string) (*Item, error) {
 	}
 	defer stmt.Close()
 
-	err = stmt.QueryRowContext(ctx, uid).Scan(
-		&item.UID,
+	err = stmt.QueryRowContext(ctx, name).Scan(
 		&item.Name,
 		&item.DisplayName,
 		&item.CreateTime,
@@ -100,10 +130,7 @@ func (r *Repository) GetItem(ctx context.Context, uid string) (*Item, error) {
 	)
 
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("item not found: %w", err)
-		}
-		return nil, fmt.Errorf("failed to retrieve item: %w", err)
+		return nil, r.errorHandler.HandleError(ctx, err)
 	}
 
 	err = json.Unmarshal(propertiesJSON, &item.Properties)
@@ -120,11 +147,11 @@ func (r *Repository) GetItem(ctx context.Context, uid string) (*Item, error) {
 }
 
 // UpdateItem updates an existing item in the database.
-func (r *Repository) UpdateItem(ctx context.Context, item *Item) error {
+func (r *repository) UpdateItem(ctx context.Context, item *Item) error {
 	query := `
 		UPDATE items
 		SET update_time = $1, hash = $2, name = $3, display_name = $4, content = $5, properties = $6, metadata = $7
-		WHERE uid = $8
+		WHERE name = $8
 	`
 
 	propertiesJSON, err := json.Marshal(item.Properties)
@@ -151,11 +178,11 @@ func (r *Repository) UpdateItem(ctx context.Context, item *Item) error {
 		item.Content,
 		propertiesJSON,
 		metadataJSON,
-		item.UID,
+		item.Name,
 	)
 
 	if err != nil {
-		return fmt.Errorf("failed to update item: %w", err)
+		return r.errorHandler.HandleError(ctx, err)
 	}
 
 	rowsAffected, err := result.RowsAffected()
@@ -171,7 +198,7 @@ func (r *Repository) UpdateItem(ctx context.Context, item *Item) error {
 }
 
 // DeleteItem deletes an item from the database by its UID.
-func (r *Repository) DeleteItem(_ context.Context, _ string) error {
+func (r *repository) DeleteItem(_ context.Context, _ string) error {
 	// TODO: Reimplement with soft delete.
 	/*query := `DELETE FROM items WHERE uid = $1`
 
