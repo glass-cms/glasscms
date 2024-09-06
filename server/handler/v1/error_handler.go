@@ -43,7 +43,14 @@ func (h *ErrorHandler) HandleError(w http.ResponseWriter, r *http.Request, err e
 		}
 
 		handler.SerializeResponse(w, r, statusCode, errResp)
+		return
 	}
 
-	// TODO: Default error handling.
+	// Fallback on generic error response if we don't have a specific error mapper.
+	errResp := &v1.Error{
+		Code:    v1.ProcessingError,
+		Message: "An error occurred while processing the request.",
+		Type:    v1.ApiError,
+	}
+	handler.SerializeResponse(w, r, http.StatusInternalServerError, errResp)
 }
