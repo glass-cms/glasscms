@@ -19,14 +19,6 @@ import (
 func TestAPIHandler_ItemsCreate(t *testing.T) {
 	t.Parallel()
 
-	testdb, err := test.NewDB()
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer testdb.Close()
-
-	repo := item.NewRepository(testdb, &database.SqliteErrorHandler{})
-
 	tests := map[string]struct {
 		req      func() *http.Request
 		expected int
@@ -52,6 +44,15 @@ func TestAPIHandler_ItemsCreate(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			testdb, err := test.NewDB()
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer testdb.Close()
+
+			repo := item.NewRepository(testdb, &database.SqliteErrorHandler{})
 
 			handler := v1.NewAPIHandler(
 				log.NoopLogger(),
@@ -69,19 +70,10 @@ func TestAPIHandler_ItemsCreate(t *testing.T) {
 			assert.Equal(t, tt.expected, rr.Code)
 		})
 	}
-
 }
 
 func TestAPIHandler_ItemsGet(t *testing.T) {
 	t.Parallel()
-
-	testdb, err := test.NewDB()
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer testdb.Close()
-
-	repo := item.NewRepository(testdb, &database.SqliteErrorHandler{})
 
 	tests := map[string]struct {
 		req      func() *http.Request
@@ -98,6 +90,16 @@ func TestAPIHandler_ItemsGet(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			testdb, err := test.NewDB()
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer testdb.Close()
+
+			repo := item.NewRepository(testdb, &database.SqliteErrorHandler{})
+
 			handler := v1.NewAPIHandler(
 				log.NoopLogger(),
 				item.NewService(repo),

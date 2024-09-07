@@ -61,7 +61,7 @@ func Test_Accept(t *testing.T) {
 
 			rr := httptest.NewRecorder()
 
-			middleware.Accept(test.accepted...)(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+			middleware.Accept(test.accepted...)(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 				w.WriteHeader(http.StatusOK)
 			})).ServeHTTP(rr, req)
 
