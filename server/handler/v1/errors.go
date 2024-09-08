@@ -25,3 +25,20 @@ func ErrorMapperAlreadyExistsError(err error) *v1.Error {
 		},
 	}
 }
+
+func ErrorMapperNotFoundError(err error) *v1.Error {
+	var notFoundErr *resource.NotFoundError
+	if !errors.As(err, &notFoundErr) {
+		panic("error is not a resource.NotFoundError")
+	}
+
+	return &v1.Error{
+		Code:    v1.ResourceMissing,
+		Message: fmt.Sprintf("The %s with the name was not found", notFoundErr.Resource),
+		Type:    v1.ApiError,
+		Details: map[string]interface{}{
+			"resource": notFoundErr.Resource,
+			"name":     notFoundErr.Name,
+		},
+	}
+}

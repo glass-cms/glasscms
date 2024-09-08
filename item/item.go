@@ -7,13 +7,13 @@ const ItemResource = "item"
 // Item is the core data structure for the content management system.
 // An item represent a single piece of content. It is the structured version of a markdown file.
 type Item struct {
-	Name        string         `mapstructure:"name"`
-	DisplayName string         `mapstructure:"display_name"`
-	Content     string         `mapstructure:"content"`
-	Hash        string         `mapstructure:"hash"`
-	CreateTime  time.Time      `mapstructure:"create_time"`
-	UpdateTime  time.Time      `mapstructure:"update_time"`
-	DeleteTime  *time.Time     `mapstructure:"delete_time"`
-	Properties  map[string]any `mapstructure:"properties"`
-	Metadata    map[string]any `mapstructure:"metadata"`
+	Name        string
+	DisplayName string
+	Content     string
+	Hash        string
+	CreateTime  time.Time
+	UpdateTime  time.Time
+	DeleteTime  *time.Time
+	Properties  map[string]any
+	Metadata    map[string]any
 }

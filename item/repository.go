@@ -15,7 +15,7 @@ type Repository interface {
 
 	// TODO: Add transaction to all methods.
 	// TODO: Add method to get a transaction.
-	GetItem(ctx context.Context, uid string) (*Item, error)
+	GetItem(ctx context.Context, name string) (*Item, error)
 	UpdateItem(ctx context.Context, item *Item) error
 	DeleteItem(ctx context.Context, uid string) error
 }
@@ -98,14 +98,12 @@ func (r *repository) CreateItem(ctx context.Context, tx *sql.Tx, item *Item) err
 	return nil
 }
 
-// TODO: Where delete time is null.
-
 // GetItem retrieves an item from the database by its resource name.
 func (r *repository) GetItem(ctx context.Context, name string) (*Item, error) {
 	query := `
         SELECT name, display_name, create_time, update_time, delete_time, hash, content, properties, metadata
         FROM items
-        WHERE name = $1
+        WHERE name = $1 AND delete_time IS NULL
     `
 	var item Item
 	var propertiesJSON []byte

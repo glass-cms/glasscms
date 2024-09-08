@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	v1 "github.com/glass-cms/glasscms/api/v1"
+	"github.com/glass-cms/glasscms/server/handler"
 )
 
 func (s *APIHandler) ItemsCreate(w http.ResponseWriter, r *http.Request) {
@@ -15,14 +16,14 @@ func (s *APIHandler) ItemsCreate(w http.ResponseWriter, r *http.Request) {
 	reqBody, err := io.ReadAll(r.Body)
 	if err != nil {
 		s.logger.ErrorContext(ctx, fmt.Errorf("failed to read request body: %w", err).Error())
-		w.WriteHeader(http.StatusInternalServerError)
+		s.errorHandler.HandleError(w, r, err)
 		return
 	}
 
 	var request *v1.ItemsCreateJSONRequestBody
 	if err = json.Unmarshal(reqBody, &request); err != nil {
 		s.logger.ErrorContext(ctx, fmt.Errorf("failed to unmarshal request body: %w", err).Error())
-		w.WriteHeader(http.StatusBadRequest)
+		s.errorHandler.HandleError(w, r, err)
 		return
 	}
 
@@ -33,9 +34,20 @@ func (s *APIHandler) ItemsCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// TODO: Write response.
+
 	w.WriteHeader(http.StatusCreated)
 }
 
-func (s *APIHandler) ItemsGet(w http.ResponseWriter, _ *http.Request, _ v1.ItemKey) {
-	w.WriteHeader(http.StatusTeapot)
+func (s *APIHandler) ItemsGet(w http.ResponseWriter, r *http.Request, name v1.ItemKey) {
+	ctx := r.Context()
+
+	item, err := s.itemService.GetItem(ctx, name)
+	if err != nil {
+		s.logger.ErrorContext(ctx, fmt.Errorf("failed to get item: %w", err).Error())
+		s.errorHandler.HandleError(w, r, err)
+		return
+	}
+
+	handler.SerializeResponse(w, r, http.StatusOK, item)
 }

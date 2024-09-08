@@ -7,9 +7,9 @@ import (
 	"github.com/glass-cms/glasscms/lib/mediatype"
 )
 
-// MediaType generates a handler that writes a 415 Unsupported Media Type header
+// ContentType generates a handler that writes a 415 Unsupported Media Type header
 // if the request's Content-Type header does not match the provided media type.
-func MediaType(accepted ...string) func(next http.Handler) http.Handler {
+func ContentType(accepted ...string) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			header := r.Header.Get("Content-Type")

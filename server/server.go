@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/glass-cms/glasscms/lib/mediatype"
 	"github.com/glass-cms/glasscms/lib/middleware"
 	"github.com/glass-cms/glasscms/server/handler"
 )
@@ -36,7 +37,8 @@ func New(
 
 	for _, h := range handlers {
 		_ = h.Handler(serveMux, []func(http.Handler) http.Handler{
-			middleware.MediaType("application/json"),
+			middleware.ContentType(mediatype.ApplicationJSON),
+			middleware.Accept(mediatype.ApplicationJSON),
 		})
 	}
 

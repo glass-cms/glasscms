@@ -56,6 +56,11 @@ func (s *APIHandler) registerErrorMappers() {
 		reflect.TypeOf(&resource.AlreadyExistsError{}),
 		ErrorMapperAlreadyExistsError,
 	)
+
+	s.errorHandler.RegisterErrorMapper(
+		reflect.TypeOf(&resource.NotFoundError{}),
+		ErrorMapperNotFoundError,
+	)
 }
 
 var _ v1.ServerInterface = (*APIHandler)(nil)

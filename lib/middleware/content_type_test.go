@@ -9,7 +9,7 @@ import (
 	"github.com/glass-cms/glasscms/lib/middleware"
 )
 
-func Test_MediaType(t *testing.T) {
+func Test_ContentType(t *testing.T) {
 	t.Parallel()
 
 	tests := map[string]struct {
@@ -65,7 +65,7 @@ func Test_MediaType(t *testing.T) {
 			})
 
 			w := httptest.NewRecorder()
-			middleware.MediaType(test.accepted...)(handler).ServeHTTP(w, req)
+			middleware.ContentType(test.accepted...)(handler).ServeHTTP(w, req)
 
 			if w.Code != test.expected {
 				t.Errorf("expected %d, got %d", test.expected, w.Code)
