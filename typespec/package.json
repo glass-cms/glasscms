@@ -9,5 +9,8 @@
     "@typespec/openapi3": "latest",
     "@typespec/versioning": "latest"
   },
-  "private": true
+  "private": true,
+  "volta": {
+    "node": "20.17.0"
+  }
 }
