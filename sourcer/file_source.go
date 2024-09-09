@@ -15,6 +15,9 @@ type FileSource struct {
 	modtime   time.Time
 }
 
+// We need to know the root path of the file system source.
+// such that Name can return the relative path of the file.
+
 func NewFileSource(file *os.File) (*FileSource, error) {
 	stats, err := times.StatFile(file)
 	if err != nil {

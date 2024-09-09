@@ -11,6 +11,7 @@ import (
 
 	"github.com/glass-cms/glasscms/item"
 	"github.com/glass-cms/glasscms/sourcer"
+	"github.com/mozillazg/go-slugify"
 	"gopkg.in/yaml.v3"
 )
 
@@ -43,13 +44,18 @@ func Parse(src sourcer.Source) (*item.Item, error) {
 		}
 	}
 
+	pathname := src.Name()
+
+	// TODO: I want the name to be slugified but the slashes to be preserved.
+
 	return &item.Item{
-		Name:       nameFromPath(src.Name()),
-		Content:    string(content),
-		Hash:       HashContent(content),
-		CreateTime: src.CreatedAt(),
-		UpdateTime: src.ModifiedAt(),
-		Properties: properties,
+		Name:        slugify.Slugify(pathname),
+		DisplayName: nameFromPath(pathname),
+		Content:     string(content),
+		Hash:        HashContent(content),
+		CreateTime:  src.CreatedAt(),
+		UpdateTime:  src.ModifiedAt(),
+		Properties:  properties,
 	}, nil
 }
 
