@@ -44,8 +44,7 @@ func Parse(src sourcer.Source) (*item.Item, error) {
 	}
 
 	return &item.Item{
-		Name: nameFromPath(src.Name()),
-		//Path:       src.Name(),
+		Name:       nameFromPath(src.Name()),
 		Content:    string(content),
 		Hash:       HashContent(content),
 		CreateTime: src.CreatedAt(),

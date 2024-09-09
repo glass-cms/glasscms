@@ -49,3 +49,11 @@ tasks:
       - "chmod +x ./scripts/hooks/pre-commit"
       - "chmod +x ./scripts/hooks/prepare-commit-msg"
       - "git config core.hooksPath ./scripts/hooks"
+
+  clean:
+    desc: "Clean up the project"
+    cmds:
+      # Remove the out folder
+      - "rm -rf out"
+      # Remove the coverage file
+      - "rm -f coverage.out"

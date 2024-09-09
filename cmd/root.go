@@ -22,7 +22,7 @@ const (
 
 var rootCmd = &cobra.Command{
 	Use:          "glasscms <command>",
-	Short:        "glasscms is a CMS for mangaging content based on markdown files",
+	Short:        "glasscms is a headless CMS powered by markdown",
 	SilenceUsage: true,
 	PersistentPreRunE: func(cmd *cobra.Command, _ []string) error {
 		return initializeConfig(cmd)
