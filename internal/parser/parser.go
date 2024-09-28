@@ -51,8 +51,8 @@ func Parse(src sourcer.Source) (*api.Item, error) {
 		Name:        name,
 		DisplayName: nameFromPath(pathname),
 		Content:     string(content),
-		CreateTime:  src.CreatedAt(),
-		UpdateTime:  src.ModifiedAt(),
+		CreateTime:  src.CreateTime(),
+		UpdateTime:  src.UpdateTime(),
 		Properties:  properties,
 	}, nil
 }

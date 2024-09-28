@@ -18,10 +18,10 @@ func (nilSource) Name() string {
 	return ""
 }
 
-func (nilSource) CreatedAt() time.Time {
+func (nilSource) CreateTime() time.Time {
 	return time.Time{}
 }
 
-func (nilSource) ModifiedAt() time.Time {
+func (nilSource) UpdateTime() time.Time {
 	return time.Time{}
 }

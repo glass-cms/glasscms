@@ -1,11 +1,11 @@
-package sourcer_test
+package fs_test
 
 import (
 	"os"
 	"testing"
 
 	"github.com/djherbis/times"
-	"github.com/glass-cms/glasscms/internal/sourcer"
+	"github.com/glass-cms/glasscms/internal/sourcer/fs"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -29,7 +29,7 @@ func TestNewFileSource(t *testing.T) {
 	defer os.Remove(tempFile.Name())
 
 	// Act
-	fileSource, err := sourcer.NewFileSource(tempFile)
+	fileSource, err := fs.NewFileSource(tempFile, "")
 
 	// Assert
 	require.NoError(t, err)
@@ -40,6 +40,6 @@ func TestNewFileSource(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	assert.Equal(t, stats.BirthTime(), fileSource.CreatedAt())
-	assert.Equal(t, stats.ModTime(), fileSource.ModifiedAt())
+	assert.Equal(t, stats.BirthTime(), fileSource.CreateTime())
+	assert.Equal(t, stats.ModTime(), fileSource.UpdateTime())
 }

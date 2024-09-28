@@ -10,6 +10,7 @@ import (
 
 	"github.com/glass-cms/glasscms/internal/parser"
 	"github.com/glass-cms/glasscms/internal/sourcer"
+	"github.com/glass-cms/glasscms/internal/sourcer/fs"
 	"github.com/glass-cms/glasscms/pkg/api"
 	"github.com/glass-cms/glasscms/pkg/slug"
 	"github.com/lmittmann/tint"
@@ -112,13 +113,16 @@ func NewConvertCommand() *ConvertCommand {
 	return c
 }
 
+// TODO: This is now coupled to the file system sourcer, but ideally
+// once there are multiple sourcer implementation which one to use becomes a flag.
+
 func (c *ConvertCommand) Execute(_ *cobra.Command, args []string) error {
 	sourcePath := args[0]
-	if err := sourcer.IsValidFileSystemSource(sourcePath); err != nil {
+	if err := fs.IsValidFileSystemSource(sourcePath); err != nil {
 		return err
 	}
 
-	fileSystemSourcer, err := sourcer.NewFileSystemSourcer(sourcePath)
+	fileSystemSourcer, err := fs.NewSourcer(sourcePath)
 	if err != nil {
 		return err
 	}
@@ -128,7 +132,7 @@ func (c *ConvertCommand) Execute(_ *cobra.Command, args []string) error {
 	for {
 		var src sourcer.Source
 		src, err = fileSystemSourcer.Next()
-		if errors.Is(err, sourcer.ErrDone) {
+		if errors.Is(err, fs.ErrDone) {
 			break
 		}
 

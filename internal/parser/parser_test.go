@@ -34,11 +34,11 @@ func (m *MockSource) Name() string {
 	return m.name
 }
 
-func (m *MockSource) CreatedAt() time.Time {
+func (m *MockSource) CreateTime() time.Time {
 	return time.Now()
 }
 
-func (m *MockSource) ModifiedAt() time.Time {
+func (m *MockSource) UpdateTime() time.Time {
 	return time.Now()
 }
 
