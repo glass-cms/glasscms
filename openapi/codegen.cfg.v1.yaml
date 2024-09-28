@@ -1,5 +1,0 @@
-package: v1
-generate:
-  std-http-server: true
-  models: true
-output: api/v1/api.gen.go

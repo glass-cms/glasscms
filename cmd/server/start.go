@@ -6,12 +6,10 @@ import (
 	"os"
 	"os/user"
 
-	"github.com/glass-cms/glasscms/database"
-	"github.com/glass-cms/glasscms/item"
-	ctx "github.com/glass-cms/glasscms/lib/context"
-	"github.com/glass-cms/glasscms/server"
-	"github.com/glass-cms/glasscms/server/handler"
-	v1 "github.com/glass-cms/glasscms/server/handler/v1"
+	"github.com/glass-cms/glasscms/internal/database"
+	"github.com/glass-cms/glasscms/internal/item"
+	"github.com/glass-cms/glasscms/internal/server"
+	ctx "github.com/glass-cms/glasscms/pkg/context"
 	"github.com/lmittmann/tint"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -95,9 +93,8 @@ func (c *StartCommand) Execute(cmd *cobra.Command, _ []string) error {
 
 	repo := item.NewRepository(db, errHandler)
 	service := item.NewService(repo)
-	v1Handler := v1.NewAPIHandler(c.logger, service)
 
-	server, err := server.New(c.logger, []handler.VersionedHandler{v1Handler})
+	server, err := server.New(c.logger, service)
 	if err != nil {
 		return err
 	}
