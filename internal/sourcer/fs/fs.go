@@ -1,25 +1,21 @@
-package sourcer
+package fs
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 )
 
-var ErrInvalidFileSystemSource = errors.New("invalid file system source")
-
-var _ DataSourcer = &FileSystemSourcer{}
-
 // FileSystemSourcer is a DataSourcer that reads files from the file system.
 type FileSystemSourcer struct {
-	files  []string
-	cursor int // cursor is the index of the next file to be read
+	files    []string
+	cursor   int // cursor is the index of the next file to be read
+	rootPath string
 }
 
-// NewFileSystemSourcer creates a new FileSystemSourcer.
-func NewFileSystemSourcer(rootPath string) (*FileSystemSourcer, error) {
+// NewSourcer creates a new FileSystemSourcer.
+func NewSourcer(rootPath string) (*FileSystemSourcer, error) {
 	var files []string
 
 	absRootPath, err := filepath.Abs(rootPath)
@@ -43,24 +39,24 @@ func NewFileSystemSourcer(rootPath string) (*FileSystemSourcer, error) {
 	}
 
 	return &FileSystemSourcer{
-		files: files,
+		files:    files,
+		rootPath: rootPath,
 	}, nil
 }
 
-func (s *FileSystemSourcer) Next() (Source, error) {
+func (s *FileSystemSourcer) Next() (*FileSource, error) {
 	if s.cursor >= len(s.files) {
-		return NilSource, ErrDone
+		return nil, ErrDone
 	}
 
-	// Get a ReadCloser for the file
 	file, err := os.Open(s.files[s.cursor])
 	s.cursor++
 
 	if err != nil {
-		return NilSource, err
+		return nil, err
 	}
 
-	return NewFileSource(file)
+	return NewFileSource(file, s.rootPath)
 }
 
 func (s *FileSystemSourcer) Remaining() int {
@@ -75,7 +71,6 @@ func (s *FileSystemSourcer) Size() int {
 func IsValidFileSystemSource(fp string) error {
 	fileInfo, err := os.Stat(fp)
 	if err != nil {
-		// Wrap the error to provide more context.
 		return fmt.Errorf("%w: %w", ErrInvalidFileSystemSource, err)
 	}
 

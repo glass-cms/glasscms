@@ -1,4 +1,4 @@
-package sourcer_test
+package fs_test
 
 import (
 	"fmt"
@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/glass-cms/glasscms/internal/sourcer"
+	"github.com/glass-cms/glasscms/internal/sourcer/fs"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -68,7 +69,7 @@ func TestFileSystemSourcer(t *testing.T) {
 	}
 	defer os.RemoveAll(tempDir)
 
-	src, err := sourcer.NewFileSystemSourcer(tempDir)
+	src, err := fs.NewSourcer(tempDir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -97,7 +98,7 @@ func TestFileSystemSourcer(t *testing.T) {
 
 	// Assert that the sourcer is done.
 	_, err = src.Next()
-	assert.Equal(t, sourcer.ErrDone, err)
+	assert.Equal(t, fs.ErrDone, err)
 }
 
 func TestFileSystemSourcer_Size(t *testing.T) {
@@ -160,7 +161,7 @@ func TestFileSystemSourcer_Size(t *testing.T) {
 			}
 			defer os.RemoveAll(tempDir)
 
-			sourcer, err := sourcer.NewFileSystemSourcer(tempDir)
+			sourcer, err := fs.NewSourcer(tempDir)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -180,6 +181,6 @@ func TestIsValidFileSystemSource(t *testing.T) {
 	}
 	defer os.RemoveAll(fp)
 
-	require.NoError(t, sourcer.IsValidFileSystemSource(fp))
-	require.Error(t, sourcer.IsValidFileSystemSource("non-existent"))
+	require.NoError(t, fs.IsValidFileSystemSource(fp))
+	require.Error(t, fs.IsValidFileSystemSource("non-existent"))
 }
