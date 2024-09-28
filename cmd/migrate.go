@@ -4,7 +4,7 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/glass-cms/glasscms/database"
+	"github.com/glass-cms/glasscms/internal/database"
 	"github.com/lmittmann/tint"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"

@@ -1,7 +1,6 @@
 import "@typespec/http";
 import "@typespec/rest";
 import "@typespec/openapi3";
-import "@typespec/versioning";
 import "./error.tsp";
 
 using TypeSpec.Http;
@@ -10,7 +9,6 @@ using TypeSpec.Rest;
 @service({
     title: "GlassCMS API",
 })
-@TypeSpec.Versioning.versioned(Versions)
 namespace GlassCMSCore;
 
 enum Versions {

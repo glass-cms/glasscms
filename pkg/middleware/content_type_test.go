@@ -5,8 +5,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/glass-cms/glasscms/internal/mediatype"
-	"github.com/glass-cms/glasscms/internal/middleware"
+	"github.com/glass-cms/glasscms/pkg/mediatype"
+	"github.com/glass-cms/glasscms/pkg/middleware"
 )
 
 func Test_ContentType(t *testing.T) {

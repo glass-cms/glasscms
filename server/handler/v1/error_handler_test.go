@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	api "github.com/glass-cms/glasscms/api/v1"
-	"github.com/glass-cms/glasscms/internal/resource"
+	"github.com/glass-cms/glasscms/pkg/resource"
 	v1 "github.com/glass-cms/glasscms/server/handler/v1"
 )
 

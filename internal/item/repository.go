@@ -7,7 +7,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/glass-cms/glasscms/database"
+	"github.com/glass-cms/glasscms/internal/database"
 )
 
 type Repository interface {

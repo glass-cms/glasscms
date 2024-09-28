@@ -6,7 +6,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/glass-cms/glasscms/database"
+	"github.com/glass-cms/glasscms/internal/database"
 	"github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
 )

@@ -9,8 +9,8 @@ import (
 	"path"
 
 	"github.com/glass-cms/glasscms/internal/item"
-	"github.com/glass-cms/glasscms/pkg/parser"
-	"github.com/glass-cms/glasscms/pkg/sourcer"
+	"github.com/glass-cms/glasscms/internal/parser"
+	"github.com/glass-cms/glasscms/internal/sourcer"
 	"github.com/lmittmann/tint"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"

@@ -8,7 +8,7 @@ import (
 
 	v1 "github.com/glass-cms/glasscms/api/v1"
 	"github.com/glass-cms/glasscms/internal/item"
-	"github.com/glass-cms/glasscms/internal/resource"
+	"github.com/glass-cms/glasscms/pkg/resource"
 	"github.com/glass-cms/glasscms/server/handler"
 )
 

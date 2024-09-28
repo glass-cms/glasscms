@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/glass-cms/glasscms/internal/mediatype"
+	"github.com/glass-cms/glasscms/pkg/mediatype"
 )
 
 func stringPtr(s string) *string {

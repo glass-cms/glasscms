@@ -2,7 +2,7 @@ package v1
 
 import (
 	"github.com/glass-cms/glasscms/internal/item"
-	"github.com/glass-cms/glasscms/pkg/parser"
+	"github.com/glass-cms/glasscms/internal/parser"
 )
 
 // ToItem converts an api.ItemCreate to an item.Item.

@@ -8,10 +8,9 @@ import (
 	"testing"
 
 	api "github.com/glass-cms/glasscms/api/v1"
-	"github.com/glass-cms/glasscms/database"
+	"github.com/glass-cms/glasscms/internal/database"
 	"github.com/glass-cms/glasscms/internal/item"
-	"github.com/glass-cms/glasscms/internal/log"
-	"github.com/glass-cms/glasscms/internal/test"
+	"github.com/glass-cms/glasscms/pkg/log"
 	v1 "github.com/glass-cms/glasscms/server/handler/v1"
 	"github.com/stretchr/testify/assert"
 )
@@ -46,7 +45,7 @@ func TestAPIHandler_ItemsCreate(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			testdb, err := test.NewDB()
+			testdb, err := database.NewTestDB()
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -92,7 +91,7 @@ func TestAPIHandler_ItemsGet(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			testdb, err := test.NewDB()
+			testdb, err := database.NewTestDB()
 			if err != nil {
 				t.Fatal(err)
 			}

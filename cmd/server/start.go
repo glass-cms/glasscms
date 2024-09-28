@@ -6,9 +6,9 @@ import (
 	"os"
 	"os/user"
 
-	"github.com/glass-cms/glasscms/database"
-	ctx "github.com/glass-cms/glasscms/internal/context"
+	"github.com/glass-cms/glasscms/internal/database"
 	"github.com/glass-cms/glasscms/internal/item"
+	ctx "github.com/glass-cms/glasscms/pkg/context"
 	"github.com/glass-cms/glasscms/server"
 	"github.com/glass-cms/glasscms/server/handler"
 	v1 "github.com/glass-cms/glasscms/server/handler/v1"

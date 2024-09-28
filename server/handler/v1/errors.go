@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	v1 "github.com/glass-cms/glasscms/api/v1"
-	"github.com/glass-cms/glasscms/internal/resource"
+	"github.com/glass-cms/glasscms/pkg/resource"
 )
 
 // ErrorMapperAlreadyExistsError maps a resource.AlreadyExistsError to an API error response.

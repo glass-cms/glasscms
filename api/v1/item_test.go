@@ -6,7 +6,7 @@ import (
 
 	v1 "github.com/glass-cms/glasscms/api/v1"
 	"github.com/glass-cms/glasscms/internal/item"
-	"github.com/glass-cms/glasscms/pkg/parser"
+	"github.com/glass-cms/glasscms/internal/parser"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
-	"github.com/glass-cms/glasscms/database"
-	"github.com/glass-cms/glasscms/internal/resource"
+	"github.com/glass-cms/glasscms/internal/database"
+	"github.com/glass-cms/glasscms/pkg/resource"
 )
 
 // Service is a service for managing items.

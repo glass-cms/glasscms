@@ -1,7 +1,7 @@
 package server
 
 import (
-	"github.com/glass-cms/glasscms/database"
+	"github.com/glass-cms/glasscms/internal/database"
 	"github.com/spf13/cobra"
 )
 
