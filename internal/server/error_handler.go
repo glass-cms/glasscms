@@ -1,15 +1,14 @@
-package v1
+package server
 
 import (
 	"net/http"
 	"reflect"
 
-	v1 "github.com/glass-cms/glasscms/api/v1"
-	"github.com/glass-cms/glasscms/internal/server/handler"
+	"github.com/glass-cms/glasscms/pkg/api"
 )
 
 // ErrorMapper is a function that maps an error to an API error response.
-type ErrorMapper func(error) *v1.Error
+type ErrorMapper func(error) *api.Error
 
 type ErrorHandler struct {
 	Mappers map[reflect.Type]ErrorMapper
@@ -37,20 +36,20 @@ func (h *ErrorHandler) HandleError(w http.ResponseWriter, r *http.Request, err e
 	if mapper, exists := h.Mappers[errType]; exists {
 		errResp := mapper(err)
 
-		statusCode, ok := v1.ErrorCodeMapping[errResp.Code]
+		statusCode, ok := ErrorCodeMapping[errResp.Code]
 		if !ok {
 			statusCode = http.StatusInternalServerError
 		}
 
-		handler.SerializeResponse(w, r, statusCode, errResp)
+		SerializeResponse(w, r, statusCode, errResp)
 		return
 	}
 
 	// Fallback on generic error response if we don't have a specific error mapper.
-	errResp := &v1.Error{
-		Code:    v1.ProcessingError,
+	errResp := &api.Error{
+		Code:    api.ProcessingError,
 		Message: "An error occurred while processing the request.",
-		Type:    v1.ApiError,
+		Type:    api.ApiError,
 	}
-	handler.SerializeResponse(w, r, http.StatusInternalServerError, errResp)
+	SerializeResponse(w, r, http.StatusInternalServerError, errResp)
 }

@@ -5,11 +5,14 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"reflect"
 	"time"
 
-	"github.com/glass-cms/glasscms/internal/server/handler"
+	"github.com/glass-cms/glasscms/internal/item"
+	"github.com/glass-cms/glasscms/pkg/api"
 	"github.com/glass-cms/glasscms/pkg/mediatype"
 	"github.com/glass-cms/glasscms/pkg/middleware"
+	"github.com/glass-cms/glasscms/pkg/resource"
 )
 
 const (
@@ -19,31 +22,47 @@ const (
 	DefaultWriteTimeout = 10 * time.Second
 )
 
+var _ api.ServerInterface = (*Server)(nil)
+
 type Server struct {
 	logger *slog.Logger
 	server *http.Server
+
+	itemService  *item.Service
+	errorHandler *ErrorHandler
+
+	handler http.Handler
 }
 
 func New(
 	logger *slog.Logger,
-	handlers []handler.VersionedHandler,
+	itemService *item.Service,
 	opts ...Option,
 ) (*Server, error) {
-	server := &Server{
-		logger: logger,
-	}
-
 	serveMux := http.NewServeMux()
 
-	for _, h := range handlers {
-		_ = h.Handler(serveMux, []func(http.Handler) http.Handler{
-			middleware.ContentType(mediatype.ApplicationJSON),
-			middleware.Accept(mediatype.ApplicationJSON),
-		})
+	server := &Server{
+		logger:       logger,
+		itemService:  itemService,
+		errorHandler: NewErrorHandler(),
 	}
 
+	middlewares := []func(http.Handler) http.Handler{
+		middleware.ContentType(mediatype.ApplicationJSON),
+		middleware.Accept(mediatype.ApplicationJSON),
+	}
+	convertedMiddlewares := make([]api.MiddlewareFunc, len(middlewares))
+	for i, mw := range middlewares {
+		convertedMiddlewares[i] = api.MiddlewareFunc(mw)
+	}
+
+	server.handler = api.HandlerWithOptions(server, api.StdHTTPServerOptions{
+		BaseURL:    "",
+		BaseRouter: serveMux,
+	})
+
 	server.server = &http.Server{
-		Handler:      serveMux,
+		Handler:      server.handler,
 		Addr:         fmt.Sprintf(":%v", DefaultPort),
 		ReadTimeout:  DefaultReadTimeout,
 		WriteTimeout: DefaultWriteTimeout,
@@ -55,6 +74,7 @@ func New(
 		}
 	}
 
+	server.registerErrorMappers()
 	return server, nil
 }
 
@@ -75,4 +95,20 @@ func (s *Server) Shutdown() {
 	}
 
 	s.logger.Info("server stopped")
+}
+
+func (s *Server) Handler() http.Handler {
+	return s.handler
+}
+
+func (s *Server) registerErrorMappers() {
+	s.errorHandler.RegisterErrorMapper(
+		reflect.TypeOf(&resource.AlreadyExistsError{}),
+		ErrorMapperAlreadyExistsError,
+	)
+
+	s.errorHandler.RegisterErrorMapper(
+		reflect.TypeOf(&resource.NotFoundError{}),
+		ErrorMapperNotFoundError,
+	)
 }

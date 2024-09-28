@@ -1,4 +1,4 @@
-package v1_test
+package server_test
 
 import (
 	"bytes"
@@ -7,10 +7,10 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	api "github.com/glass-cms/glasscms/api/v1"
 	"github.com/glass-cms/glasscms/internal/database"
 	"github.com/glass-cms/glasscms/internal/item"
-	v1 "github.com/glass-cms/glasscms/internal/server/handler/v1"
+	"github.com/glass-cms/glasscms/internal/server"
+	"github.com/glass-cms/glasscms/pkg/api"
 	"github.com/glass-cms/glasscms/pkg/log"
 	"github.com/stretchr/testify/assert"
 )
@@ -53,10 +53,14 @@ func TestAPIHandler_ItemsCreate(t *testing.T) {
 
 			repo := item.NewRepository(testdb, &database.SqliteErrorHandler{})
 
-			handler := v1.NewAPIHandler(
+			handler, err := server.New(
 				log.NoopLogger(),
 				item.NewService(repo),
 			)
+			if err != nil {
+				t.Fatal(err)
+				return
+			}
 
 			rr := httptest.NewRecorder()
 			request := tt.req()
@@ -99,17 +103,21 @@ func TestAPIHandler_ItemsGet(t *testing.T) {
 
 			repo := item.NewRepository(testdb, &database.SqliteErrorHandler{})
 
-			handler := v1.NewAPIHandler(
+			server, err := server.New(
 				log.NoopLogger(),
 				item.NewService(repo),
-			).Handler(http.NewServeMux(), []func(http.Handler) http.Handler{})
+			)
+			if err != nil {
+				t.Fatal(err)
+				return
+			}
 
 			rr := httptest.NewRecorder()
 			request := tt.req()
 			request.Header.Set("Accept", "application/json")
 
 			// Make the request
-			handler.ServeHTTP(rr, request)
+			server.Handler().ServeHTTP(rr, request)
 
 			// Assert
 			assert.Equal(t, tt.expected, rr.Code)

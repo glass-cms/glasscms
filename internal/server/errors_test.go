@@ -1,11 +1,11 @@
-package v1_test
+package server_test
 
 import (
 	"errors"
 	"testing"
 
-	v1 "github.com/glass-cms/glasscms/api/v1"
-	v1_handler "github.com/glass-cms/glasscms/internal/server/handler/v1"
+	"github.com/glass-cms/glasscms/internal/server"
+	"github.com/glass-cms/glasscms/pkg/api"
 	"github.com/glass-cms/glasscms/pkg/resource"
 	"github.com/stretchr/testify/require"
 )
@@ -18,17 +18,17 @@ func TestErrorMapperAlreadyExistsError(t *testing.T) {
 	}
 	tests := map[string]struct {
 		args         args
-		want         *v1.Error
+		want         *api.Error
 		expectPanics bool
 	}{
 		"maps resource.AlreadyExistsError to an API error response": {
 			args: args{
 				err: resource.NewAlreadyExistsError("item1", "item", errors.New("underlying error")),
 			},
-			want: &v1.Error{
-				Code:    v1.ResourceAlreadyExists,
+			want: &api.Error{
+				Code:    api.ResourceAlreadyExists,
 				Message: "An item with the name already exists",
-				Type:    v1.ApiError,
+				Type:    api.ApiError,
 				Details: map[string]interface{}{
 					"resource": "item",
 					"name":     "item1",
@@ -48,12 +48,12 @@ func TestErrorMapperAlreadyExistsError(t *testing.T) {
 
 			if tt.expectPanics {
 				require.Panics(t, func() {
-					v1_handler.ErrorMapperAlreadyExistsError(tt.args.err)
+					server.ErrorMapperAlreadyExistsError(tt.args.err)
 				})
 				return
 			}
 
-			require.Equal(t, tt.want, v1_handler.ErrorMapperAlreadyExistsError(tt.args.err))
+			require.Equal(t, tt.want, server.ErrorMapperAlreadyExistsError(tt.args.err))
 		})
 	}
 }
@@ -66,17 +66,17 @@ func TestErrorMapperNotFoundError(t *testing.T) {
 	}
 	tests := map[string]struct {
 		args         args
-		want         *v1.Error
+		want         *api.Error
 		expectPanics bool
 	}{
 		"maps resource.NotFoundError to an API error response": {
 			args: args{
 				err: resource.NewNotFoundError("item1", "item", errors.New("underlying error")),
 			},
-			want: &v1.Error{
-				Code:    v1.ResourceMissing,
+			want: &api.Error{
+				Code:    api.ResourceMissing,
 				Message: "The item with the name was not found",
-				Type:    v1.ApiError,
+				Type:    api.ApiError,
 				Details: map[string]interface{}{
 					"resource": "item",
 					"name":     "item1",
@@ -96,12 +96,12 @@ func TestErrorMapperNotFoundError(t *testing.T) {
 
 			if tt.expectPanics {
 				require.Panics(t, func() {
-					v1_handler.ErrorMapperNotFoundError(tt.args.err)
+					server.ErrorMapperNotFoundError(tt.args.err)
 				})
 				return
 			}
 
-			require.Equal(t, tt.want, v1_handler.ErrorMapperNotFoundError(tt.args.err))
+			require.Equal(t, tt.want, server.ErrorMapperNotFoundError(tt.args.err))
 		})
 	}
 }

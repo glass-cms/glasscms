@@ -1,4 +1,4 @@
-package v1_test
+package server_test
 
 import (
 	"encoding/json"
@@ -8,15 +8,15 @@ import (
 	"reflect"
 	"testing"
 
-	api "github.com/glass-cms/glasscms/api/v1"
-	v1 "github.com/glass-cms/glasscms/internal/server/handler/v1"
+	"github.com/glass-cms/glasscms/internal/server"
+	"github.com/glass-cms/glasscms/pkg/api"
 	"github.com/glass-cms/glasscms/pkg/resource"
 )
 
 func TestErrorHandler_HandleError(t *testing.T) {
 	t.Parallel()
 
-	errorHandler := v1.NewErrorHandler()
+	errorHandler := server.NewErrorHandler()
 	errorHandler.RegisterErrorMapper(reflect.TypeOf(&resource.AlreadyExistsError{}), func(_ error) *api.Error {
 		return &api.Error{
 			Code:    api.ResourceAlreadyExists,
