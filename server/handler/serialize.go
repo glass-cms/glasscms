@@ -5,7 +5,7 @@ import (
 	"encoding/xml"
 	"net/http"
 
-	"github.com/glass-cms/glasscms/lib/mediatype"
+	"github.com/glass-cms/glasscms/internal/mediatype"
 )
 
 // SerializeResponse writes the provided data to the response writer in the

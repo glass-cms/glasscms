@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/glass-cms/glasscms/lib/mediatype"
-	"github.com/glass-cms/glasscms/lib/middleware"
+	"github.com/glass-cms/glasscms/internal/mediatype"
+	"github.com/glass-cms/glasscms/internal/middleware"
 	"github.com/glass-cms/glasscms/server/handler"
 )
 

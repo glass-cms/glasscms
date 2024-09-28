@@ -5,7 +5,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/glass-cms/glasscms/lib/middleware"
+	"github.com/glass-cms/glasscms/internal/middleware"
 )
 
 func Test_Accept(t *testing.T) {

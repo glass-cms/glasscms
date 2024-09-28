@@ -7,8 +7,8 @@ import (
 	"reflect"
 
 	v1 "github.com/glass-cms/glasscms/api/v1"
+	"github.com/glass-cms/glasscms/internal/resource"
 	"github.com/glass-cms/glasscms/item"
-	"github.com/glass-cms/glasscms/lib/resource"
 	"github.com/glass-cms/glasscms/server/handler"
 )
 
