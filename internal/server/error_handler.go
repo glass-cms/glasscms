@@ -27,7 +27,7 @@ func (h *ErrorHandler) RegisterErrorMapper(errType reflect.Type, mapper ErrorMap
 }
 
 // HandleError handles an error by writing an appropriate response to the client.
-func (h *ErrorHandler) HandleError(w http.ResponseWriter, r *http.Request, err error) {
+func (h *ErrorHandler) HandleError(w http.ResponseWriter, _ *http.Request, err error) {
 	if err == nil {
 		return
 	}
@@ -41,7 +41,7 @@ func (h *ErrorHandler) HandleError(w http.ResponseWriter, r *http.Request, err e
 			statusCode = http.StatusInternalServerError
 		}
 
-		SerializeResponse(w, r, statusCode, errResp)
+		writeJSONResponse(w, statusCode, errResp)
 		return
 	}
 
@@ -51,5 +51,5 @@ func (h *ErrorHandler) HandleError(w http.ResponseWriter, r *http.Request, err e
 		Message: "An error occurred while processing the request.",
 		Type:    api.ApiError,
 	}
-	SerializeResponse(w, r, http.StatusInternalServerError, errResp)
+	writeJSONResponse(w, http.StatusInternalServerError, errResp)
 }

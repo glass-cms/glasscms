@@ -50,7 +50,7 @@ func (s *Server) ItemsGet(w http.ResponseWriter, r *http.Request, name api.ItemK
 		return
 	}
 
-	SerializeResponse(w, r, http.StatusOK, item)
+	writeJSONResponse(w, http.StatusOK, item)
 }
 
 // ToItem converts an api.ItemCreate to an item.Item.
