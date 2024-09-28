@@ -8,9 +8,9 @@ import (
 	"os"
 	"path"
 
-	"github.com/glass-cms/glasscms/internal/item"
 	"github.com/glass-cms/glasscms/internal/parser"
 	"github.com/glass-cms/glasscms/internal/sourcer"
+	"github.com/glass-cms/glasscms/pkg/api"
 	"github.com/lmittmann/tint"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -123,7 +123,7 @@ func (c *ConvertCommand) Execute(_ *cobra.Command, args []string) error {
 	}
 
 	// Iterate over the source files and parse them.
-	var items []*item.Item
+	var items []*api.Item
 	for {
 		var src sourcer.Source
 		src, err = fileSystemSourcer.Next()
@@ -135,7 +135,7 @@ func (c *ConvertCommand) Execute(_ *cobra.Command, args []string) error {
 			return err
 		}
 
-		var i *item.Item
+		var i *api.Item
 		i, err = parser.Parse(src)
 		if err != nil {
 			c.logger.Warn(fmt.Sprintf("Failed to parse %s: %s", src.Name(), err))
@@ -148,7 +148,7 @@ func (c *ConvertCommand) Execute(_ *cobra.Command, args []string) error {
 	return WriteItems(items, c.opts)
 }
 
-func WriteItems(items []*item.Item, opts WriteItemsOption) error {
+func WriteItems(items []*api.Item, opts WriteItemsOption) error {
 	marshalFuncs := map[string]marshalerFunc{
 		FormatJSON: json.Marshal,
 		FormatYAML: yaml.Marshal,
@@ -172,7 +172,7 @@ func WriteItems(items []*item.Item, opts WriteItemsOption) error {
 	// Write each item to a separate file.
 	for _, i := range items {
 		path := path.Join(opts.Output, i.Name+"."+opts.Format)
-		if err := writeItems([]*item.Item{i}, path, marshalFunc, prettyFunc); err != nil {
+		if err := writeItems([]*api.Item{i}, path, marshalFunc, prettyFunc); err != nil {
 			return err
 		}
 	}
@@ -183,7 +183,7 @@ func WriteItems(items []*item.Item, opts WriteItemsOption) error {
 type marshalerFunc func(v any) ([]byte, error)
 type prettyFunc func(b []byte) []byte
 
-func writeItems(i []*item.Item, path string, marshal marshalerFunc, pretty prettyFunc) error {
+func writeItems(i []*api.Item, path string, marshal marshalerFunc, pretty prettyFunc) error {
 	var b []byte
 	var err error
 
