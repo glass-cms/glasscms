@@ -9,8 +9,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/glass-cms/glasscms/internal/item"
 	"github.com/glass-cms/glasscms/internal/sourcer"
+	"github.com/glass-cms/glasscms/pkg/api"
 	"github.com/mozillazg/go-slugify"
 	"gopkg.in/yaml.v3"
 )
@@ -24,7 +24,7 @@ const (
 )
 
 // Parse reads the content of a source and extracts the front matter and markdown content.
-func Parse(src sourcer.Source) (*item.Item, error) {
+func Parse(src sourcer.Source) (*api.Item, error) {
 	c, err := io.ReadAll(src)
 	if err != nil {
 		return nil, err
@@ -48,11 +48,10 @@ func Parse(src sourcer.Source) (*item.Item, error) {
 
 	// TODO: I want the name to be slugified but the slashes to be preserved.
 
-	return &item.Item{
+	return &api.Item{
 		Name:        slugify.Slugify(pathname),
 		DisplayName: nameFromPath(pathname),
 		Content:     string(content),
-		Hash:        HashContent(content),
 		CreateTime:  src.CreatedAt(),
 		UpdateTime:  src.ModifiedAt(),
 		Properties:  properties,
