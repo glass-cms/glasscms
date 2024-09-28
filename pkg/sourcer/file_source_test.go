@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/djherbis/times"
-	"github.com/glass-cms/glasscms/sourcer"
+	"github.com/glass-cms/glasscms/pkg/sourcer"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

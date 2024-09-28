@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/glass-cms/glasscms/internal/item"
-	"github.com/glass-cms/glasscms/sourcer"
+	"github.com/glass-cms/glasscms/pkg/sourcer"
 	"github.com/mozillazg/go-slugify"
 	"gopkg.in/yaml.v3"
 )
