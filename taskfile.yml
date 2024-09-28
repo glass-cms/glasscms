@@ -41,7 +41,7 @@ tasks:
   changelog:
     desc: "Generate a changelog for a pull request"
     cmds:
-      - "{{.SHELL_TO_USE}} scripts/generate-pr-changelog.sh"
+      - "{{.SHELL_TO_USE}} scripts/changelog.sh"
 
   setup-git-hooks:
     desc: "Set up Git hooks"
