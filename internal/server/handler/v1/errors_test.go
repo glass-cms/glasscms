@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	v1 "github.com/glass-cms/glasscms/api/v1"
+	v1_handler "github.com/glass-cms/glasscms/internal/server/handler/v1"
 	"github.com/glass-cms/glasscms/pkg/resource"
-	v1_handler "github.com/glass-cms/glasscms/server/handler/v1"
 	"github.com/stretchr/testify/require"
 )
 

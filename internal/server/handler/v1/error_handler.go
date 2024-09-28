@@ -5,7 +5,7 @@ import (
 	"reflect"
 
 	v1 "github.com/glass-cms/glasscms/api/v1"
-	"github.com/glass-cms/glasscms/server/handler"
+	"github.com/glass-cms/glasscms/internal/server/handler"
 )
 
 // ErrorMapper is a function that maps an error to an API error response.

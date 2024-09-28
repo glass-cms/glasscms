@@ -8,10 +8,10 @@ import (
 
 	"github.com/glass-cms/glasscms/internal/database"
 	"github.com/glass-cms/glasscms/internal/item"
+	"github.com/glass-cms/glasscms/internal/server"
+	"github.com/glass-cms/glasscms/internal/server/handler"
+	v1 "github.com/glass-cms/glasscms/internal/server/handler/v1"
 	ctx "github.com/glass-cms/glasscms/pkg/context"
-	"github.com/glass-cms/glasscms/server"
-	"github.com/glass-cms/glasscms/server/handler"
-	v1 "github.com/glass-cms/glasscms/server/handler/v1"
 	"github.com/lmittmann/tint"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"

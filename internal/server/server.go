@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/glass-cms/glasscms/internal/server/handler"
 	"github.com/glass-cms/glasscms/pkg/mediatype"
 	"github.com/glass-cms/glasscms/pkg/middleware"
-	"github.com/glass-cms/glasscms/server/handler"
 )
 
 const (

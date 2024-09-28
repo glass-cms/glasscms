@@ -9,8 +9,8 @@ import (
 	"testing"
 
 	api "github.com/glass-cms/glasscms/api/v1"
+	v1 "github.com/glass-cms/glasscms/internal/server/handler/v1"
 	"github.com/glass-cms/glasscms/pkg/resource"
-	v1 "github.com/glass-cms/glasscms/server/handler/v1"
 )
 
 func TestErrorHandler_HandleError(t *testing.T) {

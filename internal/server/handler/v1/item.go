@@ -7,7 +7,7 @@ import (
 	"net/http"
 
 	v1 "github.com/glass-cms/glasscms/api/v1"
-	"github.com/glass-cms/glasscms/server/handler"
+	"github.com/glass-cms/glasscms/internal/server/handler"
 )
 
 func (s *APIHandler) ItemsCreate(w http.ResponseWriter, r *http.Request) {

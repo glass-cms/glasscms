@@ -10,8 +10,8 @@ import (
 	api "github.com/glass-cms/glasscms/api/v1"
 	"github.com/glass-cms/glasscms/internal/database"
 	"github.com/glass-cms/glasscms/internal/item"
+	v1 "github.com/glass-cms/glasscms/internal/server/handler/v1"
 	"github.com/glass-cms/glasscms/pkg/log"
-	v1 "github.com/glass-cms/glasscms/server/handler/v1"
 	"github.com/stretchr/testify/assert"
 )
 
