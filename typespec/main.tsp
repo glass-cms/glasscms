@@ -11,10 +11,6 @@ using TypeSpec.Rest;
 })
 namespace GlassCMSCore;
 
-enum Versions {
-    v1,
-}
-
 alias CreateItem = TypeSpec.Rest.Resource.ResourceCreate<Item, Error>;
 alias GetItems = TypeSpec.Rest.Resource.ResourceRead<Item, Error>;
 
