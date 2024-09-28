@@ -19,16 +19,15 @@ func (s *Server) ItemsCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = s.itemService.CreateItem(ctx, itemCreateToItem(createRequest))
+	item := itemCreateToItem(createRequest)
+	err = s.itemService.CreateItem(ctx, item)
 	if err != nil {
 		s.logger.ErrorContext(ctx, fmt.Errorf("failed to create item: %w", err).Error())
 		s.errorHandler.HandleError(w, r, err)
 		return
 	}
 
-	// TODO: Write response.
-
-	w.WriteHeader(http.StatusCreated)
+	SerializeJSONResponse(w, http.StatusCreated, item)
 }
 
 func (s *Server) ItemsGet(w http.ResponseWriter, r *http.Request, name api.ItemKey) {

@@ -83,6 +83,7 @@ func ErrorMapperAlreadyExistsError(err error) *api.Error {
 	}
 }
 
+// ErrorMapperNotFoundError maps a resource.NotFoundError to an API error response.
 func ErrorMapperNotFoundError(err error) *api.Error {
 	var notFoundErr *resource.NotFoundError
 	if !errors.As(err, &notFoundErr) {
