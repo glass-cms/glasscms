@@ -41,7 +41,7 @@ func (h *ErrorHandler) HandleError(w http.ResponseWriter, _ *http.Request, err e
 			statusCode = http.StatusInternalServerError
 		}
 
-		writeJSONResponse(w, statusCode, errResp)
+		SerializeJSONResponse(w, statusCode, errResp)
 		return
 	}
 
@@ -51,5 +51,5 @@ func (h *ErrorHandler) HandleError(w http.ResponseWriter, _ *http.Request, err e
 		Message: "An error occurred while processing the request.",
 		Type:    api.ApiError,
 	}
-	writeJSONResponse(w, http.StatusInternalServerError, errResp)
+	SerializeJSONResponse(w, http.StatusInternalServerError, errResp)
 }
