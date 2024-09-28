@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/glass-cms/glasscms/database"
-	"github.com/glass-cms/glasscms/item"
+	"github.com/glass-cms/glasscms/internal/item"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

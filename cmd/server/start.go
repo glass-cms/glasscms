@@ -8,7 +8,7 @@ import (
 
 	"github.com/glass-cms/glasscms/database"
 	ctx "github.com/glass-cms/glasscms/internal/context"
-	"github.com/glass-cms/glasscms/item"
+	"github.com/glass-cms/glasscms/internal/item"
 	"github.com/glass-cms/glasscms/server"
 	"github.com/glass-cms/glasscms/server/handler"
 	v1 "github.com/glass-cms/glasscms/server/handler/v1"

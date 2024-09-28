@@ -1,7 +1,7 @@
 package v1
 
 import (
-	"github.com/glass-cms/glasscms/item"
+	"github.com/glass-cms/glasscms/internal/item"
 	"github.com/glass-cms/glasscms/parser"
 )
 

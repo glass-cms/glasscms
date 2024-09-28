@@ -5,7 +5,7 @@ import (
 	"time"
 
 	v1 "github.com/glass-cms/glasscms/api/v1"
-	"github.com/glass-cms/glasscms/item"
+	"github.com/glass-cms/glasscms/internal/item"
 	"github.com/glass-cms/glasscms/parser"
 	"github.com/stretchr/testify/assert"
 )
