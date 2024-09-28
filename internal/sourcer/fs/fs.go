@@ -5,7 +5,11 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/glass-cms/glasscms/internal/sourcer"
 )
+
+var _ sourcer.Sourcer = &FileSystemSourcer{}
 
 // FileSystemSourcer is a DataSourcer that reads files from the file system.
 type FileSystemSourcer struct {
@@ -40,11 +44,11 @@ func NewSourcer(rootPath string) (*FileSystemSourcer, error) {
 
 	return &FileSystemSourcer{
 		files:    files,
-		rootPath: rootPath,
+		rootPath: absRootPath,
 	}, nil
 }
 
-func (s *FileSystemSourcer) Next() (*FileSource, error) {
+func (s *FileSystemSourcer) Next() (sourcer.Source, error) {
 	if s.cursor >= len(s.files) {
 		return nil, ErrDone
 	}
