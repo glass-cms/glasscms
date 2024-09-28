@@ -11,6 +11,7 @@ import (
 	"github.com/glass-cms/glasscms/internal/parser"
 	"github.com/glass-cms/glasscms/internal/sourcer"
 	"github.com/glass-cms/glasscms/pkg/api"
+	"github.com/glass-cms/glasscms/pkg/slug"
 	"github.com/lmittmann/tint"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -171,7 +172,8 @@ func WriteItems(items []*api.Item, opts WriteItemsOption) error {
 
 	// Write each item to a separate file.
 	for _, i := range items {
-		path := path.Join(opts.Output, i.Name+"."+opts.Format)
+		fn := slug.Slug(i.Name)
+		path := path.Join(opts.Output, fn+"."+opts.Format)
 		if err := writeItems([]*api.Item{i}, path, marshalFunc, prettyFunc); err != nil {
 			return err
 		}
