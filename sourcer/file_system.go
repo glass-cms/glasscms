@@ -22,12 +22,17 @@ type FileSystemSourcer struct {
 func NewFileSystemSourcer(rootPath string) (*FileSystemSourcer, error) {
 	var files []string
 
-	err := filepath.WalkDir(rootPath, func(path string, d os.DirEntry, err error) error {
+	absRootPath, err := filepath.Abs(rootPath)
+	if err != nil {
+		return nil, err
+	}
+
+	err = filepath.WalkDir(absRootPath, func(path string, dirEntry os.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
 
-		if !d.IsDir() && strings.HasSuffix(d.Name(), ".md") {
+		if !dirEntry.IsDir() && strings.HasSuffix(dirEntry.Name(), ".md") {
 			files = append(files, path)
 		}
 		return nil

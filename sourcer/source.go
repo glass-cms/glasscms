@@ -12,4 +12,6 @@ type Source interface {
 
 	CreatedAt() time.Time
 	ModifiedAt() time.Time
+
+	// Add a metadata command.
 }
