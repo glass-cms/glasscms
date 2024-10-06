@@ -6,7 +6,7 @@ import (
 )
 
 // FieldMasksForType returns a map of JSON field names for the given struct type.
-func FieldMasksForType(item interface{}) map[string]struct{} {
+func FieldMasksForType(item any, parent string) map[string]struct{} {
 	fields := make(map[string]struct{})
 
 	val := reflect.ValueOf(item)
@@ -21,7 +21,22 @@ func FieldMasksForType(item interface{}) map[string]struct{} {
 		jsonField := strings.Split(jsonTag, ",")[0]
 
 		// Skip fields with json tag "-"
-		if jsonField != "" && jsonField != "-" {
+		if jsonField == "" || jsonField == "-" {
+			continue
+		}
+
+		fieldType := field.Type
+		kind := fieldType.Kind()
+		if kind == reflect.Struct {
+			// Recursively add fields from nested structs
+			for nestedField := range FieldMasksForType(reflect.New(fieldType).Elem().Interface(), jsonField) {
+				fields[nestedField] = struct{}{}
+			}
+		} else {
+			// If the field has a parent, add it to the field name
+			if parent != "" {
+				jsonField = parent + "." + jsonField
+			}
 			fields[jsonField] = struct{}{}
 		}
 	}

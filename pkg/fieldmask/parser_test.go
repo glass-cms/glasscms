@@ -48,13 +48,28 @@ func TestFieldMasksForType(t *testing.T) {
 			}{},
 			want: map[string]struct{}{},
 		},
+		{
+			name: "struct with nested struct",
+			item: struct {
+				Field1 string `json:"field"`
+				Field2 struct {
+					Field3 string `json:"field"`
+					Field4 int    `json:"field2"`
+				} `json:"nested"`
+			}{},
+			want: map[string]struct{}{
+				"field":         {},
+				"nested.field":  {},
+				"nested.field2": {},
+			},
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			if got := fieldmask.FieldMasksForType(tt.item); !reflect.DeepEqual(got, tt.want) {
+			if got := fieldmask.FieldMasksForType(tt.item, ""); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("FieldMasksForType() = %v, want %v", got, tt.want)
 			}
 		})
