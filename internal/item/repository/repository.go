@@ -97,54 +97,29 @@ func (r *ItemRepository) CreateItem(ctx context.Context, tx *sql.Tx, item item.I
 		return nil, r.errorHandler.HandleError(ctx, err)
 	}
 
-	newItem := ConvertQueryItem(i)
-	return &newItem, nil
-}
-
-// GetItem retrieves an item from the database by its resource name.
-func (r *ItemRepository) GetItem(ctx context.Context, name string) (*item.Item, error) {
-	query := `
-        SELECT name, display_name, create_time, update_time, delete_time, hash, content, properties, metadata
-        FROM items
-        WHERE name = $1 AND delete_time IS NULL
-    `
-	var item item.Item
-	var propertiesJSON []byte
-	var metadataJSON []byte
-
-	stmt, err := r.db.PrepareContext(ctx, query)
-	if err != nil {
-		return nil, fmt.Errorf("failed to prepare statement: %w", err)
-	}
-	defer stmt.Close()
-
-	err = stmt.QueryRowContext(ctx, name).Scan(
-		&item.Name,
-		&item.DisplayName,
-		&item.CreateTime,
-		&item.UpdateTime,
-		&item.DeleteTime,
-		&item.Hash,
-		&item.Content,
-		&propertiesJSON,
-		&metadataJSON,
-	)
-
+	newItem, err := ConvertQueryItem(i)
 	if err != nil {
 		return nil, r.errorHandler.HandleError(ctx, err)
 	}
 
-	err = json.Unmarshal(propertiesJSON, &item.Properties)
+	return newItem, nil
+}
+
+// GetItem retrieves an item from the database by its resource name.
+func (r *ItemRepository) GetItem(ctx context.Context, name string) (*item.Item, error) {
+	q := query.New(r.db)
+
+	i, err := q.GetItem(ctx, name)
 	if err != nil {
-		return nil, fmt.Errorf("failed to unmarshal properties: %w", err)
+		return nil, r.errorHandler.HandleError(ctx, err)
 	}
 
-	err = json.Unmarshal(metadataJSON, &item.Metadata)
+	foundItem, err := ConvertQueryItem(i)
 	if err != nil {
-		return nil, fmt.Errorf("failed to unmarshal metadata: %w", err)
+		return nil, r.errorHandler.HandleError(ctx, err)
 	}
 
-	return &item, nil
+	return foundItem, nil
 }
 
 // UpdateItem updates an existing item in the database.

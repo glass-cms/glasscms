@@ -27,6 +27,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.createItemStmt, err = db.PrepareContext(ctx, createItem); err != nil {
 		return nil, fmt.Errorf("error preparing query CreateItem: %w", err)
 	}
+	if q.getItemStmt, err = db.PrepareContext(ctx, getItem); err != nil {
+		return nil, fmt.Errorf("error preparing query GetItem: %w", err)
+	}
 	return &q, nil
 }
 
@@ -35,6 +38,11 @@ func (q *Queries) Close() error {
 	if q.createItemStmt != nil {
 		if cerr := q.createItemStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing createItemStmt: %w", cerr)
+		}
+	}
+	if q.getItemStmt != nil {
+		if cerr := q.getItemStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing getItemStmt: %w", cerr)
 		}
 	}
 	return err
@@ -77,6 +85,7 @@ type Queries struct {
 	db             DBTX
 	tx             *sql.Tx
 	createItemStmt *sql.Stmt
+	getItemStmt    *sql.Stmt
 }
 
 func (q *Queries) WithTx(tx *sql.Tx) *Queries {
@@ -84,5 +93,6 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		db:             tx,
 		tx:             tx,
 		createItemStmt: q.createItemStmt,
+		getItemStmt:    q.getItemStmt,
 	}
 }

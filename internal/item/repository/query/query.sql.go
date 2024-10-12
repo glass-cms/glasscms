@@ -66,3 +66,30 @@ func (q *Queries) CreateItem(ctx context.Context, arg CreateItemParams) (Item, e
 	)
 	return i, err
 }
+
+const getItem = `-- name: GetItem :one
+SELECT
+    name, display_name, create_time, update_time, delete_time, hash, content, properties, metadata
+FROM
+    items
+WHERE
+    name = ?
+    AND delete_time IS NULL
+`
+
+func (q *Queries) GetItem(ctx context.Context, name string) (Item, error) {
+	row := q.queryRow(ctx, q.getItemStmt, getItem, name)
+	var i Item
+	err := row.Scan(
+		&i.Name,
+		&i.DisplayName,
+		&i.CreateTime,
+		&i.UpdateTime,
+		&i.DeleteTime,
+		&i.Hash,
+		&i.Content,
+		&i.Properties,
+		&i.Metadata,
+	)
+	return i, err
+}

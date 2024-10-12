@@ -13,3 +13,12 @@ INSERT INTO
     )
 VALUES
     (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *;
+
+-- name: GetItem :one
+SELECT
+    *
+FROM
+    items
+WHERE
+    name = ?
+    AND delete_time IS NULL;
