@@ -21,15 +21,22 @@ func NewService(repo Repository) *Service {
 }
 
 // CreateItem creates a new item.
-func (s *Service) CreateItem(ctx context.Context, item *Item) error {
-	return s.repo.Transactionally(ctx, func(tx *sql.Tx) error {
-		_, err := s.repo.CreateItem(ctx, tx, *item)
+func (s *Service) CreateItem(ctx context.Context, item Item) (Item, error) {
+	createdItem := &Item{}
+	err := s.repo.Transactionally(ctx, func(tx *sql.Tx) error {
+		var err error
+		createdItem, err = s.repo.CreateItem(ctx, tx, item)
 		if errors.Is(err, database.ErrDuplicatePrimaryKey) {
 			return resource.NewAlreadyExistsError(item.Name, ItemResource, err)
 		}
 
 		return err
 	})
+	if err != nil {
+		return Item{}, err
+	}
+
+	return *createdItem, nil
 }
 
 // GetItem retrieves an item by name.
