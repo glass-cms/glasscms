@@ -9,6 +9,7 @@ import (
 	"github.com/glass-cms/glasscms/pkg/api"
 )
 
+// ItemsCreate creates a new item.
 func (s *Server) ItemsCreate(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
@@ -30,7 +31,8 @@ func (s *Server) ItemsCreate(w http.ResponseWriter, r *http.Request) {
 	SerializeJSONResponse(w, http.StatusCreated, createdItem)
 }
 
-func (s *Server) ItemsGet(w http.ResponseWriter, r *http.Request, name api.ItemKey) {
+// ItemsGet retrieves an item by name.
+func (s *Server) ItemsGet(w http.ResponseWriter, r *http.Request, name string) {
 	ctx := r.Context()
 
 	item, err := s.itemService.GetItem(ctx, name)
@@ -41,6 +43,11 @@ func (s *Server) ItemsGet(w http.ResponseWriter, r *http.Request, name api.ItemK
 	}
 
 	SerializeJSONResponse(w, http.StatusOK, item)
+}
+
+// ItemsUpdate updates an item by name.
+func (s *Server) ItemsUpdate(w http.ResponseWriter, _ *http.Request, _ string) {
+	SerializeJSONResponse[any](w, http.StatusNotImplemented, nil)
 }
 
 func itemCreateToItem(i *api.ItemCreate) item.Item {
