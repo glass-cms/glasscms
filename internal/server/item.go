@@ -34,6 +34,7 @@ func (s *Server) ItemsCreate(w http.ResponseWriter, r *http.Request) {
 // ItemsGet retrieves an item by name.
 func (s *Server) ItemsGet(w http.ResponseWriter, r *http.Request, name string) {
 	ctx := r.Context()
+	s.logger.DebugContext(ctx, fmt.Sprintf("getting item: %s", name))
 
 	item, err := s.itemService.GetItem(ctx, name)
 	if err != nil {

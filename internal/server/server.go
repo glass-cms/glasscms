@@ -48,9 +48,9 @@ func New(
 	}
 
 	middlewares := []func(http.Handler) http.Handler{
+		middleware.RequestID,
 		middleware.ContentType(mediatype.ApplicationJSON),
 		middleware.Accept(mediatype.ApplicationJSON),
-		middleware.RequestID,
 	}
 	convertedMiddlewares := make([]api.MiddlewareFunc, len(middlewares))
 	for i, mw := range middlewares {
@@ -58,8 +58,9 @@ func New(
 	}
 
 	server.handler = api.HandlerWithOptions(server, api.StdHTTPServerOptions{
-		BaseURL:    "",
-		BaseRouter: serveMux,
+		BaseURL:     "",
+		BaseRouter:  serveMux,
+		Middlewares: convertedMiddlewares,
 	})
 
 	server.server = &http.Server{
