@@ -9,13 +9,10 @@ import (
 
 	"github.com/glass-cms/glasscms/internal/database"
 	"github.com/glass-cms/glasscms/internal/item"
+	"github.com/glass-cms/glasscms/internal/item/repository/query"
 )
 
 var _ item.Repository = &ItemRepository{}
-
-type executor interface {
-	PrepareContext(ctx context.Context, query string) (*sql.Stmt, error)
-}
 
 type ItemRepository struct {
 	db           *sql.DB
@@ -64,62 +61,44 @@ func (r *ItemRepository) Transactionally(ctx context.Context, f func(tx *sql.Tx)
 
 // CreateItem creates a new item in the database.
 // If a transaction is provided, the item will be created within the transaction.
-func (r *ItemRepository) CreateItem(ctx context.Context, tx *sql.Tx, item *item.Item) error {
-	var exec executor
-	if tx != nil {
-		exec = tx
-	} else {
-		exec = r.db
-	}
+func (r *ItemRepository) CreateItem(ctx context.Context, tx *sql.Tx, item item.Item) (*item.Item, error) {
+	q := query.New(tx)
 
-	query := `
-        INSERT INTO items (
-			name, 
-			display_name, 
-			create_time, 
-			update_time, 
-			delete_time, 
-			hash, 
-			content, 
-			properties, 
-			metadata)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-    `
-
-	properties, err := json.Marshal(item.Properties)
+	propertiesJSON, err := json.Marshal(item.Properties)
 	if err != nil {
-		return r.errorHandler.HandleError(ctx, err)
+		return nil, r.errorHandler.HandleError(ctx, err)
 	}
 
-	metadata, err := json.Marshal(item.Metadata)
+	metadataJSON, err := json.Marshal(item.Metadata)
 	if err != nil {
-		return r.errorHandler.HandleError(ctx, err)
+		return nil, r.errorHandler.HandleError(ctx, err)
 	}
 
-	stmt, err := exec.PrepareContext(ctx, query)
+	params := query.CreateItemParams{
+		Name:        item.Name,
+		DisplayName: item.DisplayName,
+		CreateTime:  item.CreateTime,
+		UpdateTime:  item.UpdateTime,
+		DeleteTime:  sql.NullTime{},
+		Hash: sql.NullString{
+			String: item.Hash,
+			Valid:  true,
+		},
+		Content: sql.NullString{
+			String: item.Content,
+			Valid:  true,
+		},
+		Properties: propertiesJSON,
+		Metadata:   metadataJSON,
+	}
+
+	i, err := q.CreateItem(ctx, params)
 	if err != nil {
-		return r.errorHandler.HandleError(ctx, err)
+		return nil, r.errorHandler.HandleError(ctx, err)
 	}
 
-	defer stmt.Close()
-
-	_, err = stmt.ExecContext(ctx,
-		item.Name,
-		item.DisplayName,
-		item.CreateTime,
-		item.UpdateTime,
-		item.DeleteTime,
-		item.Hash,
-		item.Content,
-		properties,
-		metadata,
-	)
-
-	if err != nil {
-		return r.errorHandler.HandleError(ctx, err)
-	}
-
-	return nil
+	newItem := ConvertQueryItem(i)
+	return &newItem, nil
 }
 
 // GetItem retrieves an item from the database by its resource name.

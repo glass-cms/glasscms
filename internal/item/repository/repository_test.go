@@ -28,12 +28,22 @@ func GetTestDatabase() *sql.DB {
 	return db
 }
 
-func SeedDatabase(db *sql.DB, items ...*item.Item) error {
+func SeedDatabase(db *sql.DB, items ...item.Item) error {
 	repo := repository.NewRepository(db, &database.SqliteErrorHandler{})
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback() //nolint: errcheck // Ignore.
+
 	for _, i := range items {
-		if err := repo.CreateItem(context.Background(), nil, i); err != nil {
+		if _, err = repo.CreateItem(context.Background(), tx, i); err != nil {
 			return err
 		}
+	}
+
+	if err = tx.Commit(); err != nil {
+		return err
 	}
 	return nil
 }
@@ -60,14 +70,13 @@ func TestRepository_CreateItem(t *testing.T) {
 
 	type args struct {
 		ctx  context.Context
-		item *item.Item
+		item item.Item
 	}
 
 	tests := map[string]struct {
 		fields  fields
 		args    args
 		wantErr bool
-		withTx  bool
 		err     error
 	}{
 		"successful creation": {
@@ -76,21 +85,9 @@ func TestRepository_CreateItem(t *testing.T) {
 			},
 			args: args{
 				ctx:  context.Background(),
-				item: getTestItem("items/name2"),
+				item: *getTestItem("items/name2"),
 			},
 			wantErr: false,
-			err:     nil,
-		},
-		"successful creation with transaction": {
-			fields: fields{
-				db: GetTestDatabase(),
-			},
-			args: args{
-				ctx:  context.Background(),
-				item: getTestItem("items/name"),
-			},
-			wantErr: false,
-			withTx:  true,
 			err:     nil,
 		},
 		"returns an err when context is canceled": {
@@ -103,7 +100,7 @@ func TestRepository_CreateItem(t *testing.T) {
 					cancel()
 					return ctx
 				}(),
-				item: getTestItem("items/name"),
+				item: *getTestItem("items/name"),
 			},
 			wantErr: true,
 			err:     database.ErrOperationFailed,
@@ -114,7 +111,7 @@ func TestRepository_CreateItem(t *testing.T) {
 			},
 			args: args{
 				ctx: context.Background(),
-				item: &item.Item{
+				item: item.Item{
 					CreateTime:  time.Now(),
 					UpdateTime:  time.Now(),
 					Hash:        "hash",
@@ -133,7 +130,7 @@ func TestRepository_CreateItem(t *testing.T) {
 			},
 			args: args{
 				ctx: context.Background(),
-				item: &item.Item{
+				item: item.Item{
 					CreateTime:  time.Now(),
 					UpdateTime:  time.Now(),
 					Hash:        "hash",
@@ -151,14 +148,14 @@ func TestRepository_CreateItem(t *testing.T) {
 			fields: fields{
 				db: GetTestDatabase(),
 				seed: func(db *sql.DB) {
-					if err := SeedDatabase(db, getTestItem("items/name")); err != nil {
+					if err := SeedDatabase(db, *getTestItem("items/name")); err != nil {
 						t.Error(err)
 					}
 				},
 			},
 			args: args{
 				ctx:  context.Background(),
-				item: getTestItem("items/name"),
+				item: *getTestItem("items/name"),
 			},
 			wantErr: true,
 			err:     database.ErrDuplicatePrimaryKey,
@@ -175,21 +172,15 @@ func TestRepository_CreateItem(t *testing.T) {
 			}
 			r := repository.NewRepository(tt.fields.db, &database.SqliteErrorHandler{})
 
-			var tx *sql.Tx
-			if tt.withTx {
-				var err error
-				tx, err = tt.fields.db.Begin()
-				require.NoError(t, err)
-			}
+			tx, err := tt.fields.db.Begin()
+			require.NoError(t, err)
 
 			defer func() {
-				if tx != nil {
-					require.NoError(t, tx.Rollback())
-				}
+				require.NoError(t, tx.Rollback())
 			}()
 
 			// Act
-			err := r.CreateItem(tt.args.ctx, tx, tt.args.item)
+			_, err = r.CreateItem(tt.args.ctx, tx, tt.args.item)
 
 			// Assert
 			if tt.wantErr {
@@ -224,7 +215,7 @@ func TestRepository_GetItem(t *testing.T) {
 			fields: fields{
 				db: GetTestDatabase(),
 				seed: func(db *sql.DB) {
-					if err := SeedDatabase(db, getTestItem("items/name")); err != nil {
+					if err := SeedDatabase(db, *getTestItem("items/name")); err != nil {
 						t.Error(err)
 					}
 				},
@@ -240,7 +231,7 @@ func TestRepository_GetItem(t *testing.T) {
 			fields: fields{
 				db: GetTestDatabase(),
 				seed: func(db *sql.DB) {
-					if err := SeedDatabase(db, getTestItem("items/name")); err != nil {
+					if err := SeedDatabase(db, *getTestItem("items/name")); err != nil {
 						t.Error(err)
 					}
 				},
@@ -312,7 +303,7 @@ func TestRepository_UpdateItem(t *testing.T) {
 			fields: fields{
 				db: GetTestDatabase(),
 				seed: func(db *sql.DB) {
-					if err := SeedDatabase(db, getTestItem("items/name")); err != nil {
+					if err := SeedDatabase(db, *getTestItem("items/name")); err != nil {
 						t.Error(err)
 					}
 				},
@@ -335,7 +326,7 @@ func TestRepository_UpdateItem(t *testing.T) {
 			fields: fields{
 				db: GetTestDatabase(),
 				seed: func(db *sql.DB) {
-					if err := SeedDatabase(db, getTestItem("items/name")); err != nil {
+					if err := SeedDatabase(db, *getTestItem("items/name")); err != nil {
 						t.Error(err)
 					}
 				},

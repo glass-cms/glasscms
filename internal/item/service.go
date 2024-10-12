@@ -2,6 +2,7 @@ package item
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 
 	"github.com/glass-cms/glasscms/internal/database"
@@ -21,12 +22,14 @@ func NewService(repo Repository) *Service {
 
 // CreateItem creates a new item.
 func (s *Service) CreateItem(ctx context.Context, item *Item) error {
-	err := s.repo.CreateItem(ctx, nil, item)
-	if errors.Is(err, database.ErrDuplicatePrimaryKey) {
-		return resource.NewAlreadyExistsError(item.Name, ItemResource, err)
-	}
+	return s.repo.Transactionally(ctx, func(tx *sql.Tx) error {
+		_, err := s.repo.CreateItem(ctx, tx, *item)
+		if errors.Is(err, database.ErrDuplicatePrimaryKey) {
+			return resource.NewAlreadyExistsError(item.Name, ItemResource, err)
+		}
 
-	return err
+		return err
+	})
 }
 
 // GetItem retrieves an item by name.

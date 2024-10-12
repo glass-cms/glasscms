@@ -7,10 +7,7 @@ import (
 
 type Repository interface {
 	Transactionally(ctx context.Context, f func(tx *sql.Tx) error) (err error)
-	CreateItem(ctx context.Context, tx *sql.Tx, item *Item) error
-
-	// TODO: Add transaction to all methods.
-	// TODO: Add method to get a transaction.
+	CreateItem(ctx context.Context, tx *sql.Tx, item Item) (*Item, error)
 	GetItem(ctx context.Context, name string) (*Item, error)
 	UpdateItem(ctx context.Context, item *Item) error
 }
