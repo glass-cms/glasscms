@@ -8,6 +8,7 @@ import (
 
 	"github.com/glass-cms/glasscms/internal/database"
 	"github.com/glass-cms/glasscms/internal/item"
+	"github.com/glass-cms/glasscms/internal/item/repository"
 	"github.com/glass-cms/glasscms/internal/server"
 	ctx "github.com/glass-cms/glasscms/pkg/context"
 	"github.com/lmittmann/tint"
@@ -91,7 +92,7 @@ func (c *StartCommand) Execute(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 
-	repo := item.NewRepository(db, errHandler)
+	repo := repository.NewRepository(db, errHandler)
 	service := item.NewService(repo)
 
 	server, err := server.New(c.logger, service)

@@ -9,6 +9,7 @@ import (
 
 	"github.com/glass-cms/glasscms/internal/database"
 	"github.com/glass-cms/glasscms/internal/item"
+	"github.com/glass-cms/glasscms/internal/item/repository"
 	"github.com/glass-cms/glasscms/internal/server"
 	"github.com/glass-cms/glasscms/pkg/api"
 	"github.com/glass-cms/glasscms/pkg/log"
@@ -51,7 +52,7 @@ func TestAPIHandler_ItemsCreate(t *testing.T) {
 			}
 			defer testdb.Close()
 
-			repo := item.NewRepository(testdb, &database.SqliteErrorHandler{})
+			repo := repository.NewRepository(testdb, &database.SqliteErrorHandler{})
 
 			handler, err := server.New(
 				log.NoopLogger(),
@@ -101,7 +102,7 @@ func TestAPIHandler_ItemsGet(t *testing.T) {
 			}
 			defer testdb.Close()
 
-			repo := item.NewRepository(testdb, &database.SqliteErrorHandler{})
+			repo := repository.NewRepository(testdb, &database.SqliteErrorHandler{})
 
 			server, err := server.New(
 				log.NoopLogger(),

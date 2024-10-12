@@ -1,4 +1,4 @@
-package item_test
+package repository_test
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 
 	"github.com/glass-cms/glasscms/internal/database"
 	"github.com/glass-cms/glasscms/internal/item"
+	"github.com/glass-cms/glasscms/internal/item/repository"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -28,7 +29,7 @@ func GetTestDatabase() *sql.DB {
 }
 
 func SeedDatabase(db *sql.DB, items ...*item.Item) error {
-	repo := item.NewRepository(db, &database.SqliteErrorHandler{})
+	repo := repository.NewRepository(db, &database.SqliteErrorHandler{})
 	for _, i := range items {
 		if err := repo.CreateItem(context.Background(), nil, i); err != nil {
 			return err
@@ -172,7 +173,7 @@ func TestRepository_CreateItem(t *testing.T) {
 			if tt.fields.seed != nil {
 				tt.fields.seed(tt.fields.db)
 			}
-			r := item.NewRepository(tt.fields.db, &database.SqliteErrorHandler{})
+			r := repository.NewRepository(tt.fields.db, &database.SqliteErrorHandler{})
 
 			var tx *sql.Tx
 			if tt.withTx {
@@ -271,7 +272,7 @@ func TestRepository_GetItem(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			r := item.NewRepository(tt.fields.db, &database.SqliteErrorHandler{})
+			r := repository.NewRepository(tt.fields.db, &database.SqliteErrorHandler{})
 			if tt.fields.seed != nil {
 				tt.fields.seed(tt.fields.db)
 			}
@@ -380,7 +381,7 @@ func TestRepository_UpdateItem(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			r := item.NewRepository(tt.fields.db, &database.SqliteErrorHandler{})
+			r := repository.NewRepository(tt.fields.db, &database.SqliteErrorHandler{})
 			if tt.fields.seed != nil {
 				tt.fields.seed(tt.fields.db)
 			}
