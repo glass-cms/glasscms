@@ -50,6 +50,7 @@ func New(
 	middlewares := []func(http.Handler) http.Handler{
 		middleware.ContentType(mediatype.ApplicationJSON),
 		middleware.Accept(mediatype.ApplicationJSON),
+		middleware.RequestID,
 	}
 	convertedMiddlewares := make([]api.MiddlewareFunc, len(middlewares))
 	for i, mw := range middlewares {
