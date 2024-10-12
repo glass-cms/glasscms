@@ -48,6 +48,7 @@ func New(
 	}
 
 	middlewares := []func(http.Handler) http.Handler{
+		middleware.RequestID,
 		middleware.ContentType(mediatype.ApplicationJSON),
 		middleware.Accept(mediatype.ApplicationJSON),
 	}
@@ -57,8 +58,9 @@ func New(
 	}
 
 	server.handler = api.HandlerWithOptions(server, api.StdHTTPServerOptions{
-		BaseURL:    "",
-		BaseRouter: serveMux,
+		BaseURL:     "",
+		BaseRouter:  serveMux,
+		Middlewares: convertedMiddlewares,
 	})
 
 	server.server = &http.Server{

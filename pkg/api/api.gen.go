@@ -65,11 +65,24 @@ type ItemCreate struct {
 	UpdateTime  time.Time              `json:"update_time"`
 }
 
+// ItemUpdate Resource create or update operation model.
+type ItemUpdate struct {
+	Content     *string                 `json:"content,omitempty"`
+	CreateTime  *time.Time              `json:"create_time,omitempty"`
+	DisplayName *string                 `json:"display_name,omitempty"`
+	Metadata    *map[string]interface{} `json:"metadata,omitempty"`
+	Properties  *map[string]interface{} `json:"properties,omitempty"`
+	UpdateTime  *time.Time              `json:"update_time,omitempty"`
+}
+
 // ItemKey defines model for ItemKey.
 type ItemKey = string
 
 // ItemsCreateJSONRequestBody defines body for ItemsCreate for application/json ContentType.
 type ItemsCreateJSONRequestBody = ItemCreate
+
+// ItemsUpdateJSONRequestBody defines body for ItemsUpdate for application/json ContentType.
+type ItemsUpdateJSONRequestBody = ItemUpdate
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
@@ -79,6 +92,9 @@ type ServerInterface interface {
 
 	// (GET /items/{name})
 	ItemsGet(w http.ResponseWriter, r *http.Request, name ItemKey)
+
+	// (PATCH /items/{name})
+	ItemsUpdate(w http.ResponseWriter, r *http.Request, name ItemKey)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -122,6 +138,32 @@ func (siw *ServerInterfaceWrapper) ItemsGet(w http.ResponseWriter, r *http.Reque
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ItemsGet(w, r, name)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// ItemsUpdate operation middleware
+func (siw *ServerInterfaceWrapper) ItemsUpdate(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var err error
+
+	// ------------- Path parameter "name" -------------
+	var name ItemKey
+
+	err = runtime.BindStyledParameterWithOptions("simple", "name", r.PathValue("name"), &name, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "name", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ItemsUpdate(w, r, name)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -247,6 +289,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 
 	m.HandleFunc("POST "+options.BaseURL+"/items", wrapper.ItemsCreate)
 	m.HandleFunc("GET "+options.BaseURL+"/items/{name}", wrapper.ItemsGet)
+	m.HandleFunc("PATCH "+options.BaseURL+"/items/{name}", wrapper.ItemsUpdate)
 
 	return m
 }

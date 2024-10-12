@@ -8,27 +8,22 @@ import (
 
 	"github.com/glass-cms/glasscms/internal/database"
 	"github.com/glass-cms/glasscms/internal/item"
+	"github.com/glass-cms/glasscms/internal/item/repository"
 	"github.com/glass-cms/glasscms/internal/server"
 	ctx "github.com/glass-cms/glasscms/pkg/context"
-	"github.com/lmittmann/tint"
+	"github.com/glass-cms/glasscms/pkg/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
 type StartCommand struct {
 	Command *cobra.Command
-	logger  *slog.Logger
 
 	databaseConfig database.Config
 }
 
 func NewStartCommand() *StartCommand {
 	sc := &StartCommand{
-		logger: slog.New(
-			tint.NewHandler(os.Stdout, &tint.Options{
-				Level: slog.LevelDebug,
-			}),
-		),
 		databaseConfig: database.Config{},
 	}
 
@@ -76,7 +71,12 @@ func NewStartCommand() *StartCommand {
 }
 
 func (c *StartCommand) Execute(cmd *cobra.Command, _ []string) error {
-	c.logger.Debug("connecting to database",
+	logger, err := log.SetupLogger()
+	if err != nil {
+		return err
+	}
+
+	logger.Debug("connecting to database",
 		slog.String("driver", c.databaseConfig.Driver),
 		slog.String("dsn", c.databaseConfig.DSN),
 	)
@@ -91,10 +91,10 @@ func (c *StartCommand) Execute(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 
-	repo := item.NewRepository(db, errHandler)
+	repo := repository.NewRepository(db, errHandler)
 	service := item.NewService(repo)
 
-	server, err := server.New(c.logger, service)
+	server, err := server.New(logger, service)
 	if err != nil {
 		return err
 	}
@@ -104,11 +104,11 @@ func (c *StartCommand) Execute(cmd *cobra.Command, _ []string) error {
 	}
 
 	_ = ctx.SigtermCacellationContext(cmd.Context(), func() {
-		c.logger.Info("shutting down server")
+		slog.Info("shutting down server")
 		server.Shutdown()
 	})
 
-	c.logger.Info("starting server")
+	logger.Info("starting server")
 	return server.ListenAndServer()
 }
 

@@ -9,6 +9,7 @@ import (
 	"github.com/glass-cms/glasscms/pkg/api"
 )
 
+// ItemsCreate creates a new item.
 func (s *Server) ItemsCreate(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
@@ -19,19 +20,21 @@ func (s *Server) ItemsCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	item := itemCreateToItem(createRequest)
-	err = s.itemService.CreateItem(ctx, item)
+	var createdItem item.Item
+	createdItem, err = s.itemService.CreateItem(ctx, itemCreateToItem(createRequest))
 	if err != nil {
 		s.logger.ErrorContext(ctx, fmt.Errorf("failed to create item: %w", err).Error())
 		s.errorHandler.HandleError(w, r, err)
 		return
 	}
 
-	SerializeJSONResponse(w, http.StatusCreated, item)
+	SerializeJSONResponse(w, http.StatusCreated, createdItem)
 }
 
-func (s *Server) ItemsGet(w http.ResponseWriter, r *http.Request, name api.ItemKey) {
+// ItemsGet retrieves an item by name.
+func (s *Server) ItemsGet(w http.ResponseWriter, r *http.Request, name string) {
 	ctx := r.Context()
+	s.logger.DebugContext(ctx, fmt.Sprintf("getting item: %s", name))
 
 	item, err := s.itemService.GetItem(ctx, name)
 	if err != nil {
@@ -43,12 +46,13 @@ func (s *Server) ItemsGet(w http.ResponseWriter, r *http.Request, name api.ItemK
 	SerializeJSONResponse(w, http.StatusOK, item)
 }
 
-func itemCreateToItem(i *api.ItemCreate) *item.Item {
-	if i == nil {
-		return nil
-	}
+// ItemsUpdate updates an item by name.
+func (s *Server) ItemsUpdate(w http.ResponseWriter, _ *http.Request, _ string) {
+	SerializeJSONResponse[any](w, http.StatusNotImplemented, nil)
+}
 
-	return &item.Item{
+func itemCreateToItem(i *api.ItemCreate) item.Item {
+	return item.Item{
 		Name:        i.Name,
 		DisplayName: i.DisplayName,
 		Content:     i.Content,

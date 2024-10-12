@@ -53,6 +53,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+    patch:
+      operationId: Items_update
+      description: Update an item by its unique identifier.
+      parameters:
+        - $ref: '#/components/parameters/ItemKey'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Item'
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ItemUpdate'
 components:
   parameters:
     ItemKey:
@@ -158,7 +182,23 @@ components:
           type: object
           additionalProperties: {}
       description: Resource create operation model.
-    Versions:
-      type: string
-      enum:
-        - v1
+    ItemUpdate:
+      type: object
+      properties:
+        display_name:
+          type: string
+        content:
+          type: string
+        create_time:
+          type: string
+          format: date-time
+        update_time:
+          type: string
+          format: date-time
+        properties:
+          type: object
+          additionalProperties: {}
+        metadata:
+          type: object
+          additionalProperties: {}
+      description: Resource create or update operation model.

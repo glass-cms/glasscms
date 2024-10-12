@@ -13,6 +13,7 @@ namespace GlassCMSCore;
 
 alias CreateItem = TypeSpec.Rest.Resource.ResourceCreate<Item, Error>;
 alias GetItems = TypeSpec.Rest.Resource.ResourceRead<Item, Error>;
+alias UpdateItem = TypeSpec.Rest.Resource.ResourceUpdate<Item, Error>;
 
 interface Items {
     @doc("Creates a new item.")
@@ -20,6 +21,9 @@ interface Items {
 
     @doc("Retrieve an item by its unique identifier.")
     op get is GetItems.get;
+
+    @doc("Update an item by its unique identifier.")
+    op update is UpdateItem.update;
 }
 
 @doc("Item represents an individual content item.")

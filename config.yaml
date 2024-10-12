@@ -2,4 +2,7 @@ output: './out'
 database:
   dsn: 'file:test.sqlite?cache=shared'
   driver: 'sqlite3'
-  
+  max_connections: 1
+logger:
+  level: DEBUG
+  format: text

@@ -16,7 +16,6 @@ func Accept(accepted ...string) func(next http.Handler) http.Handler {
 				// Set default media type of Accept header to application/json
 				r.Header.Set("Accept", "application/json")
 			}
-
 			header := r.Header.Get("Accept")
 			mdt, err := mediatype.Parse(header)
 			if err != nil {

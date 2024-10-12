@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/glass-cms/glasscms/cmd/server"
+	"github.com/glass-cms/glasscms/pkg/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -46,6 +47,12 @@ func init() {
 
 	pflags.BoolP(ArgsVerbose, ArgsVerboseShorthand, false, "Enable verbose output")
 	_ = viper.BindPFlag(ArgsVerbose, pflags.Lookup(ArgsVerbose))
+
+	pflags.String(log.ArgLevel, "INFO", "Log level")
+	_ = viper.BindPFlag(log.ArgLevel, pflags.Lookup(log.ArgLevel))
+
+	pflags.String(log.ArgFormat, "TEXT", "Log format")
+	_ = viper.BindPFlag(log.ArgFormat, pflags.Lookup(log.ArgFormat))
 }
 
 func initializeConfig(cmd *cobra.Command) error {
