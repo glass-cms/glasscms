@@ -118,7 +118,7 @@ func TestParseFieldMask(t *testing.T) {
 			req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("/test?%s", tt.query), nil)
 			require.NoError(t, err, "failed to create request")
 
-			masks, err := fieldmask.ParseFieldMask(req)
+			masks, err := fieldmask.ParseFieldMaskRequest(req)
 			if tt.expectedError != nil {
 				require.Error(t, err)
 				require.EqualError(t, err, tt.expectedError.Error(), "expected error %v, got %v", tt.expectedError, err)

@@ -51,6 +51,10 @@ func (s *Server) ItemsUpdate(w http.ResponseWriter, _ *http.Request, _ string) {
 	SerializeJSONResponse[any](w, http.StatusNotImplemented, nil)
 }
 
+func (s *Server) ItemsList(w http.ResponseWriter, _ *http.Request, _ api.ItemsListParams) {
+	SerializeJSONResponse[any](w, http.StatusNotImplemented, nil)
+}
+
 func itemCreateToItem(i *api.ItemCreate) item.Item {
 	return item.Item{
 		Name:        i.Name,
