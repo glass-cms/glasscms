@@ -10,4 +10,5 @@ type Repository interface {
 	CreateItem(ctx context.Context, tx *sql.Tx, item Item) (*Item, error)
 	GetItem(ctx context.Context, name string) (*Item, error)
 	UpdateItem(ctx context.Context, item *Item) error
+	ListItems(ctx context.Context) ([]Item, error)
 }

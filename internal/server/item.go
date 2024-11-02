@@ -43,7 +43,7 @@ func (s *Server) ItemsGet(w http.ResponseWriter, r *http.Request, name string) {
 		return
 	}
 
-	SerializeJSONResponse(w, http.StatusOK, item)
+	SerializeJSONResponse(w, http.StatusOK, FromItem(item))
 }
 
 // ItemsUpdate updates an item by name.
@@ -51,8 +51,24 @@ func (s *Server) ItemsUpdate(w http.ResponseWriter, _ *http.Request, _ string) {
 	SerializeJSONResponse[any](w, http.StatusNotImplemented, nil)
 }
 
-func (s *Server) ItemsList(w http.ResponseWriter, _ *http.Request, _ api.ItemsListParams) {
-	SerializeJSONResponse[any](w, http.StatusNotImplemented, nil)
+func (s *Server) ItemsList(w http.ResponseWriter, r *http.Request, _ api.ItemsListParams) {
+	ctx := r.Context()
+	s.logger.DebugContext(ctx, "listing items")
+
+	items, err := s.itemService.ListItems(ctx)
+	if err != nil {
+		s.logger.ErrorContext(ctx, fmt.Errorf("failed to list items: %w", err).Error())
+		s.errorHandler.HandleError(w, r, err)
+		return
+	}
+
+	// Convert items to API items.
+	var apiItems = make([]*api.Item, len(items))
+	for i, item := range items {
+		apiItems[i] = FromItem(&item)
+	}
+
+	SerializeJSONResponse(w, http.StatusOK, apiItems)
 }
 
 func itemCreateToItem(i *api.ItemCreate) item.Item {

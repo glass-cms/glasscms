@@ -122,6 +122,8 @@ func (r *ItemRepository) GetItem(ctx context.Context, name string) (*item.Item, 
 	return foundItem, nil
 }
 
+// TODO: Refactor UpdateItem to use query.
+
 // UpdateItem updates an existing item in the database.
 func (r *ItemRepository) UpdateItem(ctx context.Context, item *item.Item) error {
 	query := `
@@ -171,4 +173,26 @@ func (r *ItemRepository) UpdateItem(ctx context.Context, item *item.Item) error 
 	}
 
 	return nil
+}
+
+// TODO: Add field mask support in query.
+// ListItems retrieves a list of items from the database with optional fieldmask.
+func (r *ItemRepository) ListItems(ctx context.Context) ([]item.Item, error) {
+	q := query.New(r.db)
+
+	items, err := q.ListItems(ctx)
+	if err != nil {
+		return nil, r.errorHandler.HandleError(ctx, err)
+	}
+
+	itemList := make([]item.Item, len(items))
+	for index, item := range items {
+		convertedItem, convertErr := ConvertQueryItem(item)
+		if convertErr != nil {
+			return nil, r.errorHandler.HandleError(ctx, convertErr)
+		}
+
+		itemList[index] = *convertedItem
+	}
+	return itemList, nil
 }

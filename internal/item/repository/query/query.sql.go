@@ -93,3 +93,45 @@ func (q *Queries) GetItem(ctx context.Context, name string) (Item, error) {
 	)
 	return i, err
 }
+
+const listItems = `-- name: ListItems :many
+SELECT
+    name, display_name, create_time, update_time, delete_time, hash, content, properties, metadata
+FROM
+    items
+WHERE
+    delete_time IS NULL
+`
+
+func (q *Queries) ListItems(ctx context.Context) ([]Item, error) {
+	rows, err := q.query(ctx, q.listItemsStmt, listItems)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Item
+	for rows.Next() {
+		var i Item
+		if err := rows.Scan(
+			&i.Name,
+			&i.DisplayName,
+			&i.CreateTime,
+			&i.UpdateTime,
+			&i.DeleteTime,
+			&i.Hash,
+			&i.Content,
+			&i.Properties,
+			&i.Metadata,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
