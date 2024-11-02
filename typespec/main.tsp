@@ -41,4 +41,6 @@ model Item {
     delete_time: utcDateTime;
     properties: Record<unknown>;
     metadata: Record<unknown>;
+    @doc("represents a hash value calculated from the item's content.")
+    hash: string;
 }

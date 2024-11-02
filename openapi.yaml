@@ -152,6 +152,7 @@ components:
         - delete_time
         - properties
         - metadata
+        - hash
       properties:
         name:
           type: string
@@ -175,6 +176,9 @@ components:
         metadata:
           type: object
           additionalProperties: {}
+        hash:
+          type: string
+          description: represents a hash value calculated from the item's content.
       description: Item represents an individual content item.
     ItemCreate:
       type: object
@@ -186,6 +190,7 @@ components:
         - update_time
         - properties
         - metadata
+        - hash
       properties:
         name:
           type: string
@@ -205,6 +210,9 @@ components:
         metadata:
           type: object
           additionalProperties: {}
+        hash:
+          type: string
+          description: represents a hash value calculated from the item's content.
       description: Resource create operation model.
     ItemUpdate:
       type: object
@@ -225,4 +233,7 @@ components:
         metadata:
           type: object
           additionalProperties: {}
+        hash:
+          type: string
+          description: represents a hash value calculated from the item's content.
       description: Resource create or update operation model.

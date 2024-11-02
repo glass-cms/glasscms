@@ -13,6 +13,7 @@ func ValidateItemFieldMask(fieldmask []string) error {
 		"create_time":  {},
 		"delete_time":  {},
 		"display_name": {},
+		"hash":         {},
 		"metadata":     {},
 		"name":         {},
 		"properties":   {},

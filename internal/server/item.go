@@ -81,5 +81,6 @@ func FromItem(item *item.Item) *api.Item {
 		UpdateTime:  item.UpdateTime,
 		Properties:  item.Properties,
 		Metadata:    item.Metadata,
+		Hash:        item.Hash,
 	}
 }
