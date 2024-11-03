@@ -7,6 +7,7 @@ import (
 	"reflect"
 
 	"github.com/glass-cms/glasscms/pkg/api"
+	"github.com/glass-cms/glasscms/pkg/fieldmask"
 	"github.com/glass-cms/glasscms/pkg/resource"
 )
 
@@ -97,6 +98,23 @@ func ErrorMapperNotFoundError(err error) *api.Error {
 		Details: map[string]interface{}{
 			"resource": notFoundErr.Resource,
 			"name":     notFoundErr.Name,
+		},
+	}
+}
+
+// ErrorMapperInvalidFieldMaskError maps a fieldmask.InvalidFieldMaskError to an API error response.
+func ErrorMapperInvalidFieldMaskError(err error) *api.Error {
+	var invalidFieldMaskErr *fieldmask.InvalidFieldMaskError
+	if !errors.As(err, &invalidFieldMaskErr) {
+		panic("error is not a fieldmask.ErrInvalidFieldMask")
+	}
+
+	return &api.Error{
+		Code:    api.ParameterInvalid,
+		Message: "The field mask is invalid",
+		Type:    api.ApiError,
+		Details: map[string]interface{}{
+			"field_mask": invalidFieldMaskErr.FieldMask,
 		},
 	}
 }

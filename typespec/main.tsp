@@ -24,7 +24,7 @@ interface Items {
     @autoRoute
     @doc("Lists all instances of the resource.")
     @listsResource(Item)
-    list(@query fields: string): Item[] | Error;
+    list(@query fields?: string): Item[] | Error;
 }
 
 @doc("Item represents an individual content item.")

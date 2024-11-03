@@ -10,6 +10,7 @@ import (
 
 	"github.com/glass-cms/glasscms/internal/item"
 	"github.com/glass-cms/glasscms/pkg/api"
+	"github.com/glass-cms/glasscms/pkg/fieldmask"
 	"github.com/glass-cms/glasscms/pkg/mediatype"
 	"github.com/glass-cms/glasscms/pkg/middleware"
 	"github.com/glass-cms/glasscms/pkg/resource"
@@ -112,5 +113,10 @@ func (s *Server) registerErrorMappers() {
 	s.errorHandler.RegisterErrorMapper(
 		reflect.TypeOf(&resource.NotFoundError{}),
 		ErrorMapperNotFoundError,
+	)
+
+	s.errorHandler.RegisterErrorMapper(
+		reflect.TypeOf(&fieldmask.InvalidFieldMaskError{}),
+		ErrorMapperInvalidFieldMaskError,
 	)
 }

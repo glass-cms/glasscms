@@ -89,7 +89,7 @@ type ItemKey = string
 
 // ItemsListParams defines parameters for ItemsList.
 type ItemsListParams struct {
-	Fields string `form:"fields" json:"fields"`
+	Fields *string `form:"fields,omitempty" json:"fields,omitempty"`
 }
 
 // ItemsCreateJSONRequestBody defines body for ItemsCreate for application/json ContentType.
@@ -132,16 +132,9 @@ func (siw *ServerInterfaceWrapper) ItemsList(w http.ResponseWriter, r *http.Requ
 	// Parameter object where we will unmarshal all parameters from the context
 	var params ItemsListParams
 
-	// ------------- Required query parameter "fields" -------------
+	// ------------- Optional query parameter "fields" -------------
 
-	if paramValue := r.URL.Query().Get("fields"); paramValue != "" {
-
-	} else {
-		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "fields"})
-		return
-	}
-
-	err = runtime.BindQueryParameter("form", true, true, "fields", r.URL.Query(), &params.Fields)
+	err = runtime.BindQueryParameter("form", true, false, "fields", r.URL.Query(), &params.Fields)
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "fields", Err: err})
 		return

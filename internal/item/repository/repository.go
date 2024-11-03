@@ -224,6 +224,10 @@ func (r *ItemRepository) listItemsWithFieldmask(ctx context.Context, fieldmask [
 
 	defer rows.Close()
 
+	// FIXME: Scan error on column index 2, name "metadata": unsupported Scan,
+	// storing driver.Value type []uint8 into type *map[string]interface {}
+	// When selecting properties or metadata in the fieldmask.
+
 	var items []item.Item
 	if err = sqlscan.ScanAll(&items, rows); err != nil {
 		return nil, r.errorHandler.HandleError(ctx, err)
