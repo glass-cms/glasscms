@@ -29,15 +29,15 @@ VALUES
 `
 
 type CreateItemParams struct {
-	Name        string
-	DisplayName string
-	CreateTime  time.Time
-	UpdateTime  time.Time
-	DeleteTime  sql.NullTime
-	Hash        sql.NullString
-	Content     sql.NullString
-	Properties  interface{}
-	Metadata    interface{}
+	Name        string         `db:"name"`
+	DisplayName string         `db:"display_name"`
+	CreateTime  time.Time      `db:"create_time"`
+	UpdateTime  time.Time      `db:"update_time"`
+	DeleteTime  sql.NullTime   `db:"delete_time"`
+	Hash        sql.NullString `db:"hash"`
+	Content     sql.NullString `db:"content"`
+	Properties  interface{}    `db:"properties"`
+	Metadata    interface{}    `db:"metadata"`
 }
 
 func (q *Queries) CreateItem(ctx context.Context, arg CreateItemParams) (Item, error) {
@@ -92,4 +92,46 @@ func (q *Queries) GetItem(ctx context.Context, name string) (Item, error) {
 		&i.Metadata,
 	)
 	return i, err
+}
+
+const listItems = `-- name: ListItems :many
+SELECT
+    name, display_name, create_time, update_time, delete_time, hash, content, properties, metadata
+FROM
+    items
+WHERE
+    delete_time IS NULL
+`
+
+func (q *Queries) ListItems(ctx context.Context) ([]Item, error) {
+	rows, err := q.query(ctx, q.listItemsStmt, listItems)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Item
+	for rows.Next() {
+		var i Item
+		if err := rows.Scan(
+			&i.Name,
+			&i.DisplayName,
+			&i.CreateTime,
+			&i.UpdateTime,
+			&i.DeleteTime,
+			&i.Hash,
+			&i.Content,
+			&i.Properties,
+			&i.Metadata,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }

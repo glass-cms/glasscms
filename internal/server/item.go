@@ -3,10 +3,12 @@ package server
 import (
 	"fmt"
 	"net/http"
+	"reflect"
 
 	"github.com/glass-cms/glasscms/internal/item"
 	"github.com/glass-cms/glasscms/internal/parser"
 	"github.com/glass-cms/glasscms/pkg/api"
+	"github.com/glass-cms/glasscms/pkg/fieldmask"
 )
 
 // ItemsCreate creates a new item.
@@ -43,12 +45,94 @@ func (s *Server) ItemsGet(w http.ResponseWriter, r *http.Request, name string) {
 		return
 	}
 
-	SerializeJSONResponse(w, http.StatusOK, item)
+	SerializeJSONResponse(w, http.StatusOK, FromItem(item))
 }
 
 // ItemsUpdate updates an item by name.
 func (s *Server) ItemsUpdate(w http.ResponseWriter, _ *http.Request, _ string) {
+	// TODO: Implement item update.
 	SerializeJSONResponse[any](w, http.StatusNotImplemented, nil)
+}
+
+// TODO: Implement batch CreateOrUpdate endpoint.
+
+func (s *Server) ItemsList(w http.ResponseWriter, r *http.Request, params api.ItemsListParams) {
+	ctx := r.Context()
+	s.logger.DebugContext(ctx, "listing items")
+
+	fm, err := parseAndValidateItemFieldMask(params.Fields)
+	if err != nil {
+		s.logger.ErrorContext(ctx, fmt.Errorf("failed to parse field mask: %w", err).Error())
+		s.errorHandler.HandleError(w, r, err)
+		return
+	}
+
+	items, err := s.itemService.ListItems(ctx, fm)
+	if err != nil {
+		s.logger.ErrorContext(ctx, fmt.Errorf("failed to list items: %w", err).Error())
+		s.errorHandler.HandleError(w, r, err)
+		return
+	}
+
+	// Convert items to API items.
+	var apiItems = make([]*api.Item, len(items))
+	for i, item := range items {
+		apiItems[i] = FromItem(&item)
+	}
+
+	if len(fm) == 0 || fm == nil {
+		SerializeJSONResponse(w, http.StatusOK, apiItems)
+		return
+	}
+
+	SerializeJSONResponse(w, http.StatusOK, applyItemFieldMask(apiItems, fm))
+}
+
+func applyItemFieldMask(items []*api.Item, fieldmask []string) []map[string]interface{} {
+	result := make([]map[string]interface{}, len(items))
+	for i, item := range items {
+		maskedItem := make(map[string]interface{})
+		itemMap := itemToMap(item)
+		for _, field := range fieldmask {
+			if value, ok := itemMap[field]; ok {
+				maskedItem[field] = value
+			}
+		}
+		result[i] = maskedItem
+	}
+	return result
+}
+
+func itemToMap(item *api.Item) map[string]interface{} {
+	itemMap := make(map[string]interface{})
+	itemValue := reflect.ValueOf(item).Elem()
+	itemType := itemValue.Type()
+
+	for i := 0; i < itemType.NumField(); i++ {
+		field := itemType.Field(i)
+		fieldValue := itemValue.Field(i).Interface()
+		jsonTag := field.Tag.Get("json")
+		if jsonTag != "" && jsonTag != "-" {
+			itemMap[jsonTag] = fieldValue
+		}
+	}
+	return itemMap
+}
+
+func parseAndValidateItemFieldMask(str *string) ([]string, error) {
+	if str == nil {
+		return nil, nil
+	}
+
+	fm, err := fieldmask.ParseFieldMask(*str)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = api.ValidateItemFieldMask(fm); err != nil {
+		return nil, fieldmask.NewInvalidFieldMaskError(*str)
+	}
+	return fm, nil
 }
 
 func itemCreateToItem(i *api.ItemCreate) item.Item {
@@ -77,5 +161,6 @@ func FromItem(item *item.Item) *api.Item {
 		UpdateTime:  item.UpdateTime,
 		Properties:  item.Properties,
 		Metadata:    item.Metadata,
+		Hash:        item.Hash,
 	}
 }

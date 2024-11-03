@@ -7,7 +7,7 @@ paths:
   /items:
     post:
       operationId: Items_create
-      description: Creates a new item.
+      description: Creates a new instance of the resource.
       parameters: []
       responses:
         '200':
@@ -34,10 +34,34 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/ItemCreate'
+    get:
+      operationId: Items_list
+      description: Lists all instances of the resource.
+      parameters:
+        - name: fields
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Item'
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /items/{name}:
     get:
       operationId: Items_get
-      description: Retrieve an item by its unique identifier.
+      description: Gets an instance of the resource.
       parameters:
         - $ref: '#/components/parameters/ItemKey'
       responses:
@@ -55,7 +79,7 @@ paths:
                 $ref: '#/components/schemas/Error'
     patch:
       operationId: Items_update
-      description: Update an item by its unique identifier.
+      description: Updates an existing instance of the resource.
       parameters:
         - $ref: '#/components/parameters/ItemKey'
       responses:
@@ -128,6 +152,7 @@ components:
         - delete_time
         - properties
         - metadata
+        - hash
       properties:
         name:
           type: string
@@ -151,6 +176,9 @@ components:
         metadata:
           type: object
           additionalProperties: {}
+        hash:
+          type: string
+          description: represents a hash value calculated from the item's content.
       description: Item represents an individual content item.
     ItemCreate:
       type: object
@@ -162,6 +190,7 @@ components:
         - update_time
         - properties
         - metadata
+        - hash
       properties:
         name:
           type: string
@@ -181,6 +210,9 @@ components:
         metadata:
           type: object
           additionalProperties: {}
+        hash:
+          type: string
+          description: represents a hash value calculated from the item's content.
       description: Resource create operation model.
     ItemUpdate:
       type: object
@@ -201,4 +233,7 @@ components:
         metadata:
           type: object
           additionalProperties: {}
+        hash:
+          type: string
+          description: represents a hash value calculated from the item's content.
       description: Resource create or update operation model.

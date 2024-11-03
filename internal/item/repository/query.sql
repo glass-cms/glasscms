@@ -22,3 +22,11 @@ FROM
 WHERE
     name = ?
     AND delete_time IS NULL;
+
+-- name: ListItems :many
+SELECT
+    *
+FROM
+    items
+WHERE
+    delete_time IS NULL;

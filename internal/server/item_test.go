@@ -2,6 +2,7 @@ package server_test
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -119,6 +120,104 @@ func TestAPIHandler_ItemsGet(t *testing.T) {
 
 			// Make the request
 			server.Handler().ServeHTTP(rr, request)
+
+			// Assert
+			assert.Equal(t, tt.expected, rr.Code)
+		})
+	}
+}
+
+//nolint:gocognit // This test is testing multiple cases.
+func TestAPIHandler_ItemsList(t *testing.T) {
+	t.Parallel()
+
+	tests := map[string]struct {
+		req      func() *http.Request
+		seed     func(*item.Service)
+		expected int
+	}{
+		"returns a 200 status code and a list of items": {
+			req: func() *http.Request {
+				return httptest.NewRequest(http.MethodGet, "/v1/items", nil)
+			},
+			seed: func(svc *item.Service) {
+				items := []item.Item{
+					{Name: "items/name1", DisplayName: "Item 1"},
+					{Name: "items/name2", DisplayName: "Item 2"},
+				}
+				for _, itm := range items {
+					if _, err := svc.CreateItem(context.Background(), itm); err != nil {
+						t.Error(err)
+					}
+				}
+			},
+			expected: http.StatusOK,
+		},
+		"returns a 200 status code and a list of items with fieldmask": {
+			req: func() *http.Request {
+				req := httptest.NewRequest(http.MethodGet, "/v1/items?fields=name,display_name", nil)
+				return req
+			},
+			seed: func(svc *item.Service) {
+				items := []item.Item{
+					{Name: "items/name1", DisplayName: "Item 1"},
+					{Name: "items/name2", DisplayName: "Item 2"},
+				}
+				for _, itm := range items {
+					if _, err := svc.CreateItem(context.Background(), itm); err != nil {
+						t.Error(err)
+					}
+				}
+			},
+			expected: http.StatusOK,
+		},
+		"returns a 400 status code when fieldmask is invalid": {
+			req: func() *http.Request {
+				req := httptest.NewRequest(http.MethodGet, "/v1/items?fields=invalid_field", nil)
+				return req
+			},
+			seed:     nil,
+			expected: http.StatusBadRequest,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			testdb, err := database.NewTestDB()
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer testdb.Close()
+
+			repo := repository.NewRepository(testdb, &database.SqliteErrorHandler{})
+			svc := item.NewService(repo)
+
+			if tt.seed != nil {
+				tt.seed(svc)
+			}
+
+			handler, err := server.New(
+				log.NoopLogger(),
+				svc,
+			)
+			if err != nil {
+				t.Fatal(err)
+				return
+			}
+
+			rr := httptest.NewRecorder()
+			request := tt.req()
+			request.Header.Set("Accept", "application/json")
+
+			// Act
+			fields := request.URL.Query().Get("fields")
+			var params api.ItemsListParams
+			if fields != "" {
+				params.Fields = &fields
+			}
+			handler.ItemsList(rr, request, params)
 
 			// Assert
 			assert.Equal(t, tt.expected, rr.Code)

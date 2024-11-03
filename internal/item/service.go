@@ -48,3 +48,13 @@ func (s *Service) GetItem(ctx context.Context, name string) (*Item, error) {
 
 	return item, err
 }
+
+// ListItems retrieves a list of items.
+func (s *Service) ListItems(ctx context.Context, fieldmask []string) ([]Item, error) {
+	items, err := s.repo.ListItems(ctx, fieldmask)
+	if err != nil {
+		return nil, err
+	}
+
+	return items, nil
+}

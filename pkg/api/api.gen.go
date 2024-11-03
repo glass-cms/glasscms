@@ -44,39 +44,53 @@ type ErrorType string
 
 // Item Item represents an individual content item.
 type Item struct {
-	Content     string                 `json:"content"`
-	CreateTime  time.Time              `json:"create_time"`
-	DeleteTime  *time.Time             `json:"delete_time,omitempty"`
-	DisplayName string                 `json:"display_name"`
-	Metadata    map[string]interface{} `json:"metadata"`
-	Name        string                 `json:"name"`
-	Properties  map[string]interface{} `json:"properties"`
-	UpdateTime  time.Time              `json:"update_time"`
+	Content     string     `json:"content"`
+	CreateTime  time.Time  `json:"create_time"`
+	DeleteTime  *time.Time `json:"delete_time,omitempty"`
+	DisplayName string     `json:"display_name"`
+
+	// Hash represents a hash value calculated from the item's content.
+	Hash       string                 `json:"hash"`
+	Metadata   map[string]interface{} `json:"metadata"`
+	Name       string                 `json:"name"`
+	Properties map[string]interface{} `json:"properties"`
+	UpdateTime time.Time              `json:"update_time"`
 }
 
 // ItemCreate Resource create operation model.
 type ItemCreate struct {
-	Content     string                 `json:"content"`
-	CreateTime  time.Time              `json:"create_time"`
-	DisplayName string                 `json:"display_name"`
-	Metadata    map[string]interface{} `json:"metadata"`
-	Name        string                 `json:"name"`
-	Properties  map[string]interface{} `json:"properties"`
-	UpdateTime  time.Time              `json:"update_time"`
+	Content     string    `json:"content"`
+	CreateTime  time.Time `json:"create_time"`
+	DisplayName string    `json:"display_name"`
+
+	// Hash represents a hash value calculated from the item's content.
+	Hash       string                 `json:"hash"`
+	Metadata   map[string]interface{} `json:"metadata"`
+	Name       string                 `json:"name"`
+	Properties map[string]interface{} `json:"properties"`
+	UpdateTime time.Time              `json:"update_time"`
 }
 
 // ItemUpdate Resource create or update operation model.
 type ItemUpdate struct {
-	Content     *string                 `json:"content,omitempty"`
-	CreateTime  *time.Time              `json:"create_time,omitempty"`
-	DisplayName *string                 `json:"display_name,omitempty"`
-	Metadata    *map[string]interface{} `json:"metadata,omitempty"`
-	Properties  *map[string]interface{} `json:"properties,omitempty"`
-	UpdateTime  *time.Time              `json:"update_time,omitempty"`
+	Content     *string    `json:"content,omitempty"`
+	CreateTime  *time.Time `json:"create_time,omitempty"`
+	DisplayName *string    `json:"display_name,omitempty"`
+
+	// Hash represents a hash value calculated from the item's content.
+	Hash       *string                 `json:"hash,omitempty"`
+	Metadata   *map[string]interface{} `json:"metadata,omitempty"`
+	Properties *map[string]interface{} `json:"properties,omitempty"`
+	UpdateTime *time.Time              `json:"update_time,omitempty"`
 }
 
 // ItemKey defines model for ItemKey.
 type ItemKey = string
+
+// ItemsListParams defines parameters for ItemsList.
+type ItemsListParams struct {
+	Fields *string `form:"fields,omitempty" json:"fields,omitempty"`
+}
 
 // ItemsCreateJSONRequestBody defines body for ItemsCreate for application/json ContentType.
 type ItemsCreateJSONRequestBody = ItemCreate
@@ -86,6 +100,9 @@ type ItemsUpdateJSONRequestBody = ItemUpdate
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
+
+	// (GET /items)
+	ItemsList(w http.ResponseWriter, r *http.Request, params ItemsListParams)
 
 	// (POST /items)
 	ItemsCreate(w http.ResponseWriter, r *http.Request)
@@ -105,6 +122,34 @@ type ServerInterfaceWrapper struct {
 }
 
 type MiddlewareFunc func(http.Handler) http.Handler
+
+// ItemsList operation middleware
+func (siw *ServerInterfaceWrapper) ItemsList(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ItemsListParams
+
+	// ------------- Optional query parameter "fields" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "fields", r.URL.Query(), &params.Fields)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "fields", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ItemsList(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
 
 // ItemsCreate operation middleware
 func (siw *ServerInterfaceWrapper) ItemsCreate(w http.ResponseWriter, r *http.Request) {
@@ -287,6 +332,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 		ErrorHandlerFunc:   options.ErrorHandlerFunc,
 	}
 
+	m.HandleFunc("GET "+options.BaseURL+"/items", wrapper.ItemsList)
 	m.HandleFunc("POST "+options.BaseURL+"/items", wrapper.ItemsCreate)
 	m.HandleFunc("GET "+options.BaseURL+"/items/{name}", wrapper.ItemsGet)
 	m.HandleFunc("PATCH "+options.BaseURL+"/items/{name}", wrapper.ItemsUpdate)

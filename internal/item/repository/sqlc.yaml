@@ -8,3 +8,5 @@ sql:
         package: "query"
         out: "query"
         emit_prepared_queries: true
+        emit_db_tags: true
+        emit_interface: true

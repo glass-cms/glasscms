@@ -12,6 +12,20 @@ const (
 	QueryParamFieldMask = "fields"
 )
 
+type InvalidFieldMaskError struct {
+	FieldMask string
+}
+
+func (e *InvalidFieldMaskError) Error() string {
+	return fmt.Errorf("%w%s", ErrInvalidFieldMask, e.FieldMask).Error()
+}
+
+func NewInvalidFieldMaskError(fieldMask string) *InvalidFieldMaskError {
+	return &InvalidFieldMaskError{
+		FieldMask: fieldMask,
+	}
+}
+
 var (
 	ErrFieldMaskMissing = errors.New("field mask query param is not set")
 	ErrFieldMaskEmpty   = errors.New("field mask is empty")
@@ -20,9 +34,18 @@ var (
 	FieldMaskRe = regexp.MustCompile(`^(\*|(\w+\.)*\*?|\w+(\.\w+)*\*?)$`)
 )
 
-// ParseFieldMask parses and validates the field mask from the HTTP request's query parameters.
+// ParseFieldMask parses and validates the field mask from the given string.
+func ParseFieldMask(fieldMask string) ([]string, error) {
+	if fieldMask == "" {
+		return nil, ErrFieldMaskEmpty
+	}
+
+	return parseFieldMask(fieldMask)
+}
+
+// ParseFieldMaskRequest parses and validates the field mask from the HTTP request's query parameters.
 // It returns a slice of field masks or an error if the field mask is missing, empty, or invalid.
-func ParseFieldMask(r *http.Request) ([]string, error) {
+func ParseFieldMaskRequest(r *http.Request) ([]string, error) {
 	query := r.URL.Query()
 
 	fields := query.Get(QueryParamFieldMask)
@@ -33,6 +56,10 @@ func ParseFieldMask(r *http.Request) ([]string, error) {
 		return nil, ErrFieldMaskEmpty
 	}
 
+	return parseFieldMask(fields)
+}
+
+func parseFieldMask(fields string) ([]string, error) {
 	fieldMasks := strings.Split(fields, ",")
 	invalidFieldMasks := []string{}
 
@@ -43,7 +70,7 @@ func ParseFieldMask(r *http.Request) ([]string, error) {
 	}
 
 	if len(invalidFieldMasks) > 0 {
-		return nil, fmt.Errorf("%w%s", ErrInvalidFieldMask, strings.Join(invalidFieldMasks, ", "))
+		return nil, NewInvalidFieldMaskError(strings.Join(invalidFieldMasks, ", "))
 	}
 
 	return fieldMasks, nil
