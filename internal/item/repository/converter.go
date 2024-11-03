@@ -52,6 +52,10 @@ func convertNullTime(nullTime sql.NullTime) *time.Time {
 }
 
 func unmarshalJSONToMap(data interface{}) (map[string]any, error) {
+	if data == nil {
+		return make(map[string]any), nil
+	}
+
 	var result map[string]any
 
 	switch v := data.(type) {

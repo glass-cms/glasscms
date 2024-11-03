@@ -7,6 +7,7 @@ import (
 	"github.com/glass-cms/glasscms/internal/item"
 	"github.com/glass-cms/glasscms/internal/parser"
 	"github.com/glass-cms/glasscms/pkg/api"
+	"github.com/glass-cms/glasscms/pkg/fieldmask"
 )
 
 // ItemsCreate creates a new item.
@@ -51,11 +52,25 @@ func (s *Server) ItemsUpdate(w http.ResponseWriter, _ *http.Request, _ string) {
 	SerializeJSONResponse[any](w, http.StatusNotImplemented, nil)
 }
 
-func (s *Server) ItemsList(w http.ResponseWriter, r *http.Request, _ api.ItemsListParams) {
+func (s *Server) ItemsList(w http.ResponseWriter, r *http.Request, params api.ItemsListParams) {
 	ctx := r.Context()
 	s.logger.DebugContext(ctx, "listing items")
 
-	items, err := s.itemService.ListItems(ctx)
+	fm, err := fieldmask.ParseFieldMask(params.Fields)
+	if err != nil {
+		s.logger.ErrorContext(ctx, fmt.Errorf("failed to parse fieldmask: %w", err).Error())
+		s.errorHandler.HandleError(w, r, err)
+		return
+	}
+
+	if err = api.ValidateItemFieldMask(fm); err != nil {
+		s.logger.ErrorContext(ctx, fmt.Errorf("failed to validate fieldmask: %w", err).Error())
+		s.errorHandler.HandleError(
+			w, r, fmt.Errorf("%w: %s is not a valid field mask for items", fieldmask.ErrInvalidFieldMask, params.Fields))
+		return
+	}
+
+	items, err := s.itemService.ListItems(ctx, fm)
 	if err != nil {
 		s.logger.ErrorContext(ctx, fmt.Errorf("failed to list items: %w", err).Error())
 		s.errorHandler.HandleError(w, r, err)

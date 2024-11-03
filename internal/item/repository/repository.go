@@ -6,7 +6,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
+	"time"
 
+	"github.com/georgysavva/scany/v2/sqlscan"
 	"github.com/glass-cms/glasscms/internal/database"
 	"github.com/glass-cms/glasscms/internal/item"
 	"github.com/glass-cms/glasscms/internal/item/repository/query"
@@ -17,6 +20,8 @@ var _ item.Repository = &ItemRepository{}
 type ItemRepository struct {
 	db           *sql.DB
 	errorHandler database.ErrorHandler
+
+	// TODO: Queries should be a property of the repository so that the prepared statements are cached.
 }
 
 func NewRepository(db *sql.DB, errorHandler database.ErrorHandler) *ItemRepository {
@@ -79,7 +84,15 @@ func (r *ItemRepository) CreateItem(ctx context.Context, tx *sql.Tx, item item.I
 		DisplayName: item.DisplayName,
 		CreateTime:  item.CreateTime,
 		UpdateTime:  item.UpdateTime,
-		DeleteTime:  sql.NullTime{},
+		DeleteTime: sql.NullTime{
+			Time: func() time.Time {
+				if item.DeleteTime != nil {
+					return *item.DeleteTime
+				}
+				return time.Time{}
+			}(),
+			Valid: item.DeleteTime != nil,
+		},
 		Hash: sql.NullString{
 			String: item.Hash,
 			Valid:  true,
@@ -175,12 +188,13 @@ func (r *ItemRepository) UpdateItem(ctx context.Context, item *item.Item) error 
 	return nil
 }
 
-// TODO: Add field mask support in query.
 // ListItems retrieves a list of items from the database with optional fieldmask.
-func (r *ItemRepository) ListItems(ctx context.Context) ([]item.Item, error) {
-	q := query.New(r.db)
+func (r *ItemRepository) ListItems(ctx context.Context, fieldmask []string) ([]item.Item, error) {
+	if len(fieldmask) > 0 {
+		return r.listItemsWithFieldmask(ctx, fieldmask)
+	}
 
-	items, err := q.ListItems(ctx)
+	items, err := query.New(r.db).ListItems(ctx)
 	if err != nil {
 		return nil, r.errorHandler.HandleError(ctx, err)
 	}
@@ -195,4 +209,29 @@ func (r *ItemRepository) ListItems(ctx context.Context) ([]item.Item, error) {
 		itemList[index] = *convertedItem
 	}
 	return itemList, nil
+}
+
+// listItemsWithFieldmask retrieves a list of items from the database with the specified field mask.
+// The field mask determines which columns are selected in the query.
+func (r *ItemRepository) listItemsWithFieldmask(ctx context.Context, fieldmask []string) ([]item.Item, error) {
+	qry := "SELECT ? FROM items WHERE delete_time IS NULL"
+	qry = strings.Replace(qry, "?", strings.Join(fieldmask, ","), 1)
+
+	rows, err := r.db.QueryContext(ctx, qry)
+	if err != nil {
+		return nil, r.errorHandler.HandleError(ctx, err)
+	}
+
+	defer rows.Close()
+
+	var items []item.Item
+	if err = sqlscan.ScanAll(&items, rows); err != nil {
+		return nil, r.errorHandler.HandleError(ctx, err)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, r.errorHandler.HandleError(ctx, err)
+	}
+
+	return items, nil
 }

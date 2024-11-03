@@ -29,15 +29,15 @@ VALUES
 `
 
 type CreateItemParams struct {
-	Name        string
-	DisplayName string
-	CreateTime  time.Time
-	UpdateTime  time.Time
-	DeleteTime  sql.NullTime
-	Hash        sql.NullString
-	Content     sql.NullString
-	Properties  interface{}
-	Metadata    interface{}
+	Name        string         `db:"name"`
+	DisplayName string         `db:"display_name"`
+	CreateTime  time.Time      `db:"create_time"`
+	UpdateTime  time.Time      `db:"update_time"`
+	DeleteTime  sql.NullTime   `db:"delete_time"`
+	Hash        sql.NullString `db:"hash"`
+	Content     sql.NullString `db:"content"`
+	Properties  interface{}    `db:"properties"`
+	Metadata    interface{}    `db:"metadata"`
 }
 
 func (q *Queries) CreateItem(ctx context.Context, arg CreateItemParams) (Item, error) {

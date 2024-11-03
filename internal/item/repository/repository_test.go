@@ -60,6 +60,13 @@ func getTestItem(name string) *item.Item {
 	}
 }
 
+func getDeletedTestItem(name string) *item.Item {
+	i := getTestItem(name)
+	now := time.Now()
+	i.DeleteTime = &now
+	return i
+}
+
 func TestRepository_CreateItem(t *testing.T) {
 	t.Parallel()
 
@@ -211,7 +218,7 @@ func TestRepository_GetItem(t *testing.T) {
 		want    *item.Item
 		wantErr bool
 	}{
-		"Successful retrieval": {
+		"returns an item when item is present": {
 			fields: fields{
 				db: GetTestDatabase(),
 				seed: func(db *sql.DB) {
@@ -227,7 +234,7 @@ func TestRepository_GetItem(t *testing.T) {
 			want:    getTestItem("items/name"),
 			wantErr: false,
 		},
-		"Context canceled": {
+		"returns an error when context is cancelled": {
 			fields: fields{
 				db: GetTestDatabase(),
 				seed: func(db *sql.DB) {
@@ -247,7 +254,7 @@ func TestRepository_GetItem(t *testing.T) {
 			want:    nil,
 			wantErr: true,
 		},
-		"Item not found": {
+		"returns an error when the item is not found": {
 			fields: fields{
 				db: GetTestDatabase(),
 			},
@@ -269,6 +276,8 @@ func TestRepository_GetItem(t *testing.T) {
 			}
 			got, err := r.GetItem(tt.args.ctx, tt.args.name)
 			assert.Equal(t, tt.wantErr, err != nil, "Repository.GetItem() error = %v, wantErr %v", err, tt.wantErr)
+
+			// TODO: Extract this to a helper function, to reduce duplication.
 			if tt.want != nil && got != nil {
 				assert.WithinDuration(t, tt.want.CreateTime, got.CreateTime, time.Second)
 				assert.WithinDuration(t, tt.want.UpdateTime, got.UpdateTime, time.Second)
@@ -299,7 +308,7 @@ func TestRepository_UpdateItem(t *testing.T) {
 		args    args
 		wantErr bool
 	}{
-		"Successful update": {
+		"should update the item when update is called": {
 			fields: fields{
 				db: GetTestDatabase(),
 				seed: func(db *sql.DB) {
@@ -378,6 +387,144 @@ func TestRepository_UpdateItem(t *testing.T) {
 			}
 			err := r.UpdateItem(tt.args.ctx, tt.args.item)
 			assert.Equal(t, tt.wantErr, err != nil, "Repository.UpdateItem() error = %v, wantErr %v", err, tt.wantErr)
+		})
+	}
+}
+
+func TestRepository_ListItems(t *testing.T) {
+	t.Parallel()
+
+	type fields struct {
+		db   *sql.DB
+		seed func(*sql.DB)
+	}
+
+	type args struct {
+		ctx       context.Context
+		fieldmask []string
+	}
+
+	tests := map[string]struct {
+		fields  fields
+		args    args
+		want    []item.Item
+		wantErr bool
+	}{
+		"returns items when no fieldmask is given": {
+			fields: fields{
+				db: GetTestDatabase(),
+				seed: func(db *sql.DB) {
+					if err := SeedDatabase(db, *getTestItem("items/name1"), *getTestItem("items/name2")); err != nil {
+						t.Error(err)
+					}
+				},
+			},
+			args: args{
+				ctx:       context.Background(),
+				fieldmask: nil,
+			},
+			want: []item.Item{
+				*getTestItem("items/name1"),
+				*getTestItem("items/name2"),
+			},
+			wantErr: false,
+		},
+		"returns items with only columns defined in the fieldmask": {
+			fields: fields{
+				db: GetTestDatabase(),
+				seed: func(db *sql.DB) {
+					if err := SeedDatabase(db, *getTestItem("items/name1"), *getTestItem("items/name2")); err != nil {
+						t.Error(err)
+					}
+				},
+			},
+			args: args{
+				ctx:       context.Background(),
+				fieldmask: []string{"name", "display_name"},
+			},
+			want: []item.Item{
+				{
+					Name:        "items/name1",
+					DisplayName: "DisplayName",
+				},
+				{
+					Name:        "items/name2",
+					DisplayName: "DisplayName",
+				},
+			},
+			wantErr: false,
+		},
+		"should return error when context is cancelled": {
+			fields: fields{
+				db: GetTestDatabase(),
+				seed: func(db *sql.DB) {
+					if err := SeedDatabase(db, *getTestItem("items/name1")); err != nil {
+						t.Error(err)
+					}
+				},
+			},
+			args: args{
+				ctx: func() context.Context {
+					ctx, cancel := context.WithCancel(context.Background())
+					cancel()
+					return ctx
+				}(),
+				fieldmask: nil,
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		"should return empty slice when there are no items": {
+			fields: fields{
+				db: GetTestDatabase(),
+			},
+			args: args{
+				ctx:       context.Background(),
+				fieldmask: nil,
+			},
+			want:    []item.Item{},
+			wantErr: false,
+		},
+		"should not include deleted items": {
+			fields: fields{
+				db: GetTestDatabase(),
+				seed: func(db *sql.DB) {
+					if err := SeedDatabase(db, *getDeletedTestItem("items/name1")); err != nil {
+						t.Error(err)
+					}
+				},
+			},
+			args: args{
+				ctx:       context.Background(),
+				fieldmask: nil,
+			},
+			want:    []item.Item{},
+			wantErr: false,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			r := repository.NewRepository(tt.fields.db, &database.SqliteErrorHandler{})
+			if tt.fields.seed != nil {
+				tt.fields.seed(tt.fields.db)
+			}
+			got, err := r.ListItems(tt.args.ctx, tt.args.fieldmask)
+
+			assert.Equal(t, tt.wantErr, err != nil, "Repository.ListItems() error = %v, wantErr %v", err, tt.wantErr)
+
+			for i, item := range got {
+				// Compare other fields without CreateTime and UpdateTime
+				assert.Equal(t, tt.want[i].Name, item.Name)
+				assert.Equal(t, tt.want[i].DisplayName, item.DisplayName)
+				assert.Equal(t, tt.want[i].Content, item.Content)
+				assert.Equal(t, tt.want[i].Hash, item.Hash)
+				assert.Equal(t, tt.want[i].Properties, item.Properties)
+				assert.Equal(t, tt.want[i].Metadata, item.Metadata)
+				assert.InDelta(t, tt.want[i].CreateTime.Unix(), item.CreateTime.Unix(), 1)
+				assert.InDelta(t, tt.want[i].UpdateTime.Unix(), item.UpdateTime.Unix(), 1)
+			}
 		})
 	}
 }

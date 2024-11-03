@@ -50,8 +50,8 @@ func (s *Service) GetItem(ctx context.Context, name string) (*Item, error) {
 }
 
 // ListItems retrieves a list of items.
-func (s *Service) ListItems(ctx context.Context) ([]Item, error) {
-	items, err := s.repo.ListItems(ctx)
+func (s *Service) ListItems(ctx context.Context, fieldmask []string) ([]Item, error) {
+	items, err := s.repo.ListItems(ctx, fieldmask)
 	if err != nil {
 		return nil, err
 	}
