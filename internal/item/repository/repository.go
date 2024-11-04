@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -20,14 +19,14 @@ var _ item.Repository = &ItemRepository{}
 type ItemRepository struct {
 	db           *sql.DB
 	errorHandler database.ErrorHandler
-
-	// TODO: Queries should be a property of the repository so that the prepared statements are cached.
+	queries      query.Queries
 }
 
 func NewRepository(db *sql.DB, errorHandler database.ErrorHandler) *ItemRepository {
 	return &ItemRepository{
 		db:           db,
 		errorHandler: errorHandler,
+		queries:      *query.New(db),
 	}
 }
 
@@ -67,7 +66,7 @@ func (r *ItemRepository) Transactionally(ctx context.Context, f func(tx *sql.Tx)
 // CreateItem creates a new item in the database.
 // If a transaction is provided, the item will be created within the transaction.
 func (r *ItemRepository) CreateItem(ctx context.Context, tx *sql.Tx, item item.Item) (*item.Item, error) {
-	q := query.New(tx)
+	q := r.queries.WithTx(tx)
 
 	propertiesJSON, err := json.Marshal(item.Properties)
 	if err != nil {
@@ -119,8 +118,8 @@ func (r *ItemRepository) CreateItem(ctx context.Context, tx *sql.Tx, item item.I
 }
 
 // GetItem retrieves an item from the database by its resource name.
-func (r *ItemRepository) GetItem(ctx context.Context, name string) (*item.Item, error) {
-	q := query.New(r.db)
+func (r *ItemRepository) GetItem(ctx context.Context, tx *sql.Tx, name string) (*item.Item, error) {
+	q := r.queries.WithTx(tx)
 
 	i, err := q.GetItem(ctx, name)
 	if err != nil {
@@ -135,89 +134,80 @@ func (r *ItemRepository) GetItem(ctx context.Context, name string) (*item.Item, 
 	return foundItem, nil
 }
 
-// TODO: Refactor UpdateItem to use query.
-
 // UpdateItem updates an existing item in the database.
-func (r *ItemRepository) UpdateItem(ctx context.Context, item *item.Item) error {
-	query := `
-		UPDATE items
-		SET update_time = $1, hash = $2, name = $3, display_name = $4, content = $5, properties = $6, metadata = $7
-		WHERE name = $8
-	`
+func (r *ItemRepository) UpdateItem(ctx context.Context, tx *sql.Tx, item item.Item) (*item.Item, error) {
+	q := r.queries.WithTx(tx)
 
 	propertiesJSON, err := json.Marshal(item.Properties)
 	if err != nil {
-		return fmt.Errorf("failed to marshal properties: %w", err)
+		return nil, fmt.Errorf("failed to marshal properties: %w", err)
 	}
 
 	metadataJSON, err := json.Marshal(item.Metadata)
 	if err != nil {
-		return fmt.Errorf("failed to marshal metadata: %w", err)
+		return nil, fmt.Errorf("failed to marshal metadata: %w", err)
 	}
 
-	stmt, err := r.db.PrepareContext(ctx, query)
-	if err != nil {
-		return fmt.Errorf("failed to prepare statement: %w", err)
-	}
-	defer stmt.Close()
-
-	result, err := stmt.ExecContext(ctx,
-		item.UpdateTime,
-		item.Hash,
-		item.Name,
-		item.DisplayName,
-		item.Content,
-		propertiesJSON,
-		metadataJSON,
-		item.Name,
-	)
-
-	if err != nil {
-		return r.errorHandler.HandleError(ctx, err)
+	params := query.UpdateItemParams{
+		Name:        item.Name,
+		DisplayName: item.DisplayName,
+		UpdateTime:  item.UpdateTime,
+		Hash: sql.NullString{
+			String: item.Hash,
+			Valid:  true,
+		},
+		Content: sql.NullString{
+			String: item.Content,
+			Valid:  true,
+		},
+		Properties: propertiesJSON,
+		Metadata:   metadataJSON,
+		Name_2:     item.Name,
 	}
 
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return fmt.Errorf("failed to get rows affected: %w", err)
-	}
-
-	if rowsAffected == 0 {
-		return errors.New("item not found")
-	}
-
-	return nil
-}
-
-// ListItems retrieves a list of items from the database with optional fieldmask.
-func (r *ItemRepository) ListItems(ctx context.Context, fieldmask []string) ([]item.Item, error) {
-	if len(fieldmask) > 0 {
-		return r.listItemsWithFieldmask(ctx, fieldmask)
-	}
-
-	items, err := query.New(r.db).ListItems(ctx)
+	i, err := q.UpdateItem(ctx, params)
 	if err != nil {
 		return nil, r.errorHandler.HandleError(ctx, err)
 	}
 
-	itemList := make([]item.Item, len(items))
+	updatedItem, err := ConvertQueryItem(i)
+	if err != nil {
+		return nil, r.errorHandler.HandleError(ctx, err)
+	}
+
+	return updatedItem, nil
+}
+
+// ListItems retrieves a list of items from the database with optional fieldmask.
+func (r *ItemRepository) ListItems(ctx context.Context, tx *sql.Tx, fieldmask []string) ([]*item.Item, error) {
+	if len(fieldmask) > 0 {
+		return r.listItemsWithFieldmask(ctx, tx, fieldmask)
+	}
+
+	items, err := r.queries.WithTx(tx).ListItems(ctx)
+	if err != nil {
+		return nil, r.errorHandler.HandleError(ctx, err)
+	}
+
+	itemList := make([]*item.Item, len(items))
 	for index, item := range items {
 		convertedItem, convertErr := ConvertQueryItem(item)
 		if convertErr != nil {
 			return nil, r.errorHandler.HandleError(ctx, convertErr)
 		}
 
-		itemList[index] = *convertedItem
+		itemList[index] = convertedItem
 	}
 	return itemList, nil
 }
 
 // listItemsWithFieldmask retrieves a list of items from the database with the specified field mask.
 // The field mask determines which columns are selected in the query.
-func (r *ItemRepository) listItemsWithFieldmask(ctx context.Context, fieldmask []string) ([]item.Item, error) {
+func (r *ItemRepository) listItemsWithFieldmask(ctx context.Context, tx *sql.Tx, fieldmask []string) ([]*item.Item, error) {
 	qry := "SELECT ? FROM items WHERE delete_time IS NULL"
 	qry = strings.Replace(qry, "?", strings.Join(fieldmask, ","), 1)
 
-	rows, err := r.db.QueryContext(ctx, qry)
+	rows, err := tx.QueryContext(ctx, qry)
 	if err != nil {
 		return nil, r.errorHandler.HandleError(ctx, err)
 	}
@@ -228,7 +218,7 @@ func (r *ItemRepository) listItemsWithFieldmask(ctx context.Context, fieldmask [
 	// storing driver.Value type []uint8 into type *map[string]interface {}
 	// When selecting properties or metadata in the fieldmask.
 
-	var items []item.Item
+	var items []*item.Item
 	if err = sqlscan.ScanAll(&items, rows); err != nil {
 		return nil, r.errorHandler.HandleError(ctx, err)
 	}

@@ -22,15 +22,16 @@ func (s *Server) ItemsCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var createdItem item.Item
+	var createdItem *item.Item
 	createdItem, err = s.itemService.CreateItem(ctx, itemCreateToItem(createRequest))
 	if err != nil {
 		s.logger.ErrorContext(ctx, fmt.Errorf("failed to create item: %w", err).Error())
+
 		s.errorHandler.HandleError(w, r, err)
 		return
 	}
 
-	SerializeJSONResponse(w, http.StatusCreated, createdItem)
+	SerializeJSONResponse(w, http.StatusCreated, FromItem(createdItem))
 }
 
 // ItemsGet retrieves an item by name.
@@ -77,7 +78,7 @@ func (s *Server) ItemsList(w http.ResponseWriter, r *http.Request, params api.It
 	// Convert items to API items.
 	var apiItems = make([]*api.Item, len(items))
 	for i, item := range items {
-		apiItems[i] = FromItem(&item)
+		apiItems[i] = FromItem(item)
 	}
 
 	if len(fm) == 0 || fm == nil {

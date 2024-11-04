@@ -274,7 +274,15 @@ func TestRepository_GetItem(t *testing.T) {
 			if tt.fields.seed != nil {
 				tt.fields.seed(tt.fields.db)
 			}
-			got, err := r.GetItem(tt.args.ctx, tt.args.name)
+
+			tx, err := tt.fields.db.Begin()
+			require.NoError(t, err)
+
+			defer func() {
+				require.NoError(t, tx.Rollback())
+			}()
+
+			got, err := r.GetItem(tt.args.ctx, tx, tt.args.name)
 			assert.Equal(t, tt.wantErr, err != nil, "Repository.GetItem() error = %v, wantErr %v", err, tt.wantErr)
 
 			// TODO: Extract this to a helper function, to reduce duplication.
@@ -299,10 +307,12 @@ func TestRepository_UpdateItem(t *testing.T) {
 		db   *sql.DB
 		seed func(*sql.DB)
 	}
+
 	type args struct {
 		ctx  context.Context
-		item *item.Item
+		item item.Item
 	}
+
 	tests := map[string]struct {
 		fields  fields
 		args    args
@@ -319,7 +329,7 @@ func TestRepository_UpdateItem(t *testing.T) {
 			},
 			args: args{
 				ctx: context.Background(),
-				item: &item.Item{
+				item: item.Item{
 					CreateTime:  time.Now(),
 					UpdateTime:  time.Now(),
 					Hash:        "newhash",
@@ -346,7 +356,7 @@ func TestRepository_UpdateItem(t *testing.T) {
 					cancel()
 					return ctx
 				}(),
-				item: &item.Item{
+				item: item.Item{
 					CreateTime:  time.Now(),
 					UpdateTime:  time.Now(),
 					Hash:        "newhash",
@@ -364,7 +374,7 @@ func TestRepository_UpdateItem(t *testing.T) {
 			},
 			args: args{
 				ctx: context.Background(),
-				item: &item.Item{
+				item: item.Item{
 					CreateTime:  time.Now(),
 					UpdateTime:  time.Now(),
 					Hash:        "newhash",
@@ -385,7 +395,15 @@ func TestRepository_UpdateItem(t *testing.T) {
 			if tt.fields.seed != nil {
 				tt.fields.seed(tt.fields.db)
 			}
-			err := r.UpdateItem(tt.args.ctx, tt.args.item)
+
+			tx, err := tt.fields.db.Begin()
+			require.NoError(t, err)
+
+			defer func() {
+				require.NoError(t, tx.Rollback())
+			}()
+
+			_, err = r.UpdateItem(tt.args.ctx, tx, tt.args.item)
 			assert.Equal(t, tt.wantErr, err != nil, "Repository.UpdateItem() error = %v, wantErr %v", err, tt.wantErr)
 		})
 	}
@@ -510,12 +528,19 @@ func TestRepository_ListItems(t *testing.T) {
 			if tt.fields.seed != nil {
 				tt.fields.seed(tt.fields.db)
 			}
-			got, err := r.ListItems(tt.args.ctx, tt.args.fieldmask)
+
+			tx, err := tt.fields.db.Begin()
+			require.NoError(t, err)
+
+			defer func() {
+				require.NoError(t, tx.Rollback())
+			}()
+
+			got, err := r.ListItems(tt.args.ctx, tx, tt.args.fieldmask)
 
 			assert.Equal(t, tt.wantErr, err != nil, "Repository.ListItems() error = %v, wantErr %v", err, tt.wantErr)
 
 			for i, item := range got {
-				// Compare other fields without CreateTime and UpdateTime
 				assert.Equal(t, tt.want[i].Name, item.Name)
 				assert.Equal(t, tt.want[i].DisplayName, item.DisplayName)
 				assert.Equal(t, tt.want[i].Content, item.Content)

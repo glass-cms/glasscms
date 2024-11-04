@@ -27,11 +27,17 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.createItemStmt, err = db.PrepareContext(ctx, createItem); err != nil {
 		return nil, fmt.Errorf("error preparing query CreateItem: %w", err)
 	}
+	if q.deleteItemStmt, err = db.PrepareContext(ctx, deleteItem); err != nil {
+		return nil, fmt.Errorf("error preparing query DeleteItem: %w", err)
+	}
 	if q.getItemStmt, err = db.PrepareContext(ctx, getItem); err != nil {
 		return nil, fmt.Errorf("error preparing query GetItem: %w", err)
 	}
 	if q.listItemsStmt, err = db.PrepareContext(ctx, listItems); err != nil {
 		return nil, fmt.Errorf("error preparing query ListItems: %w", err)
+	}
+	if q.updateItemStmt, err = db.PrepareContext(ctx, updateItem); err != nil {
+		return nil, fmt.Errorf("error preparing query UpdateItem: %w", err)
 	}
 	return &q, nil
 }
@@ -43,6 +49,11 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing createItemStmt: %w", cerr)
 		}
 	}
+	if q.deleteItemStmt != nil {
+		if cerr := q.deleteItemStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing deleteItemStmt: %w", cerr)
+		}
+	}
 	if q.getItemStmt != nil {
 		if cerr := q.getItemStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing getItemStmt: %w", cerr)
@@ -51,6 +62,11 @@ func (q *Queries) Close() error {
 	if q.listItemsStmt != nil {
 		if cerr := q.listItemsStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing listItemsStmt: %w", cerr)
+		}
+	}
+	if q.updateItemStmt != nil {
+		if cerr := q.updateItemStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing updateItemStmt: %w", cerr)
 		}
 	}
 	return err
@@ -93,8 +109,10 @@ type Queries struct {
 	db             DBTX
 	tx             *sql.Tx
 	createItemStmt *sql.Stmt
+	deleteItemStmt *sql.Stmt
 	getItemStmt    *sql.Stmt
 	listItemsStmt  *sql.Stmt
+	updateItemStmt *sql.Stmt
 }
 
 func (q *Queries) WithTx(tx *sql.Tx) *Queries {
@@ -102,7 +120,9 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		db:             tx,
 		tx:             tx,
 		createItemStmt: q.createItemStmt,
+		deleteItemStmt: q.deleteItemStmt,
 		getItemStmt:    q.getItemStmt,
 		listItemsStmt:  q.listItemsStmt,
+		updateItemStmt: q.updateItemStmt,
 	}
 }
