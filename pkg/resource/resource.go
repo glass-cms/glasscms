@@ -37,3 +37,5 @@ func NewNotFoundError(name, resource string, err error) *NotFoundError {
 		err:      err,
 	}
 }
+
+// TODO: Add an error for max batch size exceeded.

@@ -50,7 +50,7 @@ type Item struct {
 	DisplayName string     `json:"display_name"`
 
 	// Hash represents a hash value calculated from the item's content.
-	Hash       string                 `json:"hash"`
+	Hash       *string                `json:"hash,omitempty"`
 	Metadata   map[string]interface{} `json:"metadata"`
 	Name       string                 `json:"name"`
 	Properties map[string]interface{} `json:"properties"`
@@ -59,55 +59,46 @@ type Item struct {
 
 // ItemCreate Resource create operation model.
 type ItemCreate struct {
-	Content     string    `json:"content"`
-	CreateTime  time.Time `json:"create_time"`
-	DisplayName string    `json:"display_name"`
-
-	// Hash represents a hash value calculated from the item's content.
-	Hash       string                 `json:"hash"`
-	Metadata   map[string]interface{} `json:"metadata"`
-	Name       string                 `json:"name"`
-	Properties map[string]interface{} `json:"properties"`
-	UpdateTime time.Time              `json:"update_time"`
+	Content     string                 `json:"content"`
+	CreateTime  time.Time              `json:"create_time"`
+	DisplayName string                 `json:"display_name"`
+	Metadata    map[string]interface{} `json:"metadata"`
+	Name        string                 `json:"name"`
+	Properties  map[string]interface{} `json:"properties"`
+	UpdateTime  time.Time              `json:"update_time"`
 }
 
 // ItemUpdate Resource create or update operation model.
 type ItemUpdate struct {
-	Content     *string    `json:"content,omitempty"`
-	CreateTime  *time.Time `json:"create_time,omitempty"`
-	DisplayName *string    `json:"display_name,omitempty"`
-
-	// Hash represents a hash value calculated from the item's content.
-	Hash       *string                 `json:"hash,omitempty"`
-	Metadata   *map[string]interface{} `json:"metadata,omitempty"`
-	Properties *map[string]interface{} `json:"properties,omitempty"`
-	UpdateTime *time.Time              `json:"update_time,omitempty"`
+	Content     *string                 `json:"content,omitempty"`
+	CreateTime  *time.Time              `json:"create_time,omitempty"`
+	DisplayName *string                 `json:"display_name,omitempty"`
+	Metadata    *map[string]interface{} `json:"metadata,omitempty"`
+	Properties  *map[string]interface{} `json:"properties,omitempty"`
+	UpdateTime  *time.Time              `json:"update_time,omitempty"`
 }
 
 // ItemUpsert Resource create operation model.
 type ItemUpsert struct {
-	Content     string    `json:"content"`
-	CreateTime  time.Time `json:"create_time"`
-	DisplayName string    `json:"display_name"`
-
-	// Hash represents a hash value calculated from the item's content.
-	Hash       string                 `json:"hash"`
-	Metadata   map[string]interface{} `json:"metadata"`
-	Name       string                 `json:"name"`
-	Properties map[string]interface{} `json:"properties"`
-	UpdateTime time.Time              `json:"update_time"`
+	Content     string                 `json:"content"`
+	CreateTime  time.Time              `json:"create_time"`
+	DisplayName string                 `json:"display_name"`
+	Metadata    map[string]interface{} `json:"metadata"`
+	Name        string                 `json:"name"`
+	Properties  map[string]interface{} `json:"properties"`
+	UpdateTime  time.Time              `json:"update_time"`
 }
 
 // ItemKey defines model for ItemKey.
 type ItemKey = string
 
-// ItemsUpsertJSONBody defines parameters for ItemsUpsert.
-type ItemsUpsertJSONBody = []ItemUpsert
-
 // ItemsListParams defines parameters for ItemsList.
 type ItemsListParams struct {
 	Fields *string `form:"fields,omitempty" json:"fields,omitempty"`
 }
+
+// ItemsUpsertJSONBody defines parameters for ItemsUpsert.
+type ItemsUpsertJSONBody = []ItemUpsert
 
 // ItemsUpsertJSONRequestBody defines body for ItemsUpsert for application/json ContentType.
 type ItemsUpsertJSONRequestBody = ItemsUpsertJSONBody
@@ -121,11 +112,11 @@ type ItemsUpdateJSONRequestBody = ItemUpdate
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 
-	// (PATCH /)
-	ItemsUpsert(w http.ResponseWriter, r *http.Request)
-
 	// (GET /items)
 	ItemsList(w http.ResponseWriter, r *http.Request, params ItemsListParams)
+
+	// (PATCH /items)
+	ItemsUpsert(w http.ResponseWriter, r *http.Request)
 
 	// (POST /items)
 	ItemsCreate(w http.ResponseWriter, r *http.Request)
@@ -146,21 +137,6 @@ type ServerInterfaceWrapper struct {
 
 type MiddlewareFunc func(http.Handler) http.Handler
 
-// ItemsUpsert operation middleware
-func (siw *ServerInterfaceWrapper) ItemsUpsert(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ItemsUpsert(w, r)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r.WithContext(ctx))
-}
-
 // ItemsList operation middleware
 func (siw *ServerInterfaceWrapper) ItemsList(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -180,6 +156,21 @@ func (siw *ServerInterfaceWrapper) ItemsList(w http.ResponseWriter, r *http.Requ
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ItemsList(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// ItemsUpsert operation middleware
+func (siw *ServerInterfaceWrapper) ItemsUpsert(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ItemsUpsert(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -370,8 +361,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 		ErrorHandlerFunc:   options.ErrorHandlerFunc,
 	}
 
-	m.HandleFunc("PATCH "+options.BaseURL+"/", wrapper.ItemsUpsert)
 	m.HandleFunc("GET "+options.BaseURL+"/items", wrapper.ItemsList)
+	m.HandleFunc("PATCH "+options.BaseURL+"/items", wrapper.ItemsUpsert)
 	m.HandleFunc("POST "+options.BaseURL+"/items", wrapper.ItemsCreate)
 	m.HandleFunc("GET "+options.BaseURL+"/items/{name}", wrapper.ItemsGet)
 	m.HandleFunc("PATCH "+options.BaseURL+"/items/{name}", wrapper.ItemsUpdate)

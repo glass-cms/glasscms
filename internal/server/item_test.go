@@ -24,11 +24,11 @@ func TestAPIHandler_ItemsCreate(t *testing.T) {
 		req      func() *http.Request
 		expected int
 	}{
-		"returns a 500 status code when the buffer cannot be unmarshalled": {
+		"returns a 400 status code when the buffer cannot be unmarshalled": {
 			req: func() *http.Request {
 				return httptest.NewRequest(http.MethodPost, "/v1/items", nil)
 			},
-			expected: http.StatusInternalServerError,
+			expected: http.StatusBadRequest,
 		},
 		"returns a 201 status code when the item is created successfully": {
 			req: func() *http.Request {

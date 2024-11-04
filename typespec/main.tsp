@@ -28,8 +28,8 @@ interface Items {
     @doc("Lists all items")
     @listsResource(Item)
     list(@query fields?: string): Item[] | Error;
-
-    @autoRoute
+    
+    @route("/items")
     @doc("Creates or updates many items")
     @createsOrUpdatesResource(Item)
     upsert(@body items: UpsertItem[]): Item[] | Error;
@@ -54,5 +54,6 @@ model Item {
     metadata: Record<unknown>;
 
     @doc("represents a hash value calculated from the item's content.")
+    @visibility("read")
     hash: string;
 }
