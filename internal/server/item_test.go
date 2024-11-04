@@ -224,3 +224,79 @@ func TestAPIHandler_ItemsList(t *testing.T) {
 		})
 	}
 }
+
+func TestAPIHandler_ItemsUpsert(t *testing.T) {
+	t.Parallel()
+
+	tests := map[string]struct {
+		req      func() *http.Request
+		seed     func(*item.Service)
+		expected int
+	}{
+		"returns a 200 status code when items are upserted successfully": {
+			req: func() *http.Request {
+				items := api.ItemsUpsertJSONRequestBody{
+					{
+						Name:        "items/name1",
+						DisplayName: "Item 1",
+						Content:     "content1",
+					},
+					{
+						Name:        "items/name2",
+						DisplayName: "Item 2",
+						Content:     "content2",
+					},
+				}
+				body, _ := json.Marshal(items)
+				return httptest.NewRequest(http.MethodPost, "/v1/items/upsert", bytes.NewReader(body))
+			},
+			seed:     nil,
+			expected: http.StatusOK,
+		},
+		"returns a 400 status code when request body is invalid": {
+			req: func() *http.Request {
+				return httptest.NewRequest(http.MethodPost, "/v1/items/upsert", bytes.NewReader([]byte("invalid body")))
+			},
+			seed:     nil,
+			expected: http.StatusBadRequest,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			testdb, err := database.NewTestDB()
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer testdb.Close()
+
+			repo := repository.NewRepository(testdb, &database.SqliteErrorHandler{})
+			svc := item.NewService(repo)
+
+			if tt.seed != nil {
+				tt.seed(svc)
+			}
+
+			handler, err := server.New(
+				log.NoopLogger(),
+				svc,
+			)
+			if err != nil {
+				t.Fatal(err)
+				return
+			}
+
+			rr := httptest.NewRecorder()
+			request := tt.req()
+			request.Header.Set("Accept", "application/json")
+
+			// Act
+			handler.ItemsUpsert(rr, request)
+
+			// Assert
+			assert.Equal(t, tt.expected, rr.Code)
+		})
+	}
+}

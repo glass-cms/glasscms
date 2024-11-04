@@ -31,7 +31,7 @@ paths:
             schema:
               type: array
               items:
-                $ref: '#/components/schemas/UpsertItem'
+                $ref: '#/components/schemas/ItemUpsert'
   /items:
     post:
       operationId: Items_create
@@ -266,7 +266,7 @@ components:
           type: string
           description: represents a hash value calculated from the item's content.
       description: Resource create or update operation model.
-    UpsertItem:
+    ItemUpsert:
       type: object
       required:
         - name

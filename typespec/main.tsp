@@ -16,7 +16,7 @@ alias GetItems = TypeSpec.Rest.Resource.ResourceRead<Item, Error>;
 alias UpdateItem = TypeSpec.Rest.Resource.ResourceUpdate<Item, Error>;
 alias ListItems = TypeSpec.Rest.Resource.ResourceList<Item, Error>;
 
-@friendlyName("UpsertItem")
+@friendlyName("ItemUpsert")
 model UpsertItem is TypeSpec.Rest.Resource.ResourceCreateModel<Item>;
 
 interface Items {

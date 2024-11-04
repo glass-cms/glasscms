@@ -10,6 +10,7 @@ import (
 
 	"github.com/glass-cms/glasscms/internal/server"
 	"github.com/glass-cms/glasscms/pkg/api"
+	"github.com/glass-cms/glasscms/pkg/fieldmask"
 	"github.com/glass-cms/glasscms/pkg/resource"
 	"github.com/stretchr/testify/require"
 )
@@ -186,6 +187,100 @@ func TestErrorHandler_HandleError(t *testing.T) {
 			if errResp.Message != tt.expectedMsg {
 				t.Errorf("expected message %q, got %q", tt.expectedMsg, errResp.Message)
 			}
+		})
+	}
+}
+
+func TestErrorMapperInvalidFieldMaskError(t *testing.T) {
+	t.Parallel()
+
+	type args struct {
+		err error
+	}
+	tests := map[string]struct {
+		args         args
+		want         *api.Error
+		expectPanics bool
+	}{
+		"maps fieldmask.InvalidFieldMaskError to an API error response": {
+			args: args{
+				err: fieldmask.NewInvalidFieldMaskError("invalidFieldMask"),
+			},
+			want: &api.Error{
+				Code:    api.ParameterInvalid,
+				Message: "The field mask is invalid",
+				Type:    api.ApiError,
+				Details: map[string]interface{}{
+					"field_mask": "invalidFieldMask",
+				},
+			},
+		},
+		"panics if error is not a fieldmask.InvalidFieldMaskError": {
+			args: args{
+				err: errors.New("some error"),
+			},
+			expectPanics: true,
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			if tt.expectPanics {
+				require.Panics(t, func() {
+					server.ErrorMapperInvalidFieldMaskError(tt.args.err)
+				})
+				return
+			}
+
+			require.Equal(t, tt.want, server.ErrorMapperInvalidFieldMaskError(tt.args.err))
+		})
+	}
+}
+
+func TestErrorMapperDeserializationError(t *testing.T) {
+	t.Parallel()
+
+	type args struct {
+		err error
+	}
+	tests := map[string]struct {
+		args         args
+		want         *api.Error
+		expectPanics bool
+	}{
+		"maps resource.DeserializationError to an API error response": {
+			args: args{
+				err: server.NewDeserializeError(errors.New("invalid JSON")),
+			},
+			want: &api.Error{
+				Code:    api.ParameterInvalid,
+				Message: "Failed to deserialize the request body",
+				Type:    api.ApiError,
+				Details: map[string]interface{}{
+					"error": "invalid JSON",
+				},
+			},
+		},
+		"panics if error is not a resource.DeserializationError": {
+			args: args{
+				err: errors.New("some error"),
+			},
+			expectPanics: true,
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			if tt.expectPanics {
+				require.Panics(t, func() {
+					server.ErrorMapperDeserializeError(tt.args.err)
+				})
+				return
+			}
+
+			require.Equal(t, tt.want, server.ErrorMapperDeserializeError(tt.args.err))
 		})
 	}
 }

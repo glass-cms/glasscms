@@ -84,8 +84,8 @@ type ItemUpdate struct {
 	UpdateTime *time.Time              `json:"update_time,omitempty"`
 }
 
-// UpsertItem Resource create operation model.
-type UpsertItem struct {
+// ItemUpsert Resource create operation model.
+type ItemUpsert struct {
 	Content     string    `json:"content"`
 	CreateTime  time.Time `json:"create_time"`
 	DisplayName string    `json:"display_name"`
@@ -102,7 +102,7 @@ type UpsertItem struct {
 type ItemKey = string
 
 // ItemsUpsertJSONBody defines parameters for ItemsUpsert.
-type ItemsUpsertJSONBody = []UpsertItem
+type ItemsUpsertJSONBody = []ItemUpsert
 
 // ItemsListParams defines parameters for ItemsList.
 type ItemsListParams struct {
