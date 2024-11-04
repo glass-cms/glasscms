@@ -67,6 +67,25 @@ func (q *Queries) CreateItem(ctx context.Context, arg CreateItemParams) (Item, e
 	return i, err
 }
 
+const deleteItem = `-- name: DeleteItem :exec
+UPDATE
+    items
+SET
+    delete_time = ?
+WHERE
+    name = ?
+`
+
+type DeleteItemParams struct {
+	DeleteTime sql.NullTime `db:"delete_time"`
+	Name       string       `db:"name"`
+}
+
+func (q *Queries) DeleteItem(ctx context.Context, arg DeleteItemParams) error {
+	_, err := q.exec(ctx, q.deleteItemStmt, deleteItem, arg.DeleteTime, arg.Name)
+	return err
+}
+
 const getItem = `-- name: GetItem :one
 SELECT
     name, display_name, create_time, update_time, delete_time, hash, content, properties, metadata
@@ -134,4 +153,58 @@ func (q *Queries) ListItems(ctx context.Context) ([]Item, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateItem = `-- name: UpdateItem :one
+UPDATE
+    items
+SET
+    name = ?,
+    display_name = ?,
+    update_time = ?,
+    hash = ?,
+    content = ?,
+    properties = ?,
+    metadata = ?
+WHERE
+    name = ?
+    AND delete_time IS NULL
+RETURNING name, display_name, create_time, update_time, delete_time, hash, content, properties, metadata
+`
+
+type UpdateItemParams struct {
+	Name        string         `db:"name"`
+	DisplayName string         `db:"display_name"`
+	UpdateTime  time.Time      `db:"update_time"`
+	Hash        sql.NullString `db:"hash"`
+	Content     sql.NullString `db:"content"`
+	Properties  interface{}    `db:"properties"`
+	Metadata    interface{}    `db:"metadata"`
+	Name_2      string         `db:"name_2"`
+}
+
+func (q *Queries) UpdateItem(ctx context.Context, arg UpdateItemParams) (Item, error) {
+	row := q.queryRow(ctx, q.updateItemStmt, updateItem,
+		arg.Name,
+		arg.DisplayName,
+		arg.UpdateTime,
+		arg.Hash,
+		arg.Content,
+		arg.Properties,
+		arg.Metadata,
+		arg.Name_2,
+	)
+	var i Item
+	err := row.Scan(
+		&i.Name,
+		&i.DisplayName,
+		&i.CreateTime,
+		&i.UpdateTime,
+		&i.DeleteTime,
+		&i.Hash,
+		&i.Content,
+		&i.Properties,
+		&i.Metadata,
+	)
+	return i, err
 }
