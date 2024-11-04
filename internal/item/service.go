@@ -54,7 +54,6 @@ func (s *Service) GetItem(ctx context.Context, name string) (*Item, error) {
 		}
 
 		return err
-
 	})
 
 	return item, err
@@ -73,7 +72,6 @@ func (s *Service) ListItems(ctx context.Context, fieldmask []string) ([]*Item, e
 		}
 
 		return nil
-
 	})
 
 	return items, err

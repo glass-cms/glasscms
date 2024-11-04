@@ -553,3 +553,82 @@ func TestRepository_ListItems(t *testing.T) {
 		})
 	}
 }
+func TestRepository_DeleteItem(t *testing.T) {
+	t.Parallel()
+
+	type fields struct {
+		db   *sql.DB
+		seed func(*sql.DB)
+	}
+
+	type args struct {
+		ctx  context.Context
+		name string
+	}
+
+	tests := map[string]struct {
+		fields  fields
+		args    args
+		wantErr bool
+	}{
+		"should delete the item successfully": {
+			fields: fields{
+				db: GetTestDatabase(),
+				seed: func(db *sql.DB) {
+					if err := SeedDatabase(db, *getTestItem("items/name")); err != nil {
+						t.Error(err)
+					}
+				},
+			},
+			args: args{
+				ctx:  context.Background(),
+				name: "items/name",
+			},
+			wantErr: false,
+		},
+		"should return error when context is cancelled": {
+			fields: fields{
+				db: GetTestDatabase(),
+				seed: func(db *sql.DB) {
+					if err := SeedDatabase(db, *getTestItem("items/name")); err != nil {
+						t.Error(err)
+					}
+				},
+			},
+			args: args{
+				ctx: func() context.Context {
+					ctx, cancel := context.WithCancel(context.Background())
+					cancel()
+					return ctx
+				}(),
+				name: "items/name",
+			},
+			wantErr: true,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			r := repository.NewRepository(tt.fields.db, &database.SqliteErrorHandler{})
+			if tt.fields.seed != nil {
+				tt.fields.seed(tt.fields.db)
+			}
+
+			tx, err := tt.fields.db.Begin()
+			require.NoError(t, err)
+
+			defer func() {
+				require.NoError(t, tx.Rollback())
+			}()
+
+			err = r.DeleteItem(tt.args.ctx, tx, tt.args.name)
+			assert.Equal(t, tt.wantErr, err != nil, "Repository.DeleteItem() error = %v, wantErr %v", err, tt.wantErr)
+
+			if !tt.wantErr {
+				_, err = r.GetItem(tt.args.ctx, tx, tt.args.name)
+				assert.ErrorIs(t, err, database.ErrNotFound)
+			}
+		})
+	}
+}

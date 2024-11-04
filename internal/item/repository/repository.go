@@ -178,6 +178,26 @@ func (r *ItemRepository) UpdateItem(ctx context.Context, tx *sql.Tx, item item.I
 	return updatedItem, nil
 }
 
+// DeleteItem marks an item as deleted in the database.
+func (r *ItemRepository) DeleteItem(ctx context.Context, tx *sql.Tx, name string) error {
+	q := r.queries.WithTx(tx)
+
+	params := query.DeleteItemParams{
+		DeleteTime: sql.NullTime{
+			Time:  time.Now(),
+			Valid: true,
+		},
+		Name: name,
+	}
+
+	err := q.DeleteItem(ctx, params)
+	if err != nil {
+		return r.errorHandler.HandleError(ctx, err)
+	}
+
+	return nil
+}
+
 // ListItems retrieves a list of items from the database with optional fieldmask.
 func (r *ItemRepository) ListItems(ctx context.Context, tx *sql.Tx, fieldmask []string) ([]*item.Item, error) {
 	if len(fieldmask) > 0 {
@@ -203,7 +223,11 @@ func (r *ItemRepository) ListItems(ctx context.Context, tx *sql.Tx, fieldmask []
 
 // listItemsWithFieldmask retrieves a list of items from the database with the specified field mask.
 // The field mask determines which columns are selected in the query.
-func (r *ItemRepository) listItemsWithFieldmask(ctx context.Context, tx *sql.Tx, fieldmask []string) ([]*item.Item, error) {
+func (r *ItemRepository) listItemsWithFieldmask(
+	ctx context.Context,
+	tx *sql.Tx,
+	fieldmask []string,
+) ([]*item.Item, error) {
 	qry := "SELECT ? FROM items WHERE delete_time IS NULL"
 	qry = strings.Replace(qry, "?", strings.Join(fieldmask, ","), 1)
 
