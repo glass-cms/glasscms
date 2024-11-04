@@ -12,6 +12,5 @@ type Repository interface {
 	UpdateItem(ctx context.Context, tx *sql.Tx, item Item) (*Item, error)
 	DeleteItem(ddctx context.Context, tx *sql.Tx, name string) error
 	ListItems(ctx context.Context, tx *sql.Tx, fieldmasks []string) ([]*Item, error)
+	UpsertItem(ctx context.Context, tx *sql.Tx, item Item) (*Item, error)
 }
-
-// TODO: Delete Many Items.
