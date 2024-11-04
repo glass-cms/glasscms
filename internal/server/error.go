@@ -118,3 +118,20 @@ func ErrorMapperInvalidFieldMaskError(err error) *api.Error {
 		},
 	}
 }
+
+// ErrorMapperDeserializeError maps a resource.DeserializationError to an API error response.
+func ErrorMapperDeserializeError(err error) *api.Error {
+	var deserializationErr *DeserializeError
+	if !errors.As(err, &deserializationErr) {
+		panic("error is not a resource.DeserializationError")
+	}
+
+	return &api.Error{
+		Code:    api.ParameterInvalid,
+		Message: "Failed to deserialize the request body",
+		Type:    api.ApiError,
+		Details: map[string]interface{}{
+			"error": deserializationErr.Error(),
+		},
+	}
+}

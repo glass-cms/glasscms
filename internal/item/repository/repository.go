@@ -65,15 +65,12 @@ func (r *ItemRepository) Transactionally(ctx context.Context, f func(tx *sql.Tx)
 
 // CreateItem creates a new item in the database.
 // If a transaction is provided, the item will be created within the transaction.
+//
+//nolint:dupl // Very similar to UpsertItem, but with different query parameters.
 func (r *ItemRepository) CreateItem(ctx context.Context, tx *sql.Tx, item item.Item) (*item.Item, error) {
 	q := r.queries.WithTx(tx)
 
-	propertiesJSON, err := json.Marshal(item.Properties)
-	if err != nil {
-		return nil, r.errorHandler.HandleError(ctx, err)
-	}
-
-	metadataJSON, err := json.Marshal(item.Metadata)
+	propertiesJSON, metadataJSON, err := marshalItemData(item)
 	if err != nil {
 		return nil, r.errorHandler.HandleError(ctx, err)
 	}
@@ -117,6 +114,20 @@ func (r *ItemRepository) CreateItem(ctx context.Context, tx *sql.Tx, item item.I
 	return newItem, nil
 }
 
+func marshalItemData(item item.Item) ([]byte, []byte, error) {
+	propertiesJSON, err := json.Marshal(item.Properties)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	metadataJSON, err := json.Marshal(item.Metadata)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return propertiesJSON, metadataJSON, nil
+}
+
 // GetItem retrieves an item from the database by its resource name.
 func (r *ItemRepository) GetItem(ctx context.Context, tx *sql.Tx, name string) (*item.Item, error) {
 	q := r.queries.WithTx(tx)
@@ -138,14 +149,9 @@ func (r *ItemRepository) GetItem(ctx context.Context, tx *sql.Tx, name string) (
 func (r *ItemRepository) UpdateItem(ctx context.Context, tx *sql.Tx, item item.Item) (*item.Item, error) {
 	q := r.queries.WithTx(tx)
 
-	propertiesJSON, err := json.Marshal(item.Properties)
+	propertiesJSON, metadataJSON, err := marshalItemData(item)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal properties: %w", err)
-	}
-
-	metadataJSON, err := json.Marshal(item.Metadata)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal metadata: %w", err)
+		return nil, r.errorHandler.HandleError(ctx, err)
 	}
 
 	params := query.UpdateItemParams{
@@ -252,4 +258,54 @@ func (r *ItemRepository) listItemsWithFieldmask(
 	}
 
 	return items, nil
+}
+
+// UpsertItem creates a new item if it does not exist, otherwise it updates the existing item.
+//
+//nolint:dupl // Very similar to CreateItem, but with different query parameters.
+func (r *ItemRepository) UpsertItem(ctx context.Context, tx *sql.Tx, item item.Item) (*item.Item, error) {
+	q := r.queries.WithTx(tx)
+
+	propertiesJSON, metadataJSON, err := marshalItemData(item)
+	if err != nil {
+		return nil, r.errorHandler.HandleError(ctx, err)
+	}
+
+	params := query.UpsertItemParams{
+		Name:        item.Name,
+		DisplayName: item.DisplayName,
+		CreateTime:  item.CreateTime,
+		UpdateTime:  item.UpdateTime,
+		DeleteTime: sql.NullTime{
+			Time: func() time.Time {
+				if item.DeleteTime != nil {
+					return *item.DeleteTime
+				}
+				return time.Time{}
+			}(),
+			Valid: item.DeleteTime != nil,
+		},
+		Hash: sql.NullString{
+			String: item.Hash,
+			Valid:  true,
+		},
+		Content: sql.NullString{
+			String: item.Content,
+			Valid:  true,
+		},
+		Properties: propertiesJSON,
+		Metadata:   metadataJSON,
+	}
+
+	i, err := q.UpsertItem(ctx, params)
+	if err != nil {
+		return nil, r.errorHandler.HandleError(ctx, err)
+	}
+
+	newItem, err := ConvertQueryItem(i)
+	if err != nil {
+		return nil, r.errorHandler.HandleError(ctx, err)
+	}
+
+	return newItem, nil
 }

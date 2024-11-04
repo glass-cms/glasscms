@@ -76,3 +76,23 @@ func (s *Service) ListItems(ctx context.Context, fieldmask []string) ([]*Item, e
 
 	return items, err
 }
+
+// UpsertItems upserts a list of items.
+func (s *Service) UpsertItems(ctx context.Context, items []Item) ([]*Item, error) {
+	upsertedItems := make([]*Item, len(items))
+
+	err := s.repo.Transactionally(ctx, func(tx *sql.Tx) error {
+		var err error
+
+		for i, item := range items {
+			upsertedItems[i], err = s.repo.UpsertItem(ctx, tx, item)
+		}
+
+		return err
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return upsertedItems, nil
+}

@@ -553,6 +553,7 @@ func TestRepository_ListItems(t *testing.T) {
 		})
 	}
 }
+
 func TestRepository_DeleteItem(t *testing.T) {
 	t.Parallel()
 
@@ -629,6 +630,160 @@ func TestRepository_DeleteItem(t *testing.T) {
 				_, err = r.GetItem(tt.args.ctx, tx, tt.args.name)
 				assert.ErrorIs(t, err, database.ErrNotFound)
 			}
+		})
+	}
+}
+
+func TestRepository_UpsertItem(t *testing.T) {
+	t.Parallel()
+
+	type fields struct {
+		db   *sql.DB
+		seed func(*sql.DB)
+	}
+
+	type args struct {
+		ctx  context.Context
+		item item.Item
+	}
+
+	tests := map[string]struct {
+		fields  fields
+		args    args
+		wantErr bool
+		err     error
+	}{
+		"successful upsert when item does not exist": {
+			fields: fields{
+				db: GetTestDatabase(),
+			},
+			args: args{
+				ctx:  context.Background(),
+				item: *getTestItem("items/name"),
+			},
+			wantErr: false,
+			err:     nil,
+		},
+		"successful upsert when item exists": {
+			fields: fields{
+				db: GetTestDatabase(),
+				seed: func(db *sql.DB) {
+					if err := SeedDatabase(db, *getTestItem("items/name")); err != nil {
+						t.Error(err)
+					}
+				},
+			},
+			args: args{
+				ctx: context.Background(),
+				item: item.Item{
+					CreateTime:  time.Now(),
+					UpdateTime:  time.Now(),
+					Hash:        "newhash",
+					Name:        "items/name",
+					DisplayName: "NewDisplayName",
+					Content:     "NewContent",
+					Properties:  map[string]interface{}{"newkey": "newvalue"},
+				},
+			},
+			wantErr: false,
+			err:     nil,
+		},
+		"returns an error when context is canceled": {
+			fields: fields{
+				db: GetTestDatabase(),
+			},
+			args: args{
+				ctx: func() context.Context {
+					ctx, cancel := context.WithCancel(context.Background())
+					cancel()
+					return ctx
+				}(),
+				item: *getTestItem("items/name"),
+			},
+			wantErr: true,
+			err:     database.ErrOperationFailed,
+		},
+		"returns an error when properties cannot be marshalled": {
+			fields: fields{
+				db: GetTestDatabase(),
+			},
+			args: args{
+				ctx: context.Background(),
+				item: item.Item{
+					CreateTime:  time.Now(),
+					UpdateTime:  time.Now(),
+					Hash:        "hash",
+					Name:        "items/name",
+					DisplayName: "DisplayName",
+					Content:     "Content",
+					Properties:  map[string]interface{}{"key": make(chan int)},
+				},
+			},
+			wantErr: true,
+			err:     database.ErrOperationFailed,
+		},
+		"returns an error when metadata cannot be marshalled": {
+			fields: fields{
+				db: GetTestDatabase(),
+			},
+			args: args{
+				ctx: context.Background(),
+				item: item.Item{
+					CreateTime:  time.Now(),
+					UpdateTime:  time.Now(),
+					Hash:        "hash",
+					Name:        "items/name",
+					DisplayName: "DisplayName",
+					Content:     "Content",
+					Properties:  map[string]interface{}{"key": "value"},
+					Metadata:    map[string]interface{}{"key": make(chan int)},
+				},
+			},
+			wantErr: true,
+			err:     database.ErrOperationFailed,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			// Arrange
+			if tt.fields.seed != nil {
+				tt.fields.seed(tt.fields.db)
+			}
+			r := repository.NewRepository(tt.fields.db, &database.SqliteErrorHandler{})
+
+			tx, err := tt.fields.db.Begin()
+			require.NoError(t, err)
+
+			defer func() {
+				require.NoError(t, tx.Rollback())
+			}()
+
+			// Act
+			_, err = r.UpsertItem(tt.args.ctx, tx, tt.args.item)
+
+			// Assert
+			if tt.wantErr {
+				require.Error(t, err)
+				assert.ErrorIs(t, err, tt.err)
+				return
+			}
+
+			require.NoError(t, err)
+
+			// Post-upsert check
+			got, err := r.GetItem(tt.args.ctx, tx, tt.args.item.Name)
+			require.NoError(t, err)
+			assert.Equal(t, tt.args.item.Name, got.Name)
+			assert.Equal(t, tt.args.item.DisplayName, got.DisplayName)
+			assert.Equal(t, tt.args.item.Content, got.Content)
+			assert.Equal(t, tt.args.item.Hash, got.Hash)
+			assert.Equal(t, tt.args.item.Properties, got.Properties)
+			assert.Equal(t, tt.args.item.Metadata, got.Metadata)
+			assert.WithinDuration(t, tt.args.item.CreateTime, got.CreateTime, time.Second)
+			assert.WithinDuration(t, tt.args.item.UpdateTime, got.UpdateTime, time.Second)
 		})
 	}
 }

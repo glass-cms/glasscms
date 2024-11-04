@@ -36,13 +36,14 @@ paths:
               $ref: '#/components/schemas/ItemCreate'
     get:
       operationId: Items_list
-      description: Lists all instances of the resource.
+      description: Lists all items
       parameters:
         - name: fields
           in: query
           required: false
           schema:
             type: string
+          explode: false
       responses:
         '200':
           description: The request has succeeded.
@@ -58,6 +59,33 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+    patch:
+      operationId: Items_upsert
+      description: Creates or updates many items
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Item'
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/ItemUpsert'
   /items/{name}:
     get:
       operationId: Items_get
@@ -179,6 +207,7 @@ components:
         hash:
           type: string
           description: represents a hash value calculated from the item's content.
+          readOnly: true
       description: Item represents an individual content item.
     ItemCreate:
       type: object
@@ -190,7 +219,6 @@ components:
         - update_time
         - properties
         - metadata
-        - hash
       properties:
         name:
           type: string
@@ -210,9 +238,6 @@ components:
         metadata:
           type: object
           additionalProperties: {}
-        hash:
-          type: string
-          description: represents a hash value calculated from the item's content.
       description: Resource create operation model.
     ItemUpdate:
       type: object
@@ -233,7 +258,34 @@ components:
         metadata:
           type: object
           additionalProperties: {}
-        hash:
-          type: string
-          description: represents a hash value calculated from the item's content.
       description: Resource create or update operation model.
+    ItemUpsert:
+      type: object
+      required:
+        - name
+        - display_name
+        - content
+        - create_time
+        - update_time
+        - properties
+        - metadata
+      properties:
+        name:
+          type: string
+        display_name:
+          type: string
+        content:
+          type: string
+        create_time:
+          type: string
+          format: date-time
+        update_time:
+          type: string
+          format: date-time
+        properties:
+          type: object
+          additionalProperties: {}
+        metadata:
+          type: object
+          additionalProperties: {}
+      description: Resource create operation model.

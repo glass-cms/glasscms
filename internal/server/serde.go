@@ -29,8 +29,21 @@ func DeserializeJSONRequestBody[T any](r *http.Request) (*T, error) {
 
 	var requestBody T
 	if err = json.Unmarshal(body, &requestBody); err != nil {
-		return nil, err
+		return nil, NewDeserializeError(err)
 	}
 
 	return &requestBody, nil
+}
+
+// DeserializeError is an error type that wraps an error that occurred during deserialization.
+type DeserializeError struct {
+	Err error
+}
+
+func (e *DeserializeError) Error() string {
+	return e.Err.Error()
+}
+
+func NewDeserializeError(err error) *DeserializeError {
+	return &DeserializeError{Err: err}
 }

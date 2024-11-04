@@ -39,6 +39,9 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.updateItemStmt, err = db.PrepareContext(ctx, updateItem); err != nil {
 		return nil, fmt.Errorf("error preparing query UpdateItem: %w", err)
 	}
+	if q.upsertItemStmt, err = db.PrepareContext(ctx, upsertItem); err != nil {
+		return nil, fmt.Errorf("error preparing query UpsertItem: %w", err)
+	}
 	return &q, nil
 }
 
@@ -67,6 +70,11 @@ func (q *Queries) Close() error {
 	if q.updateItemStmt != nil {
 		if cerr := q.updateItemStmt.Close(); cerr != nil {
 			err = fmt.Errorf("error closing updateItemStmt: %w", cerr)
+		}
+	}
+	if q.upsertItemStmt != nil {
+		if cerr := q.upsertItemStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing upsertItemStmt: %w", cerr)
 		}
 	}
 	return err
@@ -113,6 +121,7 @@ type Queries struct {
 	getItemStmt    *sql.Stmt
 	listItemsStmt  *sql.Stmt
 	updateItemStmt *sql.Stmt
+	upsertItemStmt *sql.Stmt
 }
 
 func (q *Queries) WithTx(tx *sql.Tx) *Queries {
@@ -124,5 +133,6 @@ func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 		getItemStmt:    q.getItemStmt,
 		listItemsStmt:  q.listItemsStmt,
 		updateItemStmt: q.updateItemStmt,
+		upsertItemStmt: q.upsertItemStmt,
 	}
 }

@@ -208,3 +208,67 @@ func (q *Queries) UpdateItem(ctx context.Context, arg UpdateItemParams) (Item, e
 	)
 	return i, err
 }
+
+const upsertItem = `-- name: UpsertItem :one
+INSERT INTO items (
+    name, 
+    display_name, 
+    create_time, 
+    update_time, 
+    delete_time, 
+    hash, 
+    content, 
+    properties, 
+    metadata
+)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+ON CONFLICT(name) DO UPDATE SET
+    display_name = excluded.display_name,
+    create_time = excluded.create_time,
+    update_time = excluded.update_time,
+    delete_time = excluded.delete_time,
+    hash = excluded.hash,
+    content = excluded.content,
+    properties = excluded.properties,
+    metadata = excluded.metadata
+RETURNING name, display_name, create_time, update_time, delete_time, hash, content, properties, metadata
+`
+
+type UpsertItemParams struct {
+	Name        string         `db:"name"`
+	DisplayName string         `db:"display_name"`
+	CreateTime  time.Time      `db:"create_time"`
+	UpdateTime  time.Time      `db:"update_time"`
+	DeleteTime  sql.NullTime   `db:"delete_time"`
+	Hash        sql.NullString `db:"hash"`
+	Content     sql.NullString `db:"content"`
+	Properties  interface{}    `db:"properties"`
+	Metadata    interface{}    `db:"metadata"`
+}
+
+func (q *Queries) UpsertItem(ctx context.Context, arg UpsertItemParams) (Item, error) {
+	row := q.queryRow(ctx, q.upsertItemStmt, upsertItem,
+		arg.Name,
+		arg.DisplayName,
+		arg.CreateTime,
+		arg.UpdateTime,
+		arg.DeleteTime,
+		arg.Hash,
+		arg.Content,
+		arg.Properties,
+		arg.Metadata,
+	)
+	var i Item
+	err := row.Scan(
+		&i.Name,
+		&i.DisplayName,
+		&i.CreateTime,
+		&i.UpdateTime,
+		&i.DeleteTime,
+		&i.Hash,
+		&i.Content,
+		&i.Properties,
+		&i.Metadata,
+	)
+	return i, err
+}

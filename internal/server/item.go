@@ -55,7 +55,35 @@ func (s *Server) ItemsUpdate(w http.ResponseWriter, _ *http.Request, _ string) {
 	SerializeJSONResponse[any](w, http.StatusNotImplemented, nil)
 }
 
-// TODO: Implement batch CreateOrUpdate endpoint.
+func (s *Server) ItemsUpsert(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	upsertRequest, err := DeserializeJSONRequestBody[api.ItemsUpsertJSONRequestBody](r)
+	if err != nil {
+		s.logger.ErrorContext(ctx, fmt.Errorf("failed to read request body: %w", err).Error())
+		s.errorHandler.HandleError(w, r, err)
+		return
+	}
+
+	items := make([]item.Item, len(*upsertRequest))
+	for i, itemUpsert := range *upsertRequest {
+		items[i] = itemUpsertToItem(&itemUpsert)
+	}
+
+	upsertedItems, err := s.itemService.UpsertItems(ctx, items)
+	if err != nil {
+		s.logger.ErrorContext(ctx, fmt.Errorf("failed to upsert items: %w", err).Error())
+		s.errorHandler.HandleError(w, r, err)
+		return
+	}
+
+	apiItems := make([]*api.Item, len(upsertedItems))
+	for i, item := range upsertedItems {
+		apiItems[i] = FromItem(item)
+	}
+
+	SerializeJSONResponse(w, http.StatusOK, apiItems)
+}
 
 func (s *Server) ItemsList(w http.ResponseWriter, r *http.Request, params api.ItemsListParams) {
 	ctx := r.Context()
@@ -149,6 +177,19 @@ func itemCreateToItem(i *api.ItemCreate) item.Item {
 	}
 }
 
+func itemUpsertToItem(i *api.ItemUpsert) item.Item {
+	return item.Item{
+		Name:        i.Name,
+		DisplayName: i.DisplayName,
+		Content:     i.Content,
+		Hash:        parser.HashContent([]byte(i.Content)),
+		CreateTime:  i.CreateTime,
+		UpdateTime:  i.UpdateTime,
+		Properties:  i.Properties,
+		Metadata:    i.Metadata,
+	}
+}
+
 func FromItem(item *item.Item) *api.Item {
 	if item == nil {
 		return nil
@@ -162,6 +203,6 @@ func FromItem(item *item.Item) *api.Item {
 		UpdateTime:  item.UpdateTime,
 		Properties:  item.Properties,
 		Metadata:    item.Metadata,
-		Hash:        item.Hash,
+		Hash:        &item.Hash,
 	}
 }

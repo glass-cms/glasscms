@@ -109,14 +109,16 @@ func (s *Server) registerErrorMappers() {
 		reflect.TypeOf(&resource.AlreadyExistsError{}),
 		ErrorMapperAlreadyExistsError,
 	)
-
 	s.errorHandler.RegisterErrorMapper(
 		reflect.TypeOf(&resource.NotFoundError{}),
 		ErrorMapperNotFoundError,
 	)
-
 	s.errorHandler.RegisterErrorMapper(
 		reflect.TypeOf(&fieldmask.InvalidFieldMaskError{}),
 		ErrorMapperInvalidFieldMaskError,
+	)
+	s.errorHandler.RegisterErrorMapper(
+		reflect.TypeOf(&DeserializeError{}),
+		ErrorMapperDeserializeError,
 	)
 }
