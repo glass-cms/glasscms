@@ -84,13 +84,33 @@ type ItemUpdate struct {
 	UpdateTime *time.Time              `json:"update_time,omitempty"`
 }
 
+// UpsertItem Resource create operation model.
+type UpsertItem struct {
+	Content     string    `json:"content"`
+	CreateTime  time.Time `json:"create_time"`
+	DisplayName string    `json:"display_name"`
+
+	// Hash represents a hash value calculated from the item's content.
+	Hash       string                 `json:"hash"`
+	Metadata   map[string]interface{} `json:"metadata"`
+	Name       string                 `json:"name"`
+	Properties map[string]interface{} `json:"properties"`
+	UpdateTime time.Time              `json:"update_time"`
+}
+
 // ItemKey defines model for ItemKey.
 type ItemKey = string
+
+// ItemsUpsertJSONBody defines parameters for ItemsUpsert.
+type ItemsUpsertJSONBody = []UpsertItem
 
 // ItemsListParams defines parameters for ItemsList.
 type ItemsListParams struct {
 	Fields *string `form:"fields,omitempty" json:"fields,omitempty"`
 }
+
+// ItemsUpsertJSONRequestBody defines body for ItemsUpsert for application/json ContentType.
+type ItemsUpsertJSONRequestBody = ItemsUpsertJSONBody
 
 // ItemsCreateJSONRequestBody defines body for ItemsCreate for application/json ContentType.
 type ItemsCreateJSONRequestBody = ItemCreate
@@ -100,6 +120,9 @@ type ItemsUpdateJSONRequestBody = ItemUpdate
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
+
+	// (PATCH /)
+	ItemsUpsert(w http.ResponseWriter, r *http.Request)
 
 	// (GET /items)
 	ItemsList(w http.ResponseWriter, r *http.Request, params ItemsListParams)
@@ -123,6 +146,21 @@ type ServerInterfaceWrapper struct {
 
 type MiddlewareFunc func(http.Handler) http.Handler
 
+// ItemsUpsert operation middleware
+func (siw *ServerInterfaceWrapper) ItemsUpsert(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ItemsUpsert(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
 // ItemsList operation middleware
 func (siw *ServerInterfaceWrapper) ItemsList(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -134,7 +172,7 @@ func (siw *ServerInterfaceWrapper) ItemsList(w http.ResponseWriter, r *http.Requ
 
 	// ------------- Optional query parameter "fields" -------------
 
-	err = runtime.BindQueryParameter("form", true, false, "fields", r.URL.Query(), &params.Fields)
+	err = runtime.BindQueryParameter("form", false, false, "fields", r.URL.Query(), &params.Fields)
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "fields", Err: err})
 		return
@@ -332,6 +370,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 		ErrorHandlerFunc:   options.ErrorHandlerFunc,
 	}
 
+	m.HandleFunc("PATCH "+options.BaseURL+"/", wrapper.ItemsUpsert)
 	m.HandleFunc("GET "+options.BaseURL+"/items", wrapper.ItemsList)
 	m.HandleFunc("POST "+options.BaseURL+"/items", wrapper.ItemsCreate)
 	m.HandleFunc("GET "+options.BaseURL+"/items/{name}", wrapper.ItemsGet)

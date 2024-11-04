@@ -16,31 +16,43 @@ alias GetItems = TypeSpec.Rest.Resource.ResourceRead<Item, Error>;
 alias UpdateItem = TypeSpec.Rest.Resource.ResourceUpdate<Item, Error>;
 alias ListItems = TypeSpec.Rest.Resource.ResourceList<Item, Error>;
 
+@friendlyName("UpsertItem")
+model UpsertItem is TypeSpec.Rest.Resource.ResourceCreateModel<Item>;
+
 interface Items {
-    op create is CreateItem.create;
-    op get is GetItems.get;
-    op update is UpdateItem.update;
+    create is CreateItem.create;
+    get is GetItems.get;
+    update is UpdateItem.update;
 
     @autoRoute
-    @doc("Lists all instances of the resource.")
+    @doc("Lists all items")
     @listsResource(Item)
     list(@query fields?: string): Item[] | Error;
+
+    @autoRoute
+    @doc("Creates or updates many items")
+    @createsOrUpdatesResource(Item)
+    upsert(@body items: UpsertItem[]): Item[] | Error;
 }
 
 @doc("Item represents an individual content item.")
 @resource("items")
 model Item {
     @key
-    @visibility("create", "read")
+    @visibility("read", "create")
     name: string;
+
     display_name: string;
     content: string;
     create_time: utcDateTime;
     update_time: utcDateTime;
+
     @visibility("read")
     delete_time: utcDateTime;
+
     properties: Record<unknown>;
     metadata: Record<unknown>;
+
     @doc("represents a hash value calculated from the item's content.")
     hash: string;
 }
