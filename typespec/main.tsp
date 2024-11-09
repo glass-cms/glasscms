@@ -27,7 +27,7 @@ interface Items {
     @autoRoute
     @doc("Lists all items")
     @listsResource(Item)
-    list(@query fields?: string): Item[] | Error;
+    list(@query fields?: string[]): Item[] | Error;
     
     @route("/items")
     @doc("Creates or updates many items")

@@ -54,7 +54,7 @@ type Item struct {
 	DisplayName string     `json:"display_name"`
 
 	// Hash represents a hash value calculated from the item's content.
-	Hash       string                 `json:"hash"`
+	Hash       *string                `json:"hash,omitempty"`
 	Metadata   map[string]interface{} `json:"metadata"`
 	Name       string                 `json:"name"`
 	Properties map[string]interface{} `json:"properties"`
@@ -63,29 +63,34 @@ type Item struct {
 
 // ItemCreate Resource create operation model.
 type ItemCreate struct {
-	Content     string    `json:"content"`
-	CreateTime  time.Time `json:"create_time"`
-	DisplayName string    `json:"display_name"`
-
-	// Hash represents a hash value calculated from the item's content.
-	Hash       string                 `json:"hash"`
-	Metadata   map[string]interface{} `json:"metadata"`
-	Name       string                 `json:"name"`
-	Properties map[string]interface{} `json:"properties"`
-	UpdateTime time.Time              `json:"update_time"`
+	Content     string                 `json:"content"`
+	CreateTime  time.Time              `json:"create_time"`
+	DisplayName string                 `json:"display_name"`
+	Metadata    map[string]interface{} `json:"metadata"`
+	Name        string                 `json:"name"`
+	Properties  map[string]interface{} `json:"properties"`
+	UpdateTime  time.Time              `json:"update_time"`
 }
 
 // ItemUpdate Resource create or update operation model.
 type ItemUpdate struct {
-	Content     *string    `json:"content,omitempty"`
-	CreateTime  *time.Time `json:"create_time,omitempty"`
-	DisplayName *string    `json:"display_name,omitempty"`
+	Content     *string                 `json:"content,omitempty"`
+	CreateTime  *time.Time              `json:"create_time,omitempty"`
+	DisplayName *string                 `json:"display_name,omitempty"`
+	Metadata    *map[string]interface{} `json:"metadata,omitempty"`
+	Properties  *map[string]interface{} `json:"properties,omitempty"`
+	UpdateTime  *time.Time              `json:"update_time,omitempty"`
+}
 
-	// Hash represents a hash value calculated from the item's content.
-	Hash       *string                 `json:"hash,omitempty"`
-	Metadata   *map[string]interface{} `json:"metadata,omitempty"`
-	Properties *map[string]interface{} `json:"properties,omitempty"`
-	UpdateTime *time.Time              `json:"update_time,omitempty"`
+// ItemUpsert Resource create operation model.
+type ItemUpsert struct {
+	Content     string                 `json:"content"`
+	CreateTime  time.Time              `json:"create_time"`
+	DisplayName string                 `json:"display_name"`
+	Metadata    map[string]interface{} `json:"metadata"`
+	Name        string                 `json:"name"`
+	Properties  map[string]interface{} `json:"properties"`
+	UpdateTime  time.Time              `json:"update_time"`
 }
 
 // ItemKey defines model for ItemKey.
@@ -93,8 +98,14 @@ type ItemKey = string
 
 // ItemsListParams defines parameters for ItemsList.
 type ItemsListParams struct {
-	Fields *string `form:"fields,omitempty" json:"fields,omitempty"`
+	Fields *[]string `form:"fields,omitempty" json:"fields,omitempty"`
 }
+
+// ItemsUpsertJSONBody defines parameters for ItemsUpsert.
+type ItemsUpsertJSONBody = []ItemUpsert
+
+// ItemsUpsertJSONRequestBody defines body for ItemsUpsert for application/json ContentType.
+type ItemsUpsertJSONRequestBody = ItemsUpsertJSONBody
 
 // ItemsCreateJSONRequestBody defines body for ItemsCreate for application/json ContentType.
 type ItemsCreateJSONRequestBody = ItemCreate
@@ -178,6 +189,11 @@ type ClientInterface interface {
 	// ItemsList request
 	ItemsList(ctx context.Context, params *ItemsListParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// ItemsUpsertWithBody request with any body
+	ItemsUpsertWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	ItemsUpsert(ctx context.Context, body ItemsUpsertJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ItemsCreateWithBody request with any body
 	ItemsCreateWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -194,6 +210,30 @@ type ClientInterface interface {
 
 func (c *Client) ItemsList(ctx context.Context, params *ItemsListParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewItemsListRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ItemsUpsertWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewItemsUpsertRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ItemsUpsert(ctx context.Context, body ItemsUpsertJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewItemsUpsertRequest(c.Server, body)
 	if err != nil {
 		return nil, err
 	}
@@ -288,7 +328,7 @@ func NewItemsListRequest(server string, params *ItemsListParams) (*http.Request,
 
 		if params.Fields != nil {
 
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "fields", runtime.ParamLocationQuery, *params.Fields); err != nil {
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "fields", runtime.ParamLocationQuery, *params.Fields); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -309,6 +349,46 @@ func NewItemsListRequest(server string, params *ItemsListParams) (*http.Request,
 	if err != nil {
 		return nil, err
 	}
+
+	return req, nil
+}
+
+// NewItemsUpsertRequest calls the generic ItemsUpsert builder with application/json body
+func NewItemsUpsertRequest(server string, body ItemsUpsertJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewItemsUpsertRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewItemsUpsertRequestWithBody generates requests for ItemsUpsert with any type of body
+func NewItemsUpsertRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/items")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PATCH", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	return req, nil
 }
@@ -480,6 +560,11 @@ type ClientWithResponsesInterface interface {
 	// ItemsListWithResponse request
 	ItemsListWithResponse(ctx context.Context, params *ItemsListParams, reqEditors ...RequestEditorFn) (*ItemsListResponse, error)
 
+	// ItemsUpsertWithBodyWithResponse request with any body
+	ItemsUpsertWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ItemsUpsertResponse, error)
+
+	ItemsUpsertWithResponse(ctx context.Context, body ItemsUpsertJSONRequestBody, reqEditors ...RequestEditorFn) (*ItemsUpsertResponse, error)
+
 	// ItemsCreateWithBodyWithResponse request with any body
 	ItemsCreateWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ItemsCreateResponse, error)
 
@@ -511,6 +596,29 @@ func (r ItemsListResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r ItemsListResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ItemsUpsertResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]Item
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r ItemsUpsertResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ItemsUpsertResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -596,6 +704,23 @@ func (c *ClientWithResponses) ItemsListWithResponse(ctx context.Context, params 
 	return ParseItemsListResponse(rsp)
 }
 
+// ItemsUpsertWithBodyWithResponse request with arbitrary body returning *ItemsUpsertResponse
+func (c *ClientWithResponses) ItemsUpsertWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ItemsUpsertResponse, error) {
+	rsp, err := c.ItemsUpsertWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseItemsUpsertResponse(rsp)
+}
+
+func (c *ClientWithResponses) ItemsUpsertWithResponse(ctx context.Context, body ItemsUpsertJSONRequestBody, reqEditors ...RequestEditorFn) (*ItemsUpsertResponse, error) {
+	rsp, err := c.ItemsUpsert(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseItemsUpsertResponse(rsp)
+}
+
 // ItemsCreateWithBodyWithResponse request with arbitrary body returning *ItemsCreateResponse
 func (c *ClientWithResponses) ItemsCreateWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ItemsCreateResponse, error) {
 	rsp, err := c.ItemsCreateWithBody(ctx, contentType, body, reqEditors...)
@@ -648,6 +773,39 @@ func ParseItemsListResponse(rsp *http.Response) (*ItemsListResponse, error) {
 	}
 
 	response := &ItemsListResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []Item
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseItemsUpsertResponse parses an HTTP response from a ItemsUpsertWithResponse call
+func ParseItemsUpsertResponse(rsp *http.Response) (*ItemsUpsertResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ItemsUpsertResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}

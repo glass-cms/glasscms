@@ -89,10 +89,10 @@ func (s *Server) ItemsList(w http.ResponseWriter, r *http.Request, params api.It
 	ctx := r.Context()
 	s.logger.DebugContext(ctx, "listing items")
 
-	fm, err := parseAndValidateItemFieldMask(params.Fields)
-	if err != nil {
-		s.logger.ErrorContext(ctx, fmt.Errorf("failed to parse field mask: %w", err).Error())
-		s.errorHandler.HandleError(w, r, err)
+	fm := getFieldmask(params.Fields)
+	if err := api.ValidateItemFieldMask(fm); err != nil {
+		s.logger.ErrorContext(ctx, fmt.Errorf("failed to validate field mask: %w", err).Error())
+		s.errorHandler.HandleError(w, r, fieldmask.NewInvalidFieldMaskError(fm))
 		return
 	}
 
@@ -115,6 +115,13 @@ func (s *Server) ItemsList(w http.ResponseWriter, r *http.Request, params api.It
 	}
 
 	SerializeJSONResponse(w, http.StatusOK, applyItemFieldMask(apiItems, fm))
+}
+
+func getFieldmask(r *[]string) []string {
+	if r == nil {
+		return make([]string, 0)
+	}
+	return *r
 }
 
 func applyItemFieldMask(items []*api.Item, fieldmask []string) []map[string]interface{} {
@@ -146,22 +153,6 @@ func itemToMap(item *api.Item) map[string]interface{} {
 		}
 	}
 	return itemMap
-}
-
-func parseAndValidateItemFieldMask(str *string) ([]string, error) {
-	if str == nil {
-		return nil, nil
-	}
-
-	fm, err := fieldmask.ParseFieldMask(*str)
-	if err != nil {
-		return nil, err
-	}
-
-	if err = api.ValidateItemFieldMask(fm); err != nil {
-		return nil, fieldmask.NewInvalidFieldMaskError(*str)
-	}
-	return fm, nil
 }
 
 func itemCreateToItem(i *api.ItemCreate) item.Item {

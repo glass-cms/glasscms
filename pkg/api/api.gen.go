@@ -94,7 +94,7 @@ type ItemKey = string
 
 // ItemsListParams defines parameters for ItemsList.
 type ItemsListParams struct {
-	Fields *string `form:"fields,omitempty" json:"fields,omitempty"`
+	Fields *[]string `form:"fields,omitempty" json:"fields,omitempty"`
 }
 
 // ItemsUpsertJSONBody defines parameters for ItemsUpsert.

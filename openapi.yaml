@@ -42,7 +42,9 @@ paths:
           in: query
           required: false
           schema:
-            type: string
+            type: array
+            items:
+              type: string
           explode: false
       responses:
         '200':

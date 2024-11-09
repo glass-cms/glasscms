@@ -204,14 +204,14 @@ func TestErrorMapperInvalidFieldMaskError(t *testing.T) {
 	}{
 		"maps fieldmask.InvalidFieldMaskError to an API error response": {
 			args: args{
-				err: fieldmask.NewInvalidFieldMaskError("invalidFieldMask"),
+				err: fieldmask.NewInvalidFieldMaskError([]string{"invalidFieldMask"}),
 			},
 			want: &api.Error{
 				Code:    api.ParameterInvalid,
 				Message: "The field mask is invalid",
 				Type:    api.ApiError,
 				Details: map[string]interface{}{
-					"field_mask": "invalidFieldMask",
+					"field_mask": []string{"invalidFieldMask"},
 				},
 			},
 		},

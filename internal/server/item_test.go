@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/glass-cms/glasscms/internal/database"
@@ -215,7 +216,9 @@ func TestAPIHandler_ItemsList(t *testing.T) {
 			fields := request.URL.Query().Get("fields")
 			var params api.ItemsListParams
 			if fields != "" {
-				params.Fields = &fields
+				// Split the fields by comma
+				splitFields := strings.Split(fields, ",")
+				params.Fields = &splitFields
 			}
 			handler.ItemsList(rr, request, params)
 
