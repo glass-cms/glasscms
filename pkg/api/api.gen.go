@@ -6,8 +6,14 @@
 package api
 
 import (
+	"bytes"
+	"context"
+	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
+	"net/url"
+	"strings"
 	"time"
 
 	"github.com/oapi-codegen/runtime"
@@ -108,6 +114,829 @@ type ItemsCreateJSONRequestBody = ItemCreate
 
 // ItemsUpdateJSONRequestBody defines body for ItemsUpdate for application/json ContentType.
 type ItemsUpdateJSONRequestBody = ItemUpdate
+
+// RequestEditorFn  is the function signature for the RequestEditor callback function
+type RequestEditorFn func(ctx context.Context, req *http.Request) error
+
+// Doer performs HTTP requests.
+//
+// The standard http.Client implements this interface.
+type HttpRequestDoer interface {
+	Do(req *http.Request) (*http.Response, error)
+}
+
+// Client which conforms to the OpenAPI3 specification for this service.
+type Client struct {
+	// The endpoint of the server conforming to this interface, with scheme,
+	// https://api.deepmap.com for example. This can contain a path relative
+	// to the server, such as https://api.deepmap.com/dev-test, and all the
+	// paths in the swagger spec will be appended to the server.
+	Server string
+
+	// Doer for performing requests, typically a *http.Client with any
+	// customized settings, such as certificate chains.
+	Client HttpRequestDoer
+
+	// A list of callbacks for modifying requests which are generated before sending over
+	// the network.
+	RequestEditors []RequestEditorFn
+}
+
+// ClientOption allows setting custom parameters during construction
+type ClientOption func(*Client) error
+
+// Creates a new Client, with reasonable defaults
+func NewClient(server string, opts ...ClientOption) (*Client, error) {
+	// create a client with sane default values
+	client := Client{
+		Server: server,
+	}
+	// mutate client and add all optional params
+	for _, o := range opts {
+		if err := o(&client); err != nil {
+			return nil, err
+		}
+	}
+	// ensure the server URL always has a trailing slash
+	if !strings.HasSuffix(client.Server, "/") {
+		client.Server += "/"
+	}
+	// create httpClient, if not already present
+	if client.Client == nil {
+		client.Client = &http.Client{}
+	}
+	return &client, nil
+}
+
+// WithHTTPClient allows overriding the default Doer, which is
+// automatically created using http.Client. This is useful for tests.
+func WithHTTPClient(doer HttpRequestDoer) ClientOption {
+	return func(c *Client) error {
+		c.Client = doer
+		return nil
+	}
+}
+
+// WithRequestEditorFn allows setting up a callback function, which will be
+// called right before sending the request. This can be used to mutate the request.
+func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
+	return func(c *Client) error {
+		c.RequestEditors = append(c.RequestEditors, fn)
+		return nil
+	}
+}
+
+// The interface specification for the client above.
+type ClientInterface interface {
+	// ItemsList request
+	ItemsList(ctx context.Context, params *ItemsListParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ItemsUpsertWithBody request with any body
+	ItemsUpsertWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	ItemsUpsert(ctx context.Context, body ItemsUpsertJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ItemsCreateWithBody request with any body
+	ItemsCreateWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	ItemsCreate(ctx context.Context, body ItemsCreateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ItemsGet request
+	ItemsGet(ctx context.Context, name ItemKey, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ItemsUpdateWithBody request with any body
+	ItemsUpdateWithBody(ctx context.Context, name ItemKey, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	ItemsUpdate(ctx context.Context, name ItemKey, body ItemsUpdateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+}
+
+func (c *Client) ItemsList(ctx context.Context, params *ItemsListParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewItemsListRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ItemsUpsertWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewItemsUpsertRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ItemsUpsert(ctx context.Context, body ItemsUpsertJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewItemsUpsertRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ItemsCreateWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewItemsCreateRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ItemsCreate(ctx context.Context, body ItemsCreateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewItemsCreateRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ItemsGet(ctx context.Context, name ItemKey, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewItemsGetRequest(c.Server, name)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ItemsUpdateWithBody(ctx context.Context, name ItemKey, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewItemsUpdateRequestWithBody(c.Server, name, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ItemsUpdate(ctx context.Context, name ItemKey, body ItemsUpdateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewItemsUpdateRequest(c.Server, name, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// NewItemsListRequest generates requests for ItemsList
+func NewItemsListRequest(server string, params *ItemsListParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/items")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Fields != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", false, "fields", runtime.ParamLocationQuery, *params.Fields); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewItemsUpsertRequest calls the generic ItemsUpsert builder with application/json body
+func NewItemsUpsertRequest(server string, body ItemsUpsertJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewItemsUpsertRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewItemsUpsertRequestWithBody generates requests for ItemsUpsert with any type of body
+func NewItemsUpsertRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/items")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PATCH", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewItemsCreateRequest calls the generic ItemsCreate builder with application/json body
+func NewItemsCreateRequest(server string, body ItemsCreateJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewItemsCreateRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewItemsCreateRequestWithBody generates requests for ItemsCreate with any type of body
+func NewItemsCreateRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/items")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewItemsGetRequest generates requests for ItemsGet
+func NewItemsGetRequest(server string, name ItemKey) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "name", runtime.ParamLocationPath, name)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/items/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewItemsUpdateRequest calls the generic ItemsUpdate builder with application/json body
+func NewItemsUpdateRequest(server string, name ItemKey, body ItemsUpdateJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewItemsUpdateRequestWithBody(server, name, "application/json", bodyReader)
+}
+
+// NewItemsUpdateRequestWithBody generates requests for ItemsUpdate with any type of body
+func NewItemsUpdateRequestWithBody(server string, name ItemKey, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "name", runtime.ParamLocationPath, name)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/items/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PATCH", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+func (c *Client) applyEditors(ctx context.Context, req *http.Request, additionalEditors []RequestEditorFn) error {
+	for _, r := range c.RequestEditors {
+		if err := r(ctx, req); err != nil {
+			return err
+		}
+	}
+	for _, r := range additionalEditors {
+		if err := r(ctx, req); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// ClientWithResponses builds on ClientInterface to offer response payloads
+type ClientWithResponses struct {
+	ClientInterface
+}
+
+// NewClientWithResponses creates a new ClientWithResponses, which wraps
+// Client with return type handling
+func NewClientWithResponses(server string, opts ...ClientOption) (*ClientWithResponses, error) {
+	client, err := NewClient(server, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &ClientWithResponses{client}, nil
+}
+
+// WithBaseURL overrides the baseURL.
+func WithBaseURL(baseURL string) ClientOption {
+	return func(c *Client) error {
+		newBaseURL, err := url.Parse(baseURL)
+		if err != nil {
+			return err
+		}
+		c.Server = newBaseURL.String()
+		return nil
+	}
+}
+
+// ClientWithResponsesInterface is the interface specification for the client with responses above.
+type ClientWithResponsesInterface interface {
+	// ItemsListWithResponse request
+	ItemsListWithResponse(ctx context.Context, params *ItemsListParams, reqEditors ...RequestEditorFn) (*ItemsListResponse, error)
+
+	// ItemsUpsertWithBodyWithResponse request with any body
+	ItemsUpsertWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ItemsUpsertResponse, error)
+
+	ItemsUpsertWithResponse(ctx context.Context, body ItemsUpsertJSONRequestBody, reqEditors ...RequestEditorFn) (*ItemsUpsertResponse, error)
+
+	// ItemsCreateWithBodyWithResponse request with any body
+	ItemsCreateWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ItemsCreateResponse, error)
+
+	ItemsCreateWithResponse(ctx context.Context, body ItemsCreateJSONRequestBody, reqEditors ...RequestEditorFn) (*ItemsCreateResponse, error)
+
+	// ItemsGetWithResponse request
+	ItemsGetWithResponse(ctx context.Context, name ItemKey, reqEditors ...RequestEditorFn) (*ItemsGetResponse, error)
+
+	// ItemsUpdateWithBodyWithResponse request with any body
+	ItemsUpdateWithBodyWithResponse(ctx context.Context, name ItemKey, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ItemsUpdateResponse, error)
+
+	ItemsUpdateWithResponse(ctx context.Context, name ItemKey, body ItemsUpdateJSONRequestBody, reqEditors ...RequestEditorFn) (*ItemsUpdateResponse, error)
+}
+
+type ItemsListResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]Item
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r ItemsListResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ItemsListResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ItemsUpsertResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]Item
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r ItemsUpsertResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ItemsUpsertResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ItemsCreateResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *Item
+	JSON201      *Item
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r ItemsCreateResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ItemsCreateResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ItemsGetResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *Item
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r ItemsGetResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ItemsGetResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ItemsUpdateResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *Item
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r ItemsUpdateResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ItemsUpdateResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ItemsListWithResponse request returning *ItemsListResponse
+func (c *ClientWithResponses) ItemsListWithResponse(ctx context.Context, params *ItemsListParams, reqEditors ...RequestEditorFn) (*ItemsListResponse, error) {
+	rsp, err := c.ItemsList(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseItemsListResponse(rsp)
+}
+
+// ItemsUpsertWithBodyWithResponse request with arbitrary body returning *ItemsUpsertResponse
+func (c *ClientWithResponses) ItemsUpsertWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ItemsUpsertResponse, error) {
+	rsp, err := c.ItemsUpsertWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseItemsUpsertResponse(rsp)
+}
+
+func (c *ClientWithResponses) ItemsUpsertWithResponse(ctx context.Context, body ItemsUpsertJSONRequestBody, reqEditors ...RequestEditorFn) (*ItemsUpsertResponse, error) {
+	rsp, err := c.ItemsUpsert(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseItemsUpsertResponse(rsp)
+}
+
+// ItemsCreateWithBodyWithResponse request with arbitrary body returning *ItemsCreateResponse
+func (c *ClientWithResponses) ItemsCreateWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ItemsCreateResponse, error) {
+	rsp, err := c.ItemsCreateWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseItemsCreateResponse(rsp)
+}
+
+func (c *ClientWithResponses) ItemsCreateWithResponse(ctx context.Context, body ItemsCreateJSONRequestBody, reqEditors ...RequestEditorFn) (*ItemsCreateResponse, error) {
+	rsp, err := c.ItemsCreate(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseItemsCreateResponse(rsp)
+}
+
+// ItemsGetWithResponse request returning *ItemsGetResponse
+func (c *ClientWithResponses) ItemsGetWithResponse(ctx context.Context, name ItemKey, reqEditors ...RequestEditorFn) (*ItemsGetResponse, error) {
+	rsp, err := c.ItemsGet(ctx, name, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseItemsGetResponse(rsp)
+}
+
+// ItemsUpdateWithBodyWithResponse request with arbitrary body returning *ItemsUpdateResponse
+func (c *ClientWithResponses) ItemsUpdateWithBodyWithResponse(ctx context.Context, name ItemKey, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ItemsUpdateResponse, error) {
+	rsp, err := c.ItemsUpdateWithBody(ctx, name, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseItemsUpdateResponse(rsp)
+}
+
+func (c *ClientWithResponses) ItemsUpdateWithResponse(ctx context.Context, name ItemKey, body ItemsUpdateJSONRequestBody, reqEditors ...RequestEditorFn) (*ItemsUpdateResponse, error) {
+	rsp, err := c.ItemsUpdate(ctx, name, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseItemsUpdateResponse(rsp)
+}
+
+// ParseItemsListResponse parses an HTTP response from a ItemsListWithResponse call
+func ParseItemsListResponse(rsp *http.Response) (*ItemsListResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ItemsListResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []Item
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseItemsUpsertResponse parses an HTTP response from a ItemsUpsertWithResponse call
+func ParseItemsUpsertResponse(rsp *http.Response) (*ItemsUpsertResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ItemsUpsertResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []Item
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseItemsCreateResponse parses an HTTP response from a ItemsCreateWithResponse call
+func ParseItemsCreateResponse(rsp *http.Response) (*ItemsCreateResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ItemsCreateResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Item
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest Item
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseItemsGetResponse parses an HTTP response from a ItemsGetWithResponse call
+func ParseItemsGetResponse(rsp *http.Response) (*ItemsGetResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ItemsGetResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Item
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseItemsUpdateResponse parses an HTTP response from a ItemsUpdateWithResponse call
+func ParseItemsUpdateResponse(rsp *http.Response) (*ItemsUpdateResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ItemsUpdateResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Item
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {

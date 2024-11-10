@@ -8,7 +8,7 @@ import (
 	"github.com/glass-cms/glasscms/internal/sourcer"
 	"github.com/glass-cms/glasscms/internal/sourcer/fs"
 	"github.com/glass-cms/glasscms/internal/sync"
-	"github.com/glass-cms/glasscms/pkg/client"
+	"github.com/glass-cms/glasscms/pkg/api"
 	"github.com/spf13/cobra"
 )
 
@@ -64,7 +64,7 @@ func (c *SyncCommand) RunE(cmd *cobra.Command, args []string) error {
 		Timeout: 10 * time.Second,
 	}
 
-	cl, err := client.NewClient(c.opts.ServerURL, client.WithHTTPClient(httpClient))
+	cl, err := api.NewClientWithResponses(c.opts.ServerURL, api.WithHTTPClient(httpClient))
 	if err != nil {
 		return err
 	}

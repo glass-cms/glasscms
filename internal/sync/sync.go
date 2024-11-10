@@ -4,25 +4,26 @@ package sync
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
+	"net/http"
 
 	"github.com/glass-cms/glasscms/internal/parser"
 	"github.com/glass-cms/glasscms/internal/sourcer"
 	"github.com/glass-cms/glasscms/internal/sourcer/fs"
 	"github.com/glass-cms/glasscms/pkg/api"
-	"github.com/glass-cms/glasscms/pkg/client"
 	"github.com/glass-cms/glasscms/pkg/log"
 )
 
 // Syncer synchronizes items from a source to the server.
 type Syncer struct {
 	sourcer sourcer.Sourcer
-	client  *client.Client
+	client  *api.ClientWithResponses
 	logger  *slog.Logger
 }
 
 // NewSyncer returns a new syncer.
-func NewSyncer(s sourcer.Sourcer, c *client.Client) (*Syncer, error) {
+func NewSyncer(s sourcer.Sourcer, c *api.ClientWithResponses) (*Syncer, error) {
 	logger, err := log.NewLogger()
 	if err != nil {
 		return nil, err
@@ -45,7 +46,8 @@ func (s *Syncer) Sync(ctx context.Context, _ bool) error {
 		return err
 	}
 
-	_ = s.transformItemMap(sourceItems)
+	sourceMap := s.transformItemMap(sourceItems)
+	s.logger.DebugContext(ctx, "collected source items", "item_count", len(sourceMap))
 
 	serverItems, err := s.getServerItems(ctx)
 	if err != nil {
@@ -53,7 +55,8 @@ func (s *Syncer) Sync(ctx context.Context, _ bool) error {
 		return err
 	}
 
-	_ = s.transformItemMap(serverItems)
+	serverMap := s.transformItemMap(serverItems)
+	s.logger.DebugContext(ctx, "collected server items", "item_count", len(serverMap))
 
 	// TODO: Implement sync logic.
 	// Iterate over the source items and compare them to the server items
@@ -103,10 +106,28 @@ func (s *Syncer) collectSourceItems(ctx context.Context) ([]*api.Item, error) {
 }
 
 // getServerItems retrieves a list of items from the server.
-func (s *Syncer) getServerItems(_ context.Context) ([]*api.Item, error) {
-	//TODO: Implement getServerItems.
-	// Set a client timeout?
-	return nil, nil
+func (s *Syncer) getServerItems(ctx context.Context) ([]*api.Item, error) {
+	params := api.ItemsListParams{
+		Fields: func() *[]string {
+			fields := []string{"name", "hash", "update_time"}
+			return &fields
+		}(),
+	}
+
+	response, err := s.client.ItemsListWithResponse(ctx, &params)
+	if err != nil {
+		return nil, err
+	}
+
+	if response.StatusCode() != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status from api: %s", response.Status())
+	}
+
+	items := make([]*api.Item, len(*response.JSON200))
+	for i, item := range *response.JSON200 {
+		items[i] = &item
+	}
+	return items, nil
 }
 
 // transformItemMap transforms a slice of items into a map where the key is the item name.
