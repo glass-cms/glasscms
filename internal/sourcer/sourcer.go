@@ -8,6 +8,8 @@ import (
 	"time"
 )
 
+//go:generate moq -out mock_sourcer.go . Sourcer
+
 // Sourcer is an iterator that provides data to be parsed.
 type Sourcer interface {
 	// Next returns the next piece of data to be parsed.

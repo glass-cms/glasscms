@@ -4,14 +4,19 @@ package sync
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
+	"net/http"
 	"time"
 
 	"github.com/glass-cms/glasscms/internal/parser"
 	"github.com/glass-cms/glasscms/internal/sourcer"
 	"github.com/glass-cms/glasscms/internal/sourcer/fs"
 	"github.com/glass-cms/glasscms/pkg/api"
-	"github.com/glass-cms/glasscms/pkg/log"
+)
+
+var (
+	ErrUnexpectedStatusCode = errors.New("unexpected status code")
 )
 
 // TODO: Only do item level logging if th verbose flag is set.
@@ -24,17 +29,12 @@ type Syncer struct {
 }
 
 // NewSyncer returns a new syncer.
-func NewSyncer(s sourcer.Sourcer, c *api.ClientWithResponses) (*Syncer, error) {
-	logger, err := log.NewLogger()
-	if err != nil {
-		return nil, err
-	}
-
+func NewSyncer(s sourcer.Sourcer, c *api.ClientWithResponses, l *slog.Logger) *Syncer {
 	return &Syncer{
 		sourcer: s,
 		client:  c,
-		logger:  logger,
-	}, nil
+		logger:  l,
+	}
 }
 
 // Sync synchronizes items from a source to the server.
@@ -64,6 +64,11 @@ func (s *Syncer) Sync(ctx context.Context, livemode bool) error {
 
 	if !livemode {
 		s.logger.InfoContext(ctx, "dry run complete, exiting")
+		return nil
+	}
+
+	if len(upsertItems) == 0 {
+		s.logger.InfoContext(ctx, "no items to upsert, exiting")
 		return nil
 	}
 
@@ -154,9 +159,14 @@ func (s *Syncer) getServerItems(ctx context.Context) ([]*api.Item, error) {
 
 	response, err := s.client.ItemsListWithResponse(ctx, &params)
 	if err != nil {
+		s.logger.ErrorContext(ctx, "failed to list items", "error", err)
+		return nil, err
+	}
+
+	if response.StatusCode() != http.StatusOK {
 		s.logger.ErrorContext(
 			ctx, "received unexpected status code while listing items", "err", err, "status_code", response.StatusCode())
-		return nil, err
+		return nil, fmt.Errorf("%w: %d", ErrUnexpectedStatusCode, response.StatusCode())
 	}
 
 	items := make([]*api.Item, len(*response.JSON200))
@@ -184,9 +194,14 @@ func (s *Syncer) upsertItems(ctx context.Context, items []*api.Item) error {
 
 	response, err := s.client.ItemsUpsertWithResponse(ctx, upsertItems)
 	if err != nil {
+		s.logger.ErrorContext(ctx, "failed to upsert items", "error", err)
+		return err
+	}
+
+	if response.StatusCode() != http.StatusOK {
 		s.logger.ErrorContext(
 			ctx, "received unexpected status code while upserting items", "error", err, "status_code", response.StatusCode())
-		return err
+		return fmt.Errorf("%w: %d", ErrUnexpectedStatusCode, response.StatusCode())
 	}
 
 	return nil

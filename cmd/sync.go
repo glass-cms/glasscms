@@ -9,6 +9,7 @@ import (
 	"github.com/glass-cms/glasscms/internal/sourcer/fs"
 	"github.com/glass-cms/glasscms/internal/sync"
 	"github.com/glass-cms/glasscms/pkg/api"
+	"github.com/glass-cms/glasscms/pkg/log"
 	"github.com/spf13/cobra"
 )
 
@@ -54,7 +55,11 @@ func NewSyncCommand() *SyncCommand {
 }
 
 func (c *SyncCommand) RunE(cmd *cobra.Command, args []string) error {
-	// Setup dependencies.
+	logger, err := log.NewLogger()
+	if err != nil {
+		return err
+	}
+
 	sr, err := c.initSourcer(args)
 	if err != nil {
 		return err
@@ -71,13 +76,7 @@ func (c *SyncCommand) RunE(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// Create a new syncer and synchronize items.
-	syncer, err := sync.NewSyncer(sr, cl)
-	if err != nil {
-		return err
-	}
-
-	return syncer.Sync(cmd.Context(), c.opts.LiveMode)
+	return sync.NewSyncer(sr, cl, logger).Sync(cmd.Context(), c.opts.LiveMode)
 }
 
 // initSourcer initializes a sourcer based on the provided arguments.
