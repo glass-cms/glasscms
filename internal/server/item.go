@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"reflect"
+	"strings"
 
 	"github.com/glass-cms/glasscms/internal/item"
 	"github.com/glass-cms/glasscms/internal/parser"
@@ -126,6 +127,7 @@ func getFieldmask(r *[]string) []string {
 
 func applyItemFieldMask(items []*api.Item, fieldmask []string) []map[string]interface{} {
 	result := make([]map[string]interface{}, len(items))
+
 	for i, item := range items {
 		maskedItem := make(map[string]interface{})
 		itemMap := itemToMap(item)
@@ -136,6 +138,7 @@ func applyItemFieldMask(items []*api.Item, fieldmask []string) []map[string]inte
 		}
 		result[i] = maskedItem
 	}
+
 	return result
 }
 
@@ -147,11 +150,15 @@ func itemToMap(item *api.Item) map[string]interface{} {
 	for i := 0; i < itemType.NumField(); i++ {
 		field := itemType.Field(i)
 		fieldValue := itemValue.Field(i).Interface()
+
 		jsonTag := field.Tag.Get("json")
 		if jsonTag != "" && jsonTag != "-" {
-			itemMap[jsonTag] = fieldValue
+			tagParts := strings.Split(jsonTag, ",")
+			fieldName := tagParts[0]
+			itemMap[fieldName] = fieldValue
 		}
 	}
+
 	return itemMap
 }
 
