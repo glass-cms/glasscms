@@ -64,7 +64,7 @@ func (c *SyncCommand) RunE(cmd *cobra.Command, args []string) error {
 	}
 
 	// Create a new syncer and synchronize items.
-	syncer, err := sync.NewSyncer(&sr, cl)
+	syncer, err := sync.NewSyncer(sr, cl)
 	if err != nil {
 		return err
 	}
