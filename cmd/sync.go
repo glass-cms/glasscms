@@ -64,6 +64,8 @@ func (c *SyncCommand) RunE(cmd *cobra.Command, args []string) error {
 		Timeout: 10 * time.Second,
 	}
 
+	// TODO: The client should also have logging middleware and retry logic.
+
 	cl, err := api.NewClientWithResponses(c.opts.ServerURL, api.WithHTTPClient(httpClient))
 	if err != nil {
 		return err

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/glass-cms/glasscms/internal/parser"
 	"github.com/glass-cms/glasscms/internal/sourcer"
@@ -14,6 +15,8 @@ import (
 	"github.com/glass-cms/glasscms/pkg/api"
 	"github.com/glass-cms/glasscms/pkg/log"
 )
+
+// TODO: Only do item level logging if th verbose flag is set.
 
 // Syncer synchronizes items from a source to the server.
 type Syncer struct {
@@ -37,7 +40,7 @@ func NewSyncer(s sourcer.Sourcer, c *api.ClientWithResponses) (*Syncer, error) {
 }
 
 // Sync synchronizes items from a source to the server.
-func (s *Syncer) Sync(ctx context.Context, _ bool) error {
+func (s *Syncer) Sync(ctx context.Context, livemode bool) error {
 	s.logger.InfoContext(ctx, "syncing items")
 
 	sourceItems, err := s.collectSourceItems(ctx)
@@ -58,13 +61,50 @@ func (s *Syncer) Sync(ctx context.Context, _ bool) error {
 	serverMap := s.transformItemMap(serverItems)
 	s.logger.DebugContext(ctx, "collected server items", "item_count", len(serverMap))
 
-	// TODO: Implement sync logic.
-	// Iterate over the source items and compare them to the server items
-	// when an item is found that is not on the server, create it.
-	// when an item is found that is on the server, update it if the hash is different and the update time of the source is later than the server.
-	// when an item is found that is on the server, delete it if the item is not on the source (by updating the item with a deleted timestamp).
+	upsertItems := s.createUpsertSlice(ctx, sourceMap, serverMap)
+	s.logger.DebugContext(ctx, "upserting items", "item_count", len(upsertItems))
 
-	return nil
+	if !livemode {
+		s.logger.InfoContext(ctx, "dry run complete, exiting")
+		return nil
+	}
+
+	return s.upsertItems(ctx, upsertItems)
+}
+
+// createUpsertSlice generates a slice of items that need to be upserted (created or updated) or deleted
+// based on the differences between the source and server maps.
+func (s *Syncer) createUpsertSlice(ctx context.Context, sourceMap, serverMap map[string]*api.Item) []*api.Item {
+	var upsertItems []*api.Item
+
+	// Iterate over the source items and compare them to the server items.
+	for name, sourceItem := range sourceMap {
+		serverItem, ok := serverMap[name]
+		if !ok {
+			s.logger.DebugContext(ctx, "creating item", "name", name)
+			upsertItems = append(upsertItems, sourceItem)
+			continue
+		}
+
+		if sourceItem.Hash != serverItem.Hash && sourceItem.UpdateTime.After(serverItem.UpdateTime) {
+			s.logger.DebugContext(ctx, "updating item", "name", name)
+			upsertItems = append(upsertItems, sourceItem)
+		}
+	}
+
+	// Check for items that are on the server but not on the source, these items should be deleted.
+	for name, serverItem := range serverMap {
+		_, ok := sourceMap[name]
+		if !ok {
+			s.logger.DebugContext(ctx, "deleting item", "name", name)
+
+			now := time.Now()
+			serverItem.DeleteTime = &now
+			upsertItems = append(upsertItems, serverItem)
+		}
+	}
+
+	return upsertItems
 }
 
 // collectItems returns a slice of parsed items collected from the source
@@ -128,6 +168,24 @@ func (s *Syncer) getServerItems(ctx context.Context) ([]*api.Item, error) {
 		items[i] = &item
 	}
 	return items, nil
+}
+
+// upsertItems upserts a slice of items to the server.
+func (s *Syncer) upsertItems(ctx context.Context, items []*api.Item) error {
+	upsertItems := make([]api.ItemUpsert, len(items))
+	for i, item := range items {
+		upsertItems[i] = api.ItemUpsert{
+			Name:        item.Name,
+			UpdateTime:  item.UpdateTime,
+			CreateTime:  item.CreateTime,
+			Content:     item.Content,
+			DisplayName: item.DisplayName,
+			Metadata:    item.Metadata,
+			Properties:  item.Properties,
+		}
+	}
+
+	return nil
 }
 
 // transformItemMap transforms a slice of items into a map where the key is the item name.
