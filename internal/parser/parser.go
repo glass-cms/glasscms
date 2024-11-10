@@ -2,8 +2,6 @@ package parser
 
 import (
 	"bytes"
-	"crypto/sha256"
-	"encoding/hex"
 	"errors"
 	"io"
 	"path/filepath"
@@ -35,6 +33,7 @@ func Parse(src sourcer.Source) (*api.Item, error) {
 	if err != nil {
 		return nil, err
 	}
+	contentStr := string(content)
 
 	var properties map[string]any
 	if len(frontMatter) > 0 {
@@ -47,21 +46,20 @@ func Parse(src sourcer.Source) (*api.Item, error) {
 	pathname := src.Name()
 	name := slug.Slug(pathname, slug.AllowSlashesOption())
 
+	hash, err := api.HashItem(contentStr, properties, nil)
+	if err != nil {
+		return nil, err
+	}
+
 	return &api.Item{
 		Name:        name,
 		DisplayName: nameFromPath(pathname),
-		Content:     string(content),
+		Content:     contentStr,
+		Hash:        &hash,
 		CreateTime:  src.CreateTime(),
 		UpdateTime:  src.UpdateTime(),
 		Properties:  properties,
 	}, nil
-}
-
-// HashContent generates a hash for the content.
-func HashContent(content []byte) string {
-	hasher := sha256.New()
-	hasher.Write(content)
-	return hex.EncodeToString(hasher.Sum(nil))
 }
 
 func nameFromPath(path string) string {

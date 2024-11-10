@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"net/http"
 	"reflect"
+	"strings"
 
 	"github.com/glass-cms/glasscms/internal/item"
-	"github.com/glass-cms/glasscms/internal/parser"
 	"github.com/glass-cms/glasscms/pkg/api"
 	"github.com/glass-cms/glasscms/pkg/fieldmask"
 )
@@ -22,8 +22,15 @@ func (s *Server) ItemsCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	itemToCreate, err := itemCreateToItem(createRequest)
+	if err != nil {
+		s.logger.ErrorContext(ctx, fmt.Errorf("failed to convert item create to item: %w", err).Error())
+		s.errorHandler.HandleError(w, r, err)
+		return
+	}
+
 	var createdItem *item.Item
-	createdItem, err = s.itemService.CreateItem(ctx, itemCreateToItem(createRequest))
+	createdItem, err = s.itemService.CreateItem(ctx, itemToCreate)
 	if err != nil {
 		s.logger.ErrorContext(ctx, fmt.Errorf("failed to create item: %w", err).Error())
 
@@ -67,7 +74,15 @@ func (s *Server) ItemsUpsert(w http.ResponseWriter, r *http.Request) {
 
 	items := make([]item.Item, len(*upsertRequest))
 	for i, itemUpsert := range *upsertRequest {
-		items[i] = itemUpsertToItem(&itemUpsert)
+		var item item.Item
+		item, err = itemUpsertToItem(&itemUpsert)
+		if err != nil {
+			s.logger.ErrorContext(ctx, fmt.Errorf("failed to convert item upsert to item: %w", err).Error())
+			s.errorHandler.HandleError(w, r, err)
+			return
+		}
+
+		items[i] = item
 	}
 
 	upsertedItems, err := s.itemService.UpsertItems(ctx, items)
@@ -89,10 +104,10 @@ func (s *Server) ItemsList(w http.ResponseWriter, r *http.Request, params api.It
 	ctx := r.Context()
 	s.logger.DebugContext(ctx, "listing items")
 
-	fm, err := parseAndValidateItemFieldMask(params.Fields)
-	if err != nil {
-		s.logger.ErrorContext(ctx, fmt.Errorf("failed to parse field mask: %w", err).Error())
-		s.errorHandler.HandleError(w, r, err)
+	fm := getFieldmask(params.Fields)
+	if err := api.ValidateItemFieldMask(fm); err != nil {
+		s.logger.ErrorContext(ctx, fmt.Errorf("failed to validate field mask: %w", err).Error())
+		s.errorHandler.HandleError(w, r, fieldmask.NewInvalidFieldMaskError(fm))
 		return
 	}
 
@@ -117,8 +132,16 @@ func (s *Server) ItemsList(w http.ResponseWriter, r *http.Request, params api.It
 	SerializeJSONResponse(w, http.StatusOK, applyItemFieldMask(apiItems, fm))
 }
 
+func getFieldmask(r *[]string) []string {
+	if r == nil {
+		return make([]string, 0)
+	}
+	return *r
+}
+
 func applyItemFieldMask(items []*api.Item, fieldmask []string) []map[string]interface{} {
 	result := make([]map[string]interface{}, len(items))
+
 	for i, item := range items {
 		maskedItem := make(map[string]interface{})
 		itemMap := itemToMap(item)
@@ -129,6 +152,7 @@ func applyItemFieldMask(items []*api.Item, fieldmask []string) []map[string]inte
 		}
 		result[i] = maskedItem
 	}
+
 	return result
 }
 
@@ -140,54 +164,54 @@ func itemToMap(item *api.Item) map[string]interface{} {
 	for i := 0; i < itemType.NumField(); i++ {
 		field := itemType.Field(i)
 		fieldValue := itemValue.Field(i).Interface()
+
 		jsonTag := field.Tag.Get("json")
 		if jsonTag != "" && jsonTag != "-" {
-			itemMap[jsonTag] = fieldValue
+			tagParts := strings.Split(jsonTag, ",")
+			fieldName := tagParts[0]
+			itemMap[fieldName] = fieldValue
 		}
 	}
+
 	return itemMap
 }
 
-func parseAndValidateItemFieldMask(str *string) ([]string, error) {
-	if str == nil {
-		return nil, nil
-	}
-
-	fm, err := fieldmask.ParseFieldMask(*str)
+func itemCreateToItem(i *api.ItemCreate) (item.Item, error) {
+	hash, err := api.HashItem(i.Content, i.Properties, i.Metadata)
 	if err != nil {
-		return nil, err
+		return item.Item{}, err
 	}
 
-	if err = api.ValidateItemFieldMask(fm); err != nil {
-		return nil, fieldmask.NewInvalidFieldMaskError(*str)
-	}
-	return fm, nil
-}
-
-func itemCreateToItem(i *api.ItemCreate) item.Item {
 	return item.Item{
 		Name:        i.Name,
 		DisplayName: i.DisplayName,
 		Content:     i.Content,
-		Hash:        parser.HashContent([]byte(i.Content)),
+		Hash:        hash,
 		CreateTime:  i.CreateTime,
 		UpdateTime:  i.UpdateTime,
 		Properties:  i.Properties,
 		Metadata:    i.Metadata,
-	}
+		DeleteTime:  nil,
+	}, nil
 }
 
-func itemUpsertToItem(i *api.ItemUpsert) item.Item {
+func itemUpsertToItem(i *api.ItemUpsert) (item.Item, error) {
+	hash, err := api.HashItem(i.Content, i.Properties, i.Metadata)
+	if err != nil {
+		return item.Item{}, err
+	}
+
 	return item.Item{
 		Name:        i.Name,
 		DisplayName: i.DisplayName,
 		Content:     i.Content,
-		Hash:        parser.HashContent([]byte(i.Content)),
+		Hash:        hash,
 		CreateTime:  i.CreateTime,
 		UpdateTime:  i.UpdateTime,
 		Properties:  i.Properties,
 		Metadata:    i.Metadata,
-	}
+		DeleteTime:  i.DeleteTime,
+	}, nil
 }
 
 func FromItem(item *item.Item) *api.Item {
@@ -204,5 +228,6 @@ func FromItem(item *item.Item) *api.Item {
 		Properties:  item.Properties,
 		Metadata:    item.Metadata,
 		Hash:        &item.Hash,
+		DeleteTime:  item.DeleteTime,
 	}
 }

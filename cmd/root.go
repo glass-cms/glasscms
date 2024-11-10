@@ -41,6 +41,7 @@ func init() {
 	rootCmd.AddCommand(NewDocsCommand().Command)
 	rootCmd.AddCommand(server.NewCommand().Command)
 	rootCmd.AddCommand(NewMigrateCommand().Command)
+	rootCmd.AddCommand(NewSyncCommand().Command)
 
 	// Register flags.
 	pflags := rootCmd.PersistentFlags()

@@ -13,14 +13,14 @@ const (
 )
 
 type InvalidFieldMaskError struct {
-	FieldMask string
+	FieldMask []string
 }
 
 func (e *InvalidFieldMaskError) Error() string {
 	return fmt.Errorf("%w%s", ErrInvalidFieldMask, e.FieldMask).Error()
 }
 
-func NewInvalidFieldMaskError(fieldMask string) *InvalidFieldMaskError {
+func NewInvalidFieldMaskError(fieldMask []string) *InvalidFieldMaskError {
 	return &InvalidFieldMaskError{
 		FieldMask: fieldMask,
 	}
@@ -70,7 +70,7 @@ func parseFieldMask(fields string) ([]string, error) {
 	}
 
 	if len(invalidFieldMasks) > 0 {
-		return nil, NewInvalidFieldMaskError(strings.Join(invalidFieldMasks, ", "))
+		return nil, NewInvalidFieldMaskError(invalidFieldMasks)
 	}
 
 	return fieldMasks, nil

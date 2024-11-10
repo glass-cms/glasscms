@@ -27,7 +27,7 @@ interface Items {
     @autoRoute
     @doc("Lists all items")
     @listsResource(Item)
-    list(@query fields?: string): Item[] | Error;
+    list(@query fields?: string[]): Item[] | Error;
     
     @route("/items")
     @doc("Creates or updates many items")
@@ -46,9 +46,7 @@ model Item {
     content: string;
     create_time: utcDateTime;
     update_time: utcDateTime;
-
-    @visibility("read")
-    delete_time: utcDateTime;
+    delete_time?: utcDateTime;
 
     properties: Record<unknown>;
     metadata: Record<unknown>;

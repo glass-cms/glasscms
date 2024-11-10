@@ -41,13 +41,13 @@ func TestParseFieldMask(t *testing.T) {
 			name:          "invalid field mask",
 			query:         "fields=name,age,address..city",
 			expectedMasks: nil,
-			expectedError: fmt.Errorf("%w%s", fieldmask.ErrInvalidFieldMask, "address..city"),
+			expectedError: fmt.Errorf("%w%s", fieldmask.ErrInvalidFieldMask, "[address..city]"),
 		},
 		{
 			name:          "mixed valid and invalid field masks",
 			query:         "fields=name,age,address..city,address.street",
 			expectedMasks: nil,
-			expectedError: fmt.Errorf("%w%s", fieldmask.ErrInvalidFieldMask, "address..city"),
+			expectedError: fmt.Errorf("%w%s", fieldmask.ErrInvalidFieldMask, "[address..city]"),
 		},
 		{
 			name:          "valid wildcard field mask",
@@ -59,13 +59,13 @@ func TestParseFieldMask(t *testing.T) {
 			name:          "invalid wildcard field mask",
 			query:         "fields=*,name,age,address..*",
 			expectedMasks: nil,
-			expectedError: fmt.Errorf("%w%s", fieldmask.ErrInvalidFieldMask, "address..*"),
+			expectedError: fmt.Errorf("%w%s", fieldmask.ErrInvalidFieldMask, "[address..*]"),
 		},
 		{
 			name:          "illegal characters in field mask",
 			query:         "fields=name,age,address.city,addre$$.street",
 			expectedMasks: nil,
-			expectedError: fmt.Errorf("%w%s", fieldmask.ErrInvalidFieldMask, "addre$$.street"),
+			expectedError: fmt.Errorf("%w%s", fieldmask.ErrInvalidFieldMask, "[addre$$.street]"),
 		},
 		{
 			name:          "valid mixed wildcard and specific fields",
@@ -77,19 +77,19 @@ func TestParseFieldMask(t *testing.T) {
 			name:          "invalid wildcard placement",
 			query:         "fields=name,age,address.city.*.street",
 			expectedMasks: nil,
-			expectedError: fmt.Errorf("%w%s", fieldmask.ErrInvalidFieldMask, "address.city.*.street"),
+			expectedError: fmt.Errorf("%w%s", fieldmask.ErrInvalidFieldMask, "[address.city.*.street]"),
 		},
 		{
 			name:          "multiple invalid field masks",
 			query:         "fields=name,age,address..city,addre$$.street",
 			expectedMasks: nil,
-			expectedError: fmt.Errorf("%w%s", fieldmask.ErrInvalidFieldMask, "address..city, addre$$.street"),
+			expectedError: fmt.Errorf("%w%s", fieldmask.ErrInvalidFieldMask, "[address..city addre$$.street]"),
 		},
 		{
 			name:          "multiple invalid field masks with valid ones",
 			query:         "fields=name,age,address..city,addre$$.street,address.city",
 			expectedMasks: nil,
-			expectedError: fmt.Errorf("%w%s", fieldmask.ErrInvalidFieldMask, "address..city, addre$$.street"),
+			expectedError: fmt.Errorf("%w%s", fieldmask.ErrInvalidFieldMask, "[address..city addre$$.street]"),
 		},
 		{
 			name:          "valid nested fields",
@@ -101,13 +101,13 @@ func TestParseFieldMask(t *testing.T) {
 			name:          "invalid nested fields",
 			query:         "fields=user.name,user..age,user.address.city",
 			expectedMasks: nil,
-			expectedError: fmt.Errorf("%w%s", fieldmask.ErrInvalidFieldMask, "user..age"),
+			expectedError: fmt.Errorf("%w%s", fieldmask.ErrInvalidFieldMask, "[user..age]"),
 		},
 		{
 			name:          "valid and invalid nested fields",
 			query:         "fields=user.name,user..age,user.address.city,user.address..street",
 			expectedMasks: nil,
-			expectedError: fmt.Errorf("%w%s", fieldmask.ErrInvalidFieldMask, "user..age, user.address..street"),
+			expectedError: fmt.Errorf("%w%s", fieldmask.ErrInvalidFieldMask, "[user..age user.address..street]"),
 		},
 	}
 

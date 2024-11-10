@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-func SetupLogger() (*slog.Logger, error) {
+func NewLogger() (*slog.Logger, error) {
 	var slogLevel slog.Level
 	if err := slogLevel.UnmarshalText([]byte(viper.GetString(ArgLevel))); err != nil {
 		return nil, err

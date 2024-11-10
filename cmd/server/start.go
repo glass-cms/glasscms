@@ -71,7 +71,7 @@ func NewStartCommand() *StartCommand {
 }
 
 func (c *StartCommand) Execute(cmd *cobra.Command, _ []string) error {
-	logger, err := log.SetupLogger()
+	logger, err := log.NewLogger()
 	if err != nil {
 		return err
 	}
