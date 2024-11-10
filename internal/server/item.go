@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/glass-cms/glasscms/internal/item"
-	"github.com/glass-cms/glasscms/internal/parser"
 	"github.com/glass-cms/glasscms/pkg/api"
 	"github.com/glass-cms/glasscms/pkg/fieldmask"
 )
@@ -23,8 +22,15 @@ func (s *Server) ItemsCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	itemToCreate, err := itemCreateToItem(createRequest)
+	if err != nil {
+		s.logger.ErrorContext(ctx, fmt.Errorf("failed to convert item create to item: %w", err).Error())
+		s.errorHandler.HandleError(w, r, err)
+		return
+	}
+
 	var createdItem *item.Item
-	createdItem, err = s.itemService.CreateItem(ctx, itemCreateToItem(createRequest))
+	createdItem, err = s.itemService.CreateItem(ctx, itemToCreate)
 	if err != nil {
 		s.logger.ErrorContext(ctx, fmt.Errorf("failed to create item: %w", err).Error())
 
@@ -68,7 +74,15 @@ func (s *Server) ItemsUpsert(w http.ResponseWriter, r *http.Request) {
 
 	items := make([]item.Item, len(*upsertRequest))
 	for i, itemUpsert := range *upsertRequest {
-		items[i] = itemUpsertToItem(&itemUpsert)
+		var item item.Item
+		item, err = itemUpsertToItem(&itemUpsert)
+		if err != nil {
+			s.logger.ErrorContext(ctx, fmt.Errorf("failed to convert item upsert to item: %w", err).Error())
+			s.errorHandler.HandleError(w, r, err)
+			return
+		}
+
+		items[i] = item
 	}
 
 	upsertedItems, err := s.itemService.UpsertItems(ctx, items)
@@ -162,30 +176,40 @@ func itemToMap(item *api.Item) map[string]interface{} {
 	return itemMap
 }
 
-func itemCreateToItem(i *api.ItemCreate) item.Item {
+func itemCreateToItem(i *api.ItemCreate) (item.Item, error) {
+	hash, err := api.HashItem(i.Content, i.Properties, i.Metadata)
+	if err != nil {
+		return item.Item{}, err
+	}
+
 	return item.Item{
 		Name:        i.Name,
 		DisplayName: i.DisplayName,
 		Content:     i.Content,
-		Hash:        parser.HashContent([]byte(i.Content)),
+		Hash:        hash,
 		CreateTime:  i.CreateTime,
 		UpdateTime:  i.UpdateTime,
 		Properties:  i.Properties,
 		Metadata:    i.Metadata,
-	}
+	}, nil
 }
 
-func itemUpsertToItem(i *api.ItemUpsert) item.Item {
+func itemUpsertToItem(i *api.ItemUpsert) (item.Item, error) {
+	hash, err := api.HashItem(i.Content, i.Properties, i.Metadata)
+	if err != nil {
+		return item.Item{}, err
+	}
+
 	return item.Item{
 		Name:        i.Name,
 		DisplayName: i.DisplayName,
 		Content:     i.Content,
-		Hash:        parser.HashContent([]byte(i.Content)),
+		Hash:        hash,
 		CreateTime:  i.CreateTime,
 		UpdateTime:  i.UpdateTime,
 		Properties:  i.Properties,
 		Metadata:    i.Metadata,
-	}
+	}, nil
 }
 
 func FromItem(item *item.Item) *api.Item {
