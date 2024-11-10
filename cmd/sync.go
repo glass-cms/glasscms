@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"errors"
+	"net/http"
+	"time"
 
 	"github.com/glass-cms/glasscms/internal/sourcer"
 	"github.com/glass-cms/glasscms/internal/sourcer/fs"
@@ -58,7 +60,11 @@ func (c *SyncCommand) RunE(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	cl, err := client.NewClient(c.opts.ServerURL)
+	httpClient := &http.Client{
+		Timeout: 10 * time.Second,
+	}
+
+	cl, err := client.NewClient(c.opts.ServerURL, client.WithHTTPClient(httpClient))
 	if err != nil {
 		return err
 	}

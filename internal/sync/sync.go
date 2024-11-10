@@ -47,11 +47,19 @@ func (s *Syncer) Sync(ctx context.Context, _ bool) error {
 
 	_ = s.transformItemMap(sourceItems)
 
-	_, err = s.getServerItems(ctx)
+	serverItems, err := s.getServerItems(ctx)
 	if err != nil {
 		s.logger.ErrorContext(ctx, "failed to get items from server", "error", err)
 		return err
 	}
+
+	_ = s.transformItemMap(serverItems)
+
+	// TODO: Implement sync logic.
+	// Iterate over the source items and compare them to the server items
+	// when an item is found that is not on the server, create it.
+	// when an item is found that is on the server, update it if the hash is different and the update time of the source is later than the server.
+	// when an item is found that is on the server, delete it if the item is not on the source (by updating the item with a deleted timestamp).
 
 	return nil
 }
@@ -87,14 +95,17 @@ func (s *Syncer) collectSourceItems(ctx context.Context) ([]*api.Item, error) {
 			s.logger.WarnContext(ctx, "failed to parse item from source", "name", src.Name(), "error", err)
 			continue
 		}
-
-		items = append(items, i)
+		if i != nil {
+			items = append(items, i)
+		}
 	}
 	return items, nil
 }
 
 // getServerItems retrieves a list of items from the server.
 func (s *Syncer) getServerItems(_ context.Context) ([]*api.Item, error) {
+	//TODO: Implement getServerItems.
+	// Set a client timeout?
 	return nil, nil
 }
 
