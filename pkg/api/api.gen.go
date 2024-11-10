@@ -67,6 +67,7 @@ type Item struct {
 type ItemCreate struct {
 	Content     string                 `json:"content"`
 	CreateTime  time.Time              `json:"create_time"`
+	DeleteTime  *time.Time             `json:"delete_time,omitempty"`
 	DisplayName string                 `json:"display_name"`
 	Metadata    map[string]interface{} `json:"metadata"`
 	Name        string                 `json:"name"`
@@ -78,6 +79,7 @@ type ItemCreate struct {
 type ItemUpdate struct {
 	Content     *string                 `json:"content,omitempty"`
 	CreateTime  *time.Time              `json:"create_time,omitempty"`
+	DeleteTime  *time.Time              `json:"delete_time,omitempty"`
 	DisplayName *string                 `json:"display_name,omitempty"`
 	Metadata    *map[string]interface{} `json:"metadata,omitempty"`
 	Properties  *map[string]interface{} `json:"properties,omitempty"`
@@ -88,6 +90,7 @@ type ItemUpdate struct {
 type ItemUpsert struct {
 	Content     string                 `json:"content"`
 	CreateTime  time.Time              `json:"create_time"`
+	DeleteTime  *time.Time             `json:"delete_time,omitempty"`
 	DisplayName string                 `json:"display_name"`
 	Metadata    map[string]interface{} `json:"metadata"`
 	Name        string                 `json:"name"`

@@ -179,7 +179,6 @@ components:
         - content
         - create_time
         - update_time
-        - delete_time
         - properties
         - metadata
         - hash
@@ -199,7 +198,6 @@ components:
         delete_time:
           type: string
           format: date-time
-          readOnly: true
         properties:
           type: object
           additionalProperties: {}
@@ -234,6 +232,9 @@ components:
         update_time:
           type: string
           format: date-time
+        delete_time:
+          type: string
+          format: date-time
         properties:
           type: object
           additionalProperties: {}
@@ -252,6 +253,9 @@ components:
           type: string
           format: date-time
         update_time:
+          type: string
+          format: date-time
+        delete_time:
           type: string
           format: date-time
         properties:
@@ -282,6 +286,9 @@ components:
           type: string
           format: date-time
         update_time:
+          type: string
+          format: date-time
+        delete_time:
           type: string
           format: date-time
         properties:

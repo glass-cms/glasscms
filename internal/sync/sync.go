@@ -4,9 +4,7 @@ package sync
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log/slog"
-	"net/http"
 	"time"
 
 	"github.com/glass-cms/glasscms/internal/parser"
@@ -156,11 +154,9 @@ func (s *Syncer) getServerItems(ctx context.Context) ([]*api.Item, error) {
 
 	response, err := s.client.ItemsListWithResponse(ctx, &params)
 	if err != nil {
+		s.logger.ErrorContext(
+			ctx, "received unexpected status code while listing items", "err", err, "status_code", response.StatusCode())
 		return nil, err
-	}
-
-	if response.StatusCode() != http.StatusOK {
-		return nil, fmt.Errorf("unexpected status from api: %s", response.Status())
 	}
 
 	items := make([]*api.Item, len(*response.JSON200))
@@ -182,7 +178,15 @@ func (s *Syncer) upsertItems(ctx context.Context, items []*api.Item) error {
 			DisplayName: item.DisplayName,
 			Metadata:    item.Metadata,
 			Properties:  item.Properties,
+			DeleteTime:  item.DeleteTime,
 		}
+	}
+
+	response, err := s.client.ItemsUpsertWithResponse(ctx, upsertItems)
+	if err != nil {
+		s.logger.ErrorContext(
+			ctx, "received unexpected status code while upserting items", "error", err, "status_code", response.StatusCode())
+		return err
 	}
 
 	return nil

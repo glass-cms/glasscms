@@ -191,6 +191,7 @@ func itemCreateToItem(i *api.ItemCreate) (item.Item, error) {
 		UpdateTime:  i.UpdateTime,
 		Properties:  i.Properties,
 		Metadata:    i.Metadata,
+		DeleteTime:  nil,
 	}, nil
 }
 
@@ -209,6 +210,7 @@ func itemUpsertToItem(i *api.ItemUpsert) (item.Item, error) {
 		UpdateTime:  i.UpdateTime,
 		Properties:  i.Properties,
 		Metadata:    i.Metadata,
+		DeleteTime:  i.DeleteTime,
 	}, nil
 }
 
@@ -226,5 +228,6 @@ func FromItem(item *item.Item) *api.Item {
 		Properties:  item.Properties,
 		Metadata:    item.Metadata,
 		Hash:        &item.Hash,
+		DeleteTime:  item.DeleteTime,
 	}
 }

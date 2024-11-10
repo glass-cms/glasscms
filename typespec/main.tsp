@@ -46,9 +46,7 @@ model Item {
     content: string;
     create_time: utcDateTime;
     update_time: utcDateTime;
-
-    @visibility("read")
-    delete_time: utcDateTime;
+    delete_time?: utcDateTime;
 
     properties: Record<unknown>;
     metadata: Record<unknown>;
