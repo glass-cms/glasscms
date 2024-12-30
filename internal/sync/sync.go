@@ -209,9 +209,13 @@ func (s *Syncer) upsertItems(ctx context.Context, items []*api.Item) error {
 
 // transformItemMap transforms a slice of items into a map where the key is the item name.
 func (s *Syncer) transformItemMap(items []*api.Item) map[string]*api.Item {
+	if items == nil {
+		return make(map[string]*api.Item)
+	}
+
 	itemMap := make(map[string]*api.Item, len(items))
 	for _, i := range items {
-		if i != nil {
+		if i != nil && i.Name != "" { // Add validation for empty names
 			itemMap[i.Name] = i
 		}
 	}
