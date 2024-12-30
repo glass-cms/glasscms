@@ -2,7 +2,9 @@ package cmd
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/glass-cms/glasscms/internal/sourcer"
@@ -10,6 +12,7 @@ import (
 	"github.com/glass-cms/glasscms/internal/sync"
 	"github.com/glass-cms/glasscms/pkg/api"
 	"github.com/glass-cms/glasscms/pkg/log"
+	"github.com/lithammer/dedent"
 	"github.com/spf13/cobra"
 )
 
@@ -32,26 +35,41 @@ type SyncCommandOptions struct {
 
 // NewSyncCommand returns a new sync command.
 func NewSyncCommand() *SyncCommand {
-	cmd := &SyncCommand{
+	syncCommand := &SyncCommand{
 		opts: SyncCommandOptions{},
 	}
 
-	cmd.Command = &cobra.Command{
-		Use:   "sync",
+	syncCommand.Command = &cobra.Command{
+		Use:   "sync [source-type] [source-path]",
 		Short: "Synchronize items from a source to the server",
-		RunE:  cmd.RunE,
-		Args:  cobra.ExactArgs(2),
+		Long: dedent.Dedent(`
+			Synchronises content items from a source to the server.
+
+			Source types:
+			- filesystem: Read items from a directory on the local filesystem.
+
+			Example:
+			glasscms sync filesystem /path/to/items
+		`),
+		RunE: syncCommand.RunE,
+		Args: cobra.ExactArgs(2),
+		PreRunE: func(_ *cobra.Command, _ []string) error {
+			if _, err := url.Parse(syncCommand.opts.ServerURL); err != nil {
+				return fmt.Errorf("invalid server URL: %w", err)
+			}
+			return nil
+		},
 	}
 
-	flagset := cmd.Command.Flags()
+	flagset := syncCommand.Command.Flags()
 
-	flagset.BoolVar(&cmd.opts.LiveMode, ArgLiveMode, false,
+	flagset.BoolVar(&syncCommand.opts.LiveMode, ArgLiveMode, false,
 		"When live mode is enabled, items are synchronized to the server, otherwise changes are only previewed")
 
-	flagset.StringVar(&cmd.opts.ServerURL, ArgServerURL, "http://localhost:8080",
+	flagset.StringVar(&syncCommand.opts.ServerURL, ArgServerURL, "http://localhost:8080",
 		"The URL of the server to synchronize items to")
 
-	return cmd
+	return syncCommand
 }
 
 func (c *SyncCommand) RunE(cmd *cobra.Command, args []string) error {
