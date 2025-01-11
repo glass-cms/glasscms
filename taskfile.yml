@@ -57,3 +57,8 @@ tasks:
       - "rm -rf out"
       # Remove the coverage file
       - "rm -f coverage.out"
+
+  sqlc:
+    desc: "Run sqlc"
+    cmds:
+      - "{{.SHELL_TO_USE}} scripts/sqlc.sh"
