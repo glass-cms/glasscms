@@ -5,14 +5,11 @@ import (
 	"math/big"
 )
 
-const (
-	charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789~=+%^*/()[]{}/!@#$?|"
-	length  = 20
-)
+const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
-// GenerateRandomString generates a cryptographically secure random string of length
+// generateRandomString generates a cryptographically secure random string of the specified
 // length using characters from charset.
-func GenerateRandomString() string {
+func generateRandomString(length int) string {
 	b := make([]rune, length)
 	charsetLength := big.NewInt(int64(len(charset)))
 
