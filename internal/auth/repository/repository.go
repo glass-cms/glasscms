@@ -45,6 +45,8 @@ func (r *TokenRepository) CreateToken(ctx context.Context, tx *sql.Tx, token aut
 func (r *TokenRepository) GetToken(ctx context.Context, tx *sql.Tx, hash string) (*auth.Token, error) {
 	q := r.queries.WithTx(tx)
 
+	// Handle tokens not found.
+
 	dbToken, err := q.GetToken(ctx, hash)
 	if err != nil {
 		return nil, r.errorHandler.HandleError(ctx, err)

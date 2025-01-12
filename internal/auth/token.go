@@ -21,18 +21,14 @@ type Token struct {
 // It returns the token and a pretty value that can be used to identify the token.
 func NewToken(expireTime time.Time) (*Token, string) {
 	value := generateRandomString(32)
-
-	hasher := sha256.New()
-	hasher.Write([]byte(value))
-	hash := hasher.Sum(nil)
+	hash := tokenHash(value)
 
 	prettyValue := fmt.Sprintf("sk_%s", value)
-	// Last 4 characters of prettyValue
 	suffix := prettyValue[len(prettyValue)-4:]
 
 	return &Token{
 		ID:         uuid.New().String(),
-		Hash:       hex.EncodeToString(hash),
+		Hash:       hash,
 		Suffix:     suffix,
 		CreateTime: time.Now(),
 		ExpireTime: expireTime,
@@ -41,4 +37,12 @@ func NewToken(expireTime time.Time) (*Token, string) {
 
 func (t *Token) IsExpired() bool {
 	return t.ExpireTime.Before(time.Now())
+}
+
+func tokenHash(token string) string {
+	hasher := sha256.New()
+	hasher.Write([]byte(token))
+	hash := hasher.Sum(nil)
+
+	return hex.EncodeToString(hash)
 }
