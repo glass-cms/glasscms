@@ -15,8 +15,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestValidateToken(t *testing.T) {
-	t.Parallel()
+func setupTestAuth(t *testing.T) (*auth.Auth, *sql.DB, auth.Repository) {
+	t.Helper()
 	db, err := database.NewTestDB()
 	if err != nil {
 		t.Fatal(err)
@@ -24,8 +24,12 @@ func TestValidateToken(t *testing.T) {
 
 	repo := repository.NewRepository(db, &database.SqliteErrorHandler{})
 	a := auth.NewAuth(db, repo, log.NoopLogger())
+	return a, db, repo
+}
 
-	token, tokenValue := auth.NewToken(time.Now().Add(24 * time.Hour))
+func createToken(t *testing.T, db *sql.DB, repo auth.Repository, expireTime time.Time) string {
+	t.Helper()
+	token, tokenValue := auth.NewToken(expireTime)
 
 	tx, txErr := db.Begin()
 	if txErr != nil {
@@ -44,29 +48,60 @@ func TestValidateToken(t *testing.T) {
 		t.Fatal(commitErr)
 	}
 
-	valid, validateErr := a.ValidateToken(context.Background(), fmt.Sprintf("Bearer %s", tokenValue))
-	if validateErr != nil {
-		t.Fatal(validateErr)
-	}
-
-	assert.True(t, valid)
+	return tokenValue
 }
 
-func TestValidateToken_InvalidToken(t *testing.T) {
+func TestValidateToken(t *testing.T) {
 	t.Parallel()
 
-	db, err := database.NewTestDB()
-	if err != nil {
-		t.Fatal(err)
+	tests := []struct {
+		name          string
+		setupToken    func(_ *testing.T, db *sql.DB, repo auth.Repository) string
+		expectedValid bool
+		expectedErr   error
+	}{
+		{
+			name: "valid token",
+			setupToken: func(_ *testing.T, db *sql.DB, repo auth.Repository) string {
+				tokenValue := createToken(t, db, repo, time.Now().Add(24*time.Hour))
+				return fmt.Sprintf("Bearer %s", tokenValue)
+			},
+			expectedValid: true,
+			expectedErr:   nil,
+		},
+		{
+			name: "invalid token",
+			setupToken: func(_ *testing.T, _ *sql.DB, _ auth.Repository) string {
+				return "invalid_token"
+			},
+			expectedValid: false,
+			expectedErr:   auth.ErrTokenNotFound,
+		},
+		{
+			name: "expired token",
+			setupToken: func(_ *testing.T, db *sql.DB, repo auth.Repository) string {
+				tokenValue := createToken(t, db, repo, time.Now().Add(-24*time.Hour))
+				return fmt.Sprintf("Bearer %s", tokenValue)
+			},
+			expectedValid: false,
+			expectedErr:   auth.ErrTokenExpired,
+		},
 	}
 
-	repo := repository.NewRepository(db, &database.SqliteErrorHandler{})
-	a := auth.NewAuth(db, repo, log.NoopLogger())
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			a, db, repo := setupTestAuth(t)
 
-	valid, err := a.ValidateToken(context.Background(), "invalid_token")
-	if err != nil {
-		t.Fatal(err)
+			tokenString := tt.setupToken(t, db, repo)
+			valid, err := a.ValidateToken(context.Background(), tokenString)
+
+			assert.Equal(t, tt.expectedValid, valid)
+			if tt.expectedErr != nil {
+				assert.ErrorIs(t, err, tt.expectedErr)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
 	}
-
-	assert.False(t, valid)
 }
