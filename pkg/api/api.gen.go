@@ -19,6 +19,10 @@ import (
 	"github.com/oapi-codegen/runtime"
 )
 
+const (
+	BearerAuthScopes = "bearerAuth.Scopes"
+)
+
 // Defines values for ErrorCode.
 const (
 	ParameterInvalid      ErrorCode = "parameter_invalid"
@@ -86,7 +90,7 @@ type ItemUpdate struct {
 	UpdateTime  *time.Time              `json:"update_time,omitempty"`
 }
 
-// ItemUpsert Resource create operation model.
+// ItemUpsert Upsert operation model.
 type ItemUpsert struct {
 	Content     string                 `json:"content"`
 	CreateTime  time.Time              `json:"create_time"`
@@ -943,19 +947,19 @@ func ParseItemsUpdateResponse(rsp *http.Response) (*ItemsUpdateResponse, error) 
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
-
+	// List all items
 	// (GET /items)
 	ItemsList(w http.ResponseWriter, r *http.Request, params ItemsListParams)
-
+	// Create or update many items
 	// (PATCH /items)
 	ItemsUpsert(w http.ResponseWriter, r *http.Request)
-
+	// Create a new item
 	// (POST /items)
 	ItemsCreate(w http.ResponseWriter, r *http.Request)
-
+	// Get an item
 	// (GET /items/{name})
 	ItemsGet(w http.ResponseWriter, r *http.Request, name ItemKey)
-
+	// Update an item
 	// (PATCH /items/{name})
 	ItemsUpdate(w http.ResponseWriter, r *http.Request, name ItemKey)
 }
@@ -974,6 +978,8 @@ func (siw *ServerInterfaceWrapper) ItemsList(w http.ResponseWriter, r *http.Requ
 	ctx := r.Context()
 
 	var err error
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params ItemsListParams
@@ -1001,6 +1007,8 @@ func (siw *ServerInterfaceWrapper) ItemsList(w http.ResponseWriter, r *http.Requ
 func (siw *ServerInterfaceWrapper) ItemsUpsert(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ItemsUpsert(w, r)
 	}))
@@ -1015,6 +1023,8 @@ func (siw *ServerInterfaceWrapper) ItemsUpsert(w http.ResponseWriter, r *http.Re
 // ItemsCreate operation middleware
 func (siw *ServerInterfaceWrapper) ItemsCreate(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ItemsCreate(w, r)
@@ -1042,6 +1052,8 @@ func (siw *ServerInterfaceWrapper) ItemsGet(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ItemsGet(w, r, name)
 	}))
@@ -1067,6 +1079,8 @@ func (siw *ServerInterfaceWrapper) ItemsUpdate(w http.ResponseWriter, r *http.Re
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "name", Err: err})
 		return
 	}
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ItemsUpdate(w, r, name)

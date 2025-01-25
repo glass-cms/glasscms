@@ -2,12 +2,22 @@ openapi: 3.0.0
 info:
   title: GlassCMS API
   version: 0.0.0
-tags: []
+  description: REST API for Glass Content Management System
+
+tags:
+  - name: Items
+    description: Operations for managing content items
+
+security:
+  - bearerAuth: []
+
 paths:
   /items:
     post:
+      tags: ['Items']
       operationId: Items_create
       description: Creates a new instance of the resource.
+      summary: Create a new item
       parameters: []
       responses:
         '200':
@@ -35,8 +45,10 @@ paths:
             schema:
               $ref: '#/components/schemas/ItemCreate'
     get:
+      tags: ['Items']
       operationId: Items_list
-      description: Lists all items
+      description: Lists all items resources.
+      summary: List all items
       parameters:
         - name: fields
           in: query
@@ -62,8 +74,10 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
     patch:
+      tags: ['Items']
       operationId: Items_upsert
       description: Creates or updates many items
+      summary: Create or update many items
       parameters: []
       responses:
         '200':
@@ -90,8 +104,10 @@ paths:
                 $ref: '#/components/schemas/ItemUpsert'
   /items/{name}:
     get:
+      tags: ['Items']
       operationId: Items_get
       description: Gets an instance of the resource.
+      summary: Get an item
       parameters:
         - $ref: '#/components/parameters/ItemKey'
       responses:
@@ -108,8 +124,10 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
     patch:
+      tags: ['Items']
       operationId: Items_update
       description: Updates an existing instance of the resource.
+      summary: Update an item
       parameters:
         - $ref: '#/components/parameters/ItemKey'
       responses:
@@ -132,6 +150,11 @@ paths:
             schema:
               $ref: '#/components/schemas/ItemUpdate'
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: API token
   parameters:
     ItemKey:
       name: name
@@ -297,4 +320,4 @@ components:
         metadata:
           type: object
           additionalProperties: {}
-      description: Resource create operation model.
+      description: Upsert operation model.

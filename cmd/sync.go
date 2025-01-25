@@ -13,6 +13,7 @@ import (
 	"github.com/glass-cms/glasscms/pkg/api"
 	"github.com/glass-cms/glasscms/pkg/log"
 	"github.com/lithammer/dedent"
+	"github.com/oapi-codegen/oapi-codegen/v2/pkg/securityprovider"
 	"github.com/spf13/cobra"
 )
 
@@ -20,6 +21,7 @@ const (
 	ArgSourceType = "source-type"
 	ArgLiveMode   = "live"
 	ArgServerURL  = "server"
+	ArgToken      = "token"
 )
 
 type SyncCommand struct {
@@ -31,6 +33,7 @@ type SyncCommand struct {
 type SyncCommandOptions struct {
 	LiveMode  bool
 	ServerURL string
+	Token     string
 }
 
 // NewSyncCommand returns a new sync command.
@@ -69,6 +72,9 @@ func NewSyncCommand() *SyncCommand {
 	flagset.StringVar(&syncCommand.opts.ServerURL, ArgServerURL, "http://localhost:8080",
 		"The URL of the server to synchronize items to")
 
+	flagset.StringVar(&syncCommand.opts.Token, ArgToken, "",
+		"Bearer token for server authentication")
+
 	return syncCommand
 }
 
@@ -87,9 +93,16 @@ func (c *SyncCommand) RunE(cmd *cobra.Command, args []string) error {
 		Timeout: 10 * time.Second,
 	}
 
-	// TODO: The client should also have logging middleware and retry logic.
+	bearerAuth, err := securityprovider.NewSecurityProviderBearerToken(c.opts.Token)
+	if err != nil {
+		return err
+	}
 
-	cl, err := api.NewClientWithResponses(c.opts.ServerURL, api.WithHTTPClient(httpClient))
+	// Create client with token authentication
+	cl, err := api.NewClientWithResponses(c.opts.ServerURL,
+		api.WithHTTPClient(httpClient),
+		api.WithRequestEditorFn(bearerAuth.Intercept),
+	)
 	if err != nil {
 		return err
 	}
