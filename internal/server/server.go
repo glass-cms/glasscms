@@ -11,8 +11,6 @@ import (
 	"github.com/glass-cms/glasscms/internal/item"
 	"github.com/glass-cms/glasscms/pkg/api"
 	"github.com/glass-cms/glasscms/pkg/fieldmask"
-	"github.com/glass-cms/glasscms/pkg/mediatype"
-	"github.com/glass-cms/glasscms/pkg/middleware"
 	"github.com/glass-cms/glasscms/pkg/resource"
 )
 
@@ -38,6 +36,7 @@ type Server struct {
 func New(
 	logger *slog.Logger,
 	itemService *item.Service,
+	middlewares []func(http.Handler) http.Handler,
 	opts ...Option,
 ) (*Server, error) {
 	serveMux := http.NewServeMux()
@@ -48,11 +47,6 @@ func New(
 		errorHandler: NewErrorHandler(),
 	}
 
-	middlewares := []func(http.Handler) http.Handler{
-		middleware.RequestID,
-		middleware.ContentType(mediatype.ApplicationJSON),
-		middleware.Accept(mediatype.ApplicationJSON),
-	}
 	convertedMiddlewares := make([]api.MiddlewareFunc, len(middlewares))
 	for i, mw := range middlewares {
 		convertedMiddlewares[i] = api.MiddlewareFunc(mw)

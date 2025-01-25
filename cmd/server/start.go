@@ -3,15 +3,21 @@ package server
 import (
 	"fmt"
 	"log/slog"
+	"net/http"
 	"os"
 	"os/user"
 
+	"github.com/glass-cms/glasscms/internal/auth"
+	authRepository "github.com/glass-cms/glasscms/internal/auth/repository"
 	"github.com/glass-cms/glasscms/internal/database"
 	"github.com/glass-cms/glasscms/internal/item"
-	"github.com/glass-cms/glasscms/internal/item/repository"
+	itemRepository "github.com/glass-cms/glasscms/internal/item/repository"
 	"github.com/glass-cms/glasscms/internal/server"
+	internalMiddleware "github.com/glass-cms/glasscms/internal/server/middleware"
 	ctx "github.com/glass-cms/glasscms/pkg/context"
 	"github.com/glass-cms/glasscms/pkg/log"
+	"github.com/glass-cms/glasscms/pkg/mediatype"
+	"github.com/glass-cms/glasscms/pkg/middleware"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -91,10 +97,18 @@ func (c *StartCommand) Execute(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 
-	repo := repository.NewRepository(db, errHandler)
-	service := item.NewService(repo)
+	itemRepo := itemRepository.NewRepository(db, errHandler)
+	itemService := item.NewService(itemRepo)
 
-	server, err := server.New(logger, service)
+	authRepo := authRepository.NewRepository(db, errHandler)
+	authService := auth.NewAuth(db, authRepo, logger)
+
+	server, err := server.New(logger, itemService, []func(http.Handler) http.Handler{
+		middleware.RequestID,
+		middleware.ContentType(mediatype.ApplicationJSON),
+		middleware.Accept(mediatype.ApplicationJSON),
+		internalMiddleware.AuthMiddleware(authService),
+	})
 	if err != nil {
 		return err
 	}

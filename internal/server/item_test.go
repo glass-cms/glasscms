@@ -59,6 +59,7 @@ func TestAPIHandler_ItemsCreate(t *testing.T) {
 			handler, err := server.New(
 				log.NoopLogger(),
 				item.NewService(repo),
+				[]func(http.Handler) http.Handler{},
 			)
 			if err != nil {
 				t.Fatal(err)
@@ -109,6 +110,7 @@ func TestAPIHandler_ItemsGet(t *testing.T) {
 			server, err := server.New(
 				log.NoopLogger(),
 				item.NewService(repo),
+				[]func(http.Handler) http.Handler{},
 			)
 			if err != nil {
 				t.Fatal(err)
@@ -202,6 +204,7 @@ func TestAPIHandler_ItemsList(t *testing.T) {
 			handler, err := server.New(
 				log.NoopLogger(),
 				svc,
+				[]func(http.Handler) http.Handler{},
 			)
 			if err != nil {
 				t.Fatal(err)
@@ -285,6 +288,7 @@ func TestAPIHandler_ItemsUpsert(t *testing.T) {
 			handler, err := server.New(
 				log.NoopLogger(),
 				svc,
+				[]func(http.Handler) http.Handler{},
 			)
 			if err != nil {
 				t.Fatal(err)
