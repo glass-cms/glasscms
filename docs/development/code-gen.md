@@ -7,7 +7,7 @@ This project uses [TypeSpec](https://typespec.io/) for describing the API of the
 The TypeSpec files are located in the `typespec` directory. To compile the OpenAPI specification, run the following command:
 
 ```bash
-make typespec
+task typespec
 ```
 
 The OpenAPI specification will be generated in the `openapi` directory.
