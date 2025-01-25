@@ -54,31 +54,98 @@ func TestRepositoryImpl_CreateToken(t *testing.T) {
 func TestRepositoryImpl_GetToken(t *testing.T) {
 	t.Parallel()
 
-	db := GetTestDatabase()
-	repo := repository.NewRepository(db, &database.SqliteErrorHandler{})
+	createTestToken := func(
+		t testing.TB,
+		repo *repository.TokenRepository,
+		db *sql.DB,
+		id, suffix, hash string,
+	) auth.Token {
+		token := auth.Token{
+			ID:         id,
+			Suffix:     suffix,
+			Hash:       hash,
+			ExpireTime: time.Now().Add(24 * time.Hour),
+		}
+		tx, err := db.Begin()
+		require.NoError(t, err)
 
-	token := auth.Token{
-		ID:         "1",
-		Suffix:     "suffix",
-		Hash:       "hash",
-		ExpireTime: time.Now().Add(24 * time.Hour),
+		err = repo.CreateToken(context.Background(), tx, token)
+		require.NoError(t, err)
+		require.NoError(t, tx.Commit())
+
+		return token
 	}
 
-	tx, err := db.Begin()
-	require.NoError(t, err)
-	defer func() {
-		require.NoError(t, tx.Rollback())
-	}()
+	tests := []struct {
+		name        string
+		withoutTx   bool
+		createToken func(testing.TB, *repository.TokenRepository, *sql.DB) auth.Token
+		wantErr     error
+	}{
+		{
+			name:      "with transaction - token exists",
+			withoutTx: false,
+			createToken: func(_ testing.TB, repo *repository.TokenRepository, db *sql.DB) auth.Token {
+				return createTestToken(t, repo, db, "1", "suffix", "hash")
+			},
+		},
+		{
+			name:      "without transaction - token exists",
+			withoutTx: true,
+			createToken: func(_ testing.TB, repo *repository.TokenRepository, db *sql.DB) auth.Token {
+				return createTestToken(t, repo, db, "2", "suffix2", "hash2")
+			},
+		},
+		{
+			name:      "token not found",
+			withoutTx: false,
+			createToken: func(_ testing.TB, _ *repository.TokenRepository, _ *sql.DB) auth.Token {
+				return auth.Token{
+					Hash: "nonexistent-hash",
+				}
+			},
+			wantErr: database.ErrNotFound,
+		},
+	}
 
-	err = repo.CreateToken(context.Background(), tx, token)
-	require.NoError(t, err)
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 
-	fetchedToken, err := repo.GetToken(context.Background(), tx, token.Hash)
-	require.NoError(t, err)
-	require.NotNil(t, fetchedToken, "fetched token should not be nil")
-	assert.Equal(t, token.ID, fetchedToken.ID)
-	assert.Equal(t, token.Suffix, fetchedToken.Suffix)
-	assert.Equal(t, token.Hash, fetchedToken.Hash)
+			db := GetTestDatabase()
+			repo := repository.NewRepository(db, &database.SqliteErrorHandler{})
+
+			token := tt.createToken(t, repo, db)
+
+			var fetchedToken *auth.Token
+			var getErr error
+
+			if tt.withoutTx {
+				fetchedToken, getErr = repo.GetToken(context.Background(), nil, token.Hash)
+			} else {
+				tx, txErr := db.Begin()
+				require.NoError(t, txErr)
+				defer func() {
+					require.NoError(t, tx.Rollback())
+				}()
+				fetchedToken, getErr = repo.GetToken(context.Background(), tx, token.Hash)
+			}
+
+			if tt.wantErr != nil {
+				require.ErrorIs(t, getErr, tt.wantErr)
+				require.Nil(t, fetchedToken)
+				return
+			}
+
+			require.NoError(t, getErr)
+			require.NotNil(t, fetchedToken, "fetched token should not be nil")
+
+			assert.Equal(t, token.ID, fetchedToken.ID)
+			assert.Equal(t, token.Suffix, fetchedToken.Suffix)
+			assert.Equal(t, token.Hash, fetchedToken.Hash)
+		})
+	}
 }
 
 func TestRepositoryImpl_DeleteToken(t *testing.T) {

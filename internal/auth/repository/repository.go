@@ -42,22 +42,27 @@ func (r *TokenRepository) CreateToken(ctx context.Context, tx *sql.Tx, token aut
 	return nil
 }
 
+// GetToken retrieves a token from the database by its hash.
+// If tx is nil, the query will be executed without a transaction.
 func (r *TokenRepository) GetToken(ctx context.Context, tx *sql.Tx, hash string) (*auth.Token, error) {
-	q := r.queries.WithTx(tx)
+	var q *query.Queries
+	if tx != nil {
+		q = r.queries.WithTx(tx)
+	} else {
+		q = r.queries
+	}
 
-	// Handle tokens not found.
-
-	dbToken, err := q.GetToken(ctx, hash)
+	token, err := q.GetToken(ctx, hash)
 	if err != nil {
 		return nil, r.errorHandler.HandleError(ctx, err)
 	}
 
 	return &auth.Token{
-		ID:         dbToken.ID,
-		Suffix:     dbToken.Suffix,
-		Hash:       dbToken.Hash,
-		CreateTime: dbToken.CreateTime,
-		ExpireTime: dbToken.ExpireTime,
+		ID:         token.ID,
+		Suffix:     token.Suffix,
+		Hash:       token.Hash,
+		CreateTime: token.CreateTime,
+		ExpireTime: token.ExpireTime,
 	}, nil
 }
 
