@@ -134,7 +134,7 @@ func TestCreateToken(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			a, _, _ := setupTestAuth(t)
+			a, _, repo := setupTestAuth(t)
 
 			token, prettyValue, err := a.CreateToken(context.Background(), tt.expireTime)
 
@@ -156,6 +156,12 @@ func TestCreateToken(t *testing.T) {
 			assert.NotEmpty(t, prettyValue)
 			assert.True(t, strings.HasPrefix(prettyValue, "sk_"))
 			assert.Equal(t, tt.expireTime.Unix(), token.ExpireTime.Unix())
+
+			// Verify the token was actually persisted
+			storedToken, err := repo.GetToken(context.Background(), nil, token.Hash)
+			require.NoError(t, err)
+			assert.Equal(t, token.Hash, storedToken.Hash)
+			assert.Equal(t, token.ExpireTime.Unix(), storedToken.ExpireTime.Unix())
 		})
 	}
 }

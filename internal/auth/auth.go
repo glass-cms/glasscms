@@ -46,23 +46,12 @@ func (a *Auth) ValidateToken(ctx context.Context, token string) (bool, error) {
 	hash := tokenHash(token)
 	a.logger.DebugContext(ctx, "validating token", "hash", hash)
 
-	tx, err := a.db.BeginTx(ctx, nil)
-	if err != nil {
-		return false, err
-	}
-	defer func() {
-		if rollbackErr := tx.Rollback(); rollbackErr != nil && !errors.Is(rollbackErr, sql.ErrTxDone) {
-			a.logger.Error("failed to rollback transaction", "error", rollbackErr)
-		}
-	}()
-
-	dbToken, err := a.repo.GetToken(ctx, tx, hash)
+	dbToken, err := a.repo.GetToken(ctx, nil, hash)
 	if err != nil {
 		if errors.Is(err, database.ErrNotFound) {
 			a.logger.WarnContext(ctx, "token not found", "hash", hash)
 			return false, ErrTokenNotFound
 		}
-
 		return false, err
 	}
 
@@ -82,18 +71,11 @@ func (a *Auth) CreateToken(ctx context.Context, expireTime time.Time) (*Token, s
 
 	token, prettyValue := NewToken(expireTime)
 
-	tx, err := a.db.BeginTx(ctx, nil)
+	err := database.Transactionally(ctx, a.db, func(tx *sql.Tx) error {
+		return a.repo.CreateToken(ctx, tx, *token)
+	})
 	if err != nil {
 		return nil, "", err
-	}
-	defer func() {
-		if rollbackErr := tx.Rollback(); rollbackErr != nil && !errors.Is(rollbackErr, sql.ErrTxDone) {
-			a.logger.Error("failed to rollback transaction", "error", rollbackErr)
-		}
-	}()
-
-	if createErr := a.repo.CreateToken(ctx, tx, *token); createErr != nil {
-		return nil, "", createErr
 	}
 
 	return token, prettyValue, nil

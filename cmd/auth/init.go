@@ -87,6 +87,7 @@ func (c *InitCommand) Execute(cmd *cobra.Command, _ []string) error {
 	}
 
 	logger.Info("Token created", "token", token)
-	logger.Warn("Please save this token in a secure location. It will be used to authenticate your requests to the API.")
+	//nolint:lll
+	logger.Warn("Please save this token in a secure location. It will be used to authenticate your requests to the API and not be shown again.")
 	return nil
 }
