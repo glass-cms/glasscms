@@ -58,7 +58,7 @@ func TestAPIHandler_ItemsCreate(t *testing.T) {
 
 			handler, err := server.New(
 				log.NoopLogger(),
-				item.NewService(repo),
+				item.NewService(testdb, repo),
 				[]func(http.Handler) http.Handler{},
 			)
 			if err != nil {
@@ -109,7 +109,7 @@ func TestAPIHandler_ItemsGet(t *testing.T) {
 
 			server, err := server.New(
 				log.NoopLogger(),
-				item.NewService(repo),
+				item.NewService(testdb, repo),
 				[]func(http.Handler) http.Handler{},
 			)
 			if err != nil {
@@ -195,7 +195,7 @@ func TestAPIHandler_ItemsList(t *testing.T) {
 			defer testdb.Close()
 
 			repo := repository.NewRepository(testdb, &database.SqliteErrorHandler{})
-			svc := item.NewService(repo)
+			svc := item.NewService(testdb, repo)
 
 			if tt.seed != nil {
 				tt.seed(svc)
@@ -279,7 +279,7 @@ func TestAPIHandler_ItemsUpsert(t *testing.T) {
 			defer testdb.Close()
 
 			repo := repository.NewRepository(testdb, &database.SqliteErrorHandler{})
-			svc := item.NewService(repo)
+			svc := item.NewService(testdb, repo)
 
 			if tt.seed != nil {
 				tt.seed(svc)

@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/glass-cms/glasscms/cmd/auth"
 	"github.com/glass-cms/glasscms/cmd/server"
 	"github.com/glass-cms/glasscms/pkg/log"
 	"github.com/spf13/cobra"
@@ -42,6 +43,7 @@ func init() {
 	rootCmd.AddCommand(server.NewCommand().Command)
 	rootCmd.AddCommand(NewMigrateCommand().Command)
 	rootCmd.AddCommand(NewSyncCommand().Command)
+	rootCmd.AddCommand(auth.NewAuthCommand().Command)
 
 	// Register flags.
 	pflags := rootCmd.PersistentFlags()
