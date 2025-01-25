@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/glass-cms/glasscms/internal/database"
 	"github.com/glass-cms/glasscms/pkg/log"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func setupTestAuth(t *testing.T) (*auth.Auth, *sql.DB, auth.Repository) {
@@ -102,6 +104,58 @@ func TestValidateToken(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 			}
+		})
+	}
+}
+
+func TestCreateToken(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name        string
+		expireTime  time.Time
+		wantErr     bool
+		expectedErr error
+	}{
+		{
+			name:        "successful token creation",
+			expireTime:  time.Now().Add(24 * time.Hour),
+			wantErr:     false,
+			expectedErr: nil,
+		},
+		{
+			name:        "token with past expiration",
+			expireTime:  time.Now().Add(-24 * time.Hour),
+			wantErr:     true,
+			expectedErr: auth.ErrInvalidExpireTime,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			a, _, _ := setupTestAuth(t)
+
+			token, prettyValue, err := a.CreateToken(context.Background(), tt.expireTime)
+
+			if tt.wantErr {
+				require.Error(t, err)
+				if tt.expectedErr != nil {
+					require.ErrorIs(t, err, tt.expectedErr)
+				}
+
+				assert.Nil(t, token)
+				assert.Empty(t, prettyValue)
+
+				return
+			}
+
+			require.NoError(t, err)
+
+			assert.NotNil(t, token)
+			assert.NotEmpty(t, prettyValue)
+			assert.True(t, strings.HasPrefix(prettyValue, "sk_"))
+			assert.Equal(t, tt.expireTime.Unix(), token.ExpireTime.Unix())
 		})
 	}
 }
