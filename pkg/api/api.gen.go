@@ -90,7 +90,7 @@ type ItemUpdate struct {
 	UpdateTime  *time.Time              `json:"update_time,omitempty"`
 }
 
-// ItemUpsert Resource create operation model.
+// ItemUpsert Upsert operation model.
 type ItemUpsert struct {
 	Content     string                 `json:"content"`
 	CreateTime  time.Time              `json:"create_time"`
@@ -947,19 +947,19 @@ func ParseItemsUpdateResponse(rsp *http.Response) (*ItemsUpdateResponse, error) 
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
-
+	// List all items
 	// (GET /items)
 	ItemsList(w http.ResponseWriter, r *http.Request, params ItemsListParams)
-
+	// Create or update many items
 	// (PATCH /items)
 	ItemsUpsert(w http.ResponseWriter, r *http.Request)
-
+	// Create a new item
 	// (POST /items)
 	ItemsCreate(w http.ResponseWriter, r *http.Request)
-
+	// Get an item
 	// (GET /items/{name})
 	ItemsGet(w http.ResponseWriter, r *http.Request, name ItemKey)
-
+	// Update an item
 	// (PATCH /items/{name})
 	ItemsUpdate(w http.ResponseWriter, r *http.Request, name ItemKey)
 }

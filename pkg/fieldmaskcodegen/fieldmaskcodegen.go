@@ -101,7 +101,6 @@ func main() {
 func generateValidationCode(packageName, structName string, structType *ast.StructType, outputFile string) {
 	// Extract field names and JSON tags
 	fields := extractFields(structType)
-	fmt.Println("Fields:", fields)
 
 	// Prepare the template data
 	data := TemplateData{
