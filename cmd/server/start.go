@@ -98,7 +98,7 @@ func (c *StartCommand) Execute(cmd *cobra.Command, _ []string) error {
 	}
 
 	itemRepo := itemRepository.NewRepository(db, errHandler)
-	itemService := item.NewService(itemRepo)
+	itemService := item.NewService(db, itemRepo)
 
 	authRepo := authRepository.NewRepository(db, errHandler)
 	authService := auth.NewAuth(db, authRepo, logger)

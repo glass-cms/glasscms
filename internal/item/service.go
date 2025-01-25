@@ -11,11 +11,13 @@ import (
 
 // Service is a service for managing items.
 type Service struct {
+	db   *sql.DB
 	repo Repository
 }
 
-func NewService(repo Repository) *Service {
+func NewService(db *sql.DB, repo Repository) *Service {
 	return &Service{
+		db:   db,
 		repo: repo,
 	}
 }
@@ -24,7 +26,7 @@ func NewService(repo Repository) *Service {
 func (s *Service) CreateItem(ctx context.Context, item Item) (*Item, error) {
 	createdItem := &Item{}
 
-	err := s.repo.Transactionally(ctx, func(tx *sql.Tx) error {
+	err := database.Transactionally(ctx, s.db, func(tx *sql.Tx) error {
 		var err error
 
 		createdItem, err = s.repo.CreateItem(ctx, tx, item)
@@ -45,7 +47,7 @@ func (s *Service) CreateItem(ctx context.Context, item Item) (*Item, error) {
 func (s *Service) GetItem(ctx context.Context, name string) (*Item, error) {
 	var item *Item
 
-	err := s.repo.Transactionally(ctx, func(tx *sql.Tx) error {
+	err := database.Transactionally(ctx, s.db, func(tx *sql.Tx) error {
 		var err error
 
 		item, err = s.repo.GetItem(ctx, tx, name)
@@ -63,7 +65,7 @@ func (s *Service) GetItem(ctx context.Context, name string) (*Item, error) {
 func (s *Service) ListItems(ctx context.Context, fieldmask []string) ([]*Item, error) {
 	var items []*Item
 
-	err := s.repo.Transactionally(ctx, func(tx *sql.Tx) error {
+	err := database.Transactionally(ctx, s.db, func(tx *sql.Tx) error {
 		var err error
 
 		items, err = s.repo.ListItems(ctx, tx, fieldmask)
@@ -81,7 +83,7 @@ func (s *Service) ListItems(ctx context.Context, fieldmask []string) ([]*Item, e
 func (s *Service) UpsertItems(ctx context.Context, items []Item) ([]*Item, error) {
 	upsertedItems := make([]*Item, len(items))
 
-	err := s.repo.Transactionally(ctx, func(tx *sql.Tx) error {
+	err := database.Transactionally(ctx, s.db, func(tx *sql.Tx) error {
 		var err error
 
 		for i, item := range items {

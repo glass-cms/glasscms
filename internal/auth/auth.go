@@ -44,6 +44,7 @@ func (a *Auth) ValidateToken(ctx context.Context, token string) (bool, error) {
 	token = strings.TrimPrefix(token, "sk_")
 
 	hash := tokenHash(token)
+	a.logger.DebugContext(ctx, "validating token", "hash", hash)
 
 	tx, err := a.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -58,6 +59,7 @@ func (a *Auth) ValidateToken(ctx context.Context, token string) (bool, error) {
 	dbToken, err := a.repo.GetToken(ctx, tx, hash)
 	if err != nil {
 		if errors.Is(err, database.ErrNotFound) {
+			a.logger.WarnContext(ctx, "token not found", "hash", hash)
 			return false, ErrTokenNotFound
 		}
 
@@ -65,6 +67,7 @@ func (a *Auth) ValidateToken(ctx context.Context, token string) (bool, error) {
 	}
 
 	if dbToken.ExpireTime.Before(time.Now()) {
+		a.logger.WarnContext(ctx, "token expired", "hash", hash)
 		return false, ErrTokenExpired
 	}
 
