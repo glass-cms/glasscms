@@ -22,12 +22,6 @@ tasks:
       - "go test -cover -covermode=count -coverprofile=coverage.out ./..."
       - "go tool cover -func coverage.out"
 
-  typespec:
-    desc: "Generate OpenAPI spec"
-    cmds:
-      - "{{.SHELL_TO_USE}} scripts/compile-spec.sh"
-      - "go generate ./..."
-    
   lint-fix:
     desc: "Lint Go Code"
     cmds:
