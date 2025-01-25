@@ -39,76 +39,19 @@ success() {
     pretty_print "✅ $1" $GREEN
 }
 
-install_go () {
-    header "Setting up Go 🐹"
-
-    if command -v go; then
-        echo "Go is already installed"
-        go version
-        return
-    else
-        curl -L https://git.io/vQhTU | bash -s -- --version 1.23.1
-    fi
-
-    success "Finished setting up Go!"
+error() {
+    pretty_print "❌ $1" $RED
+    exit 1
 }
 
-# Install Homebrew, a package manager for macOS
-install_brew() {
-    header "Setting up Homebrew 🍺"
+# Check prerequisites
+if ! command -v go >/dev/null; then
+    error "Go is not installed. Please install Go first."
+fi
 
-    if command -v brew; then
-        echo "Homebrew is already installed"
-        eval "$(brew shellenv)"
-    else
-        /bin/zsh -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-        INSTALL_DIR="/opt/homebrew/bin"
-
-        if read -q "confirm? -> add $INSTALL_DIR to path in ~/.zprofile? [y/N] "; then
-            echo 'eval "$('$INSTALL_DIR'/brew shellenv)"' >>~/.zprofile
-        fi
-
-        echo
-        eval "$($INSTALL_DIR/brew shellenv)"
-
-        if ! command -v brew >/dev/null; then
-            echo "Brew installation failed!"
-            exit 1
-        fi
-    fi
-
-    success "Finished setting up Homebrew!"
-}
-
-# Install Volta, a JavaScript tool manager
-install_volta() {
-    header "Setting up Volta ⚡️"
-
-    if command -v volta; then
-        echo "Volta is already installed"
-    else
-        curl https://get.volta.sh | bash
-    fi
-
-    success "Finished setting up Volta!"
-}
-
-# Install Node.js using Volta
-install_node() {
-    header "Installing Node.js 🚀"
-
-    if command -v node; then
-        echo "Node.js is already installed"
-        node --version
-        return
-    else 
-        volta install node@${NODE_VERSION}
-        # Run node version to verify installation
-        node --version
-    fi
-
-    success "Finished installing Node.js!"
-}
+if ! command -v brew >/dev/null; then
+    error "Homebrew is not installed. Please install Homebrew first."
+fi
 
 # Install or upgrade a package with Homebrew
 brew_install() {
@@ -132,22 +75,6 @@ install_packages() {
     success "Finished installing packages with Homebrew!"
 }
 
-# Setup git hooks.
-setup_git_hooks() {
-    header "Setting up git hooks 🎣"
-
-    task setup-git-hooks
-    success "Finished setting up git hooks!"
-}
-
-echo "Setting up your development environment..."
-
-install_go
-install_brew
-install_volta
-install_node
+echo "Installing Homebrew packages..."
 install_packages
-
-setup_git_hooks
-
-pretty_print "\nFinished setting up your development environment! 🎉" $GREEN $BOLD
+pretty_print "\nFinished installing Homebrew packages! 🎉" $GREEN $BOLD
