@@ -19,6 +19,10 @@ import (
 	"github.com/oapi-codegen/runtime"
 )
 
+const (
+	BearerAuthScopes = "bearerAuth.Scopes"
+)
+
 // Defines values for ErrorCode.
 const (
 	ParameterInvalid      ErrorCode = "parameter_invalid"
@@ -975,6 +979,8 @@ func (siw *ServerInterfaceWrapper) ItemsList(w http.ResponseWriter, r *http.Requ
 
 	var err error
 
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
 	// Parameter object where we will unmarshal all parameters from the context
 	var params ItemsListParams
 
@@ -1001,6 +1007,8 @@ func (siw *ServerInterfaceWrapper) ItemsList(w http.ResponseWriter, r *http.Requ
 func (siw *ServerInterfaceWrapper) ItemsUpsert(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ItemsUpsert(w, r)
 	}))
@@ -1015,6 +1023,8 @@ func (siw *ServerInterfaceWrapper) ItemsUpsert(w http.ResponseWriter, r *http.Re
 // ItemsCreate operation middleware
 func (siw *ServerInterfaceWrapper) ItemsCreate(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ItemsCreate(w, r)
@@ -1042,6 +1052,8 @@ func (siw *ServerInterfaceWrapper) ItemsGet(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ItemsGet(w, r, name)
 	}))
@@ -1067,6 +1079,8 @@ func (siw *ServerInterfaceWrapper) ItemsUpdate(w http.ResponseWriter, r *http.Re
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "name", Err: err})
 		return
 	}
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ItemsUpdate(w, r, name)

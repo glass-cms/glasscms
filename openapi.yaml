@@ -3,6 +3,10 @@ info:
   title: GlassCMS API
   version: 0.0.0
 tags: []
+
+security:
+  - bearerAuth: []
+
 paths:
   /items:
     post:
@@ -132,6 +136,11 @@ paths:
             schema:
               $ref: '#/components/schemas/ItemUpdate'
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: API token
   parameters:
     ItemKey:
       name: name
