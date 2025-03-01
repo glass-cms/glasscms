@@ -13,11 +13,12 @@ type Command struct {
 	Command *cobra.Command
 }
 
+// TODO: Find a way to omit this command from the help command and docs, whilst still allowing its children to be shown.
+
 func NewCommand() *Command {
 	cmd := &Command{
 		Command: &cobra.Command{
-			Use:    "server",
-			Hidden: true, // Server command is a group command not meant to be run directly.
+			Use: "server",
 		},
 	}
 
