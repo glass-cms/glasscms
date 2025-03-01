@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/glass-cms/glasscms/pkg/slug"
 	"github.com/spf13/cobra"
 	"github.com/spf13/cobra/doc"
 	"golang.org/x/text/cases"
@@ -20,6 +21,9 @@ const (
 
 type DocsCommand struct {
 	Command *cobra.Command
+
+	linkPrefix   string
+	slugifyLinks bool
 }
 
 // NewDocsCommand creates a new cobra.Command for `docs` which generates
@@ -34,6 +38,19 @@ func NewDocsCommand() *DocsCommand {
 		Args:   cobra.NoArgs,
 	}
 
+	dc.Command.Flags().StringVar(
+		&dc.linkPrefix,
+		"link-prefix",
+		"",
+		"Prefix to add to documentation links (e.g., '../commands/')",
+	)
+	dc.Command.Flags().BoolVar(
+		&dc.slugifyLinks,
+		"slugify-links",
+		false,
+		"Convert link names to slugs",
+	)
+
 	return dc
 }
 
@@ -45,10 +62,16 @@ func (c *DocsCommand) Execute(_ *cobra.Command, _ []string) error {
 		}
 	}
 
-	return doc.GenMarkdownTreeCustom(rootCmd, DocsCommandsFolder, DocFilePrepender, linkHandler)
+	linkHandlerFunc := func(name string) string {
+		if c.slugifyLinks {
+			name = slug.Slug(strings.TrimSuffix(name, filepath.Ext(name)))
+		}
+		return c.linkPrefix + name
+	}
+
+	return doc.GenMarkdownTreeCustom(rootCmd, DocsCommandsFolder, DocFilePrepender, linkHandlerFunc)
 }
 
-// TODO: Consider moving this to package.
 func DocFilePrepender(filename string) string {
 	type FrontMatter struct {
 		Title           string `yaml:"title"`
@@ -73,8 +96,4 @@ func DocFilePrepender(filename string) string {
 	}
 
 	return "---\n" + string(yamlFrontMatter) + "---\n"
-}
-
-func linkHandler(_ string) string {
-	return "" // TODO: Implement linkHandler
 }

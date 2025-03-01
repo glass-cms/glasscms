@@ -11,8 +11,8 @@ type Command struct {
 func NewAuthCommand() *Command {
 	cmd := &Command{
 		Command: &cobra.Command{
-			Use:   "auth",
-			Short: "Manage authentication",
+			Use:    "auth",
+			Hidden: true, // Auth command is a group command not meant to be run directly.
 		},
 	}
 

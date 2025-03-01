@@ -16,7 +16,8 @@ type Command struct {
 func NewCommand() *Command {
 	cmd := &Command{
 		Command: &cobra.Command{
-			Use: "server",
+			Use:    "server",
+			Hidden: true, // Server command is a group command not meant to be run directly.
 		},
 	}
 
