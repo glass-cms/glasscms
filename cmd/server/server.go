@@ -13,6 +13,8 @@ type Command struct {
 	Command *cobra.Command
 }
 
+// TODO: Find a way to omit this command from the help command and docs, whilst still allowing its children to be shown.
+
 func NewCommand() *Command {
 	cmd := &Command{
 		Command: &cobra.Command{

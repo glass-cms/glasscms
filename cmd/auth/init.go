@@ -3,6 +3,7 @@ package auth
 import (
 	"time"
 
+	"github.com/MakeNowJust/heredoc"
 	"github.com/glass-cms/glasscms/internal/auth"
 	"github.com/glass-cms/glasscms/internal/auth/repository"
 	"github.com/glass-cms/glasscms/internal/database"
@@ -21,8 +22,24 @@ func NewInitCommand() *InitCommand {
 
 	cmd.Command = &cobra.Command{
 		Use:   "init",
-		Short: "Initialize a new token",
-		RunE:  cmd.Execute,
+		Short: "Initialize a new authentication token",
+		Long: heredoc.Doc(`
+			Initialize a new authentication token for API access.
+
+			This command creates a new authentication token that can be used to authenticate 
+			requests to the GlassCMS API. By default, the token is valid for 24 hours.
+
+			The token is displayed only once upon creation and should be stored securely.
+			It cannot be retrieved later, so make sure to save it in a secure location.
+		`),
+		Example: heredoc.Doc(`
+			# Create a new token with default settings
+			glasscms auth init
+
+			# Create a new token with a specific database driver and DSN
+			glasscms auth init --driver postgres --dsn "postgres://user:password@localhost:5432/glasscms"
+		`),
+		RunE: cmd.Execute,
 	}
 
 	flagset := cmd.Command.Flags()
@@ -31,7 +48,7 @@ func NewInitCommand() *InitCommand {
 		&cmd.databaseConfig.DSN,
 		database.ArgDSN,
 		"",
-		"The data source name (DSN) for the database",
+		"The data source name (DSN) for the database connection",
 	)
 	_ = viper.BindPFlag(database.ArgDSN, flagset.Lookup(database.ArgDSN))
 
@@ -39,7 +56,7 @@ func NewInitCommand() *InitCommand {
 		&cmd.databaseConfig.Driver,
 		database.ArgDriver,
 		"",
-		"The name of the database driver",
+		"The database driver to use (e.g., postgres, mysql, sqlite)",
 	)
 	_ = viper.BindPFlag(database.ArgDriver, flagset.Lookup(database.ArgDriver))
 
@@ -47,7 +64,7 @@ func NewInitCommand() *InitCommand {
 		&cmd.databaseConfig.MaxConnections,
 		database.ArgMaxConnections,
 		database.MaxConnectionsDefault,
-		"The maximum number of connections that can be opened to the database",
+		"The maximum number of open connections to the database",
 	)
 	_ = viper.BindPFlag(database.ArgMaxConnections, flagset.Lookup(database.ArgMaxConnections))
 
@@ -55,7 +72,7 @@ func NewInitCommand() *InitCommand {
 		&cmd.databaseConfig.MaxIdleConnections,
 		database.ArgMaxIdleConnections,
 		database.MaxIdleConnectionsDefault,
-		"The maximum number of idle connections that can be maintained",
+		"The maximum number of idle connections in the connection pool",
 	)
 	_ = viper.BindPFlag(database.ArgMaxIdleConnections, flagset.Lookup(database.ArgMaxIdleConnections))
 
