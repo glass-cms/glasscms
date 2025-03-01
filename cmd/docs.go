@@ -24,6 +24,7 @@ type DocsCommand struct {
 
 	linkPrefix   string
 	slugifyLinks bool
+	outputDir    string
 }
 
 // NewDocsCommand creates a new cobra.Command for `docs` which generates
@@ -38,6 +39,12 @@ func NewDocsCommand() *DocsCommand {
 		Args:   cobra.NoArgs,
 	}
 
+	dc.Command.Flags().StringVar(
+		&dc.outputDir,
+		"output-dir",
+		DocsCommandsFolder,
+		"Directory where documentation will be generated",
+	)
 	dc.Command.Flags().StringVar(
 		&dc.linkPrefix,
 		"link-prefix",
@@ -55,8 +62,8 @@ func NewDocsCommand() *DocsCommand {
 }
 
 func (c *DocsCommand) Execute(_ *cobra.Command, _ []string) error {
-	if _, err := os.Stat(DocsCommandsFolder); os.IsNotExist(err) {
-		err = os.MkdirAll(DocsCommandsFolder, 0755)
+	if _, err := os.Stat(c.outputDir); os.IsNotExist(err) {
+		err = os.MkdirAll(c.outputDir, 0755)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -69,7 +76,7 @@ func (c *DocsCommand) Execute(_ *cobra.Command, _ []string) error {
 		return c.linkPrefix + name
 	}
 
-	return doc.GenMarkdownTreeCustom(rootCmd, DocsCommandsFolder, DocFilePrepender, linkHandlerFunc)
+	return doc.GenMarkdownTreeCustom(rootCmd, c.outputDir, DocFilePrepender, linkHandlerFunc)
 }
 
 func DocFilePrepender(filename string) string {
