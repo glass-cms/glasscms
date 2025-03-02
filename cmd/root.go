@@ -29,6 +29,7 @@ var rootCmd = &cobra.Command{
 	PersistentPreRunE: func(cmd *cobra.Command, _ []string) error {
 		return initializeConfig(cmd)
 	},
+	DisableAutoGenTag: true,
 }
 
 func Execute() {

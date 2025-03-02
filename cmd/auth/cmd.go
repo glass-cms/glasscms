@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"github.com/lithammer/dedent"
 	"github.com/spf13/cobra"
 )
 
@@ -12,6 +13,10 @@ func NewAuthCommand() *Command {
 	cmd := &Command{
 		Command: &cobra.Command{
 			Use: "auth",
+			Long: dedent.Dedent(`
+				Authentication commands for the GlassCMS API.
+				This command provides subcommands for managing authentication tokens for the GlassCMS API.
+			`),
 		},
 	}
 

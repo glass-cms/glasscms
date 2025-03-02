@@ -18,6 +18,7 @@ import (
 	"github.com/glass-cms/glasscms/pkg/log"
 	"github.com/glass-cms/glasscms/pkg/mediatype"
 	"github.com/glass-cms/glasscms/pkg/middleware"
+	"github.com/lithammer/dedent"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -35,8 +36,17 @@ func NewStartCommand() *StartCommand {
 
 	sc.Command = &cobra.Command{
 		Use:   "start",
-		Short: "Start the CMS server",
-		RunE:  sc.Execute,
+		Short: "Start the GlassCMS API server",
+		Long: dedent.Dedent(`
+			Start the GlassCMS API server with the specified configuration.
+
+			This command initializes and starts the CMS server with database connectivity
+			and all required services. It sets up the HTTP server with appropriate middleware
+			for authentication, content negotiation, and request tracking.
+
+			The server will continue running until it receives a termination signal.
+		`),
+		RunE: sc.Execute,
 	}
 
 	flagset := sc.Command.Flags()
