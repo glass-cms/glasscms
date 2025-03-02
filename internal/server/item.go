@@ -11,6 +11,8 @@ import (
 	"github.com/glass-cms/glasscms/pkg/fieldmask"
 )
 
+// TODO: Add option to parse wikilinks in the content from the API.
+
 // ItemsCreate creates a new item.
 func (s *Server) ItemsCreate(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()

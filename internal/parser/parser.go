@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"io"
+	"maps"
 	"path/filepath"
 	"strings"
 
@@ -37,6 +38,9 @@ type Config struct {
 
 	// ParseWikilinks determines if wikilinks should be parsed.
 	ParseWikilinks bool
+
+	// AdditionalMetadata is a map of additional metadata to be added to the item.
+	AdditionalMetadata map[string]any
 }
 
 // Parse reads the content of a source and extracts the front matter and markdown content.
@@ -86,6 +90,10 @@ func ParseWithConfig(src sourcer.Source, config Config) (*api.Item, error) {
 		if len(links) > 0 {
 			metadata["wikilinks"] = links
 		}
+	}
+
+	if config.AdditionalMetadata != nil {
+		maps.Copy(metadata, config.AdditionalMetadata)
 	}
 
 	pathname := src.Name()
