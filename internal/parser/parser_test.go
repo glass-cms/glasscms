@@ -56,3 +56,82 @@ func TestParse(t *testing.T) {
 	assert.Equal(t, "\n# Test\n", item.Content)
 	assert.Equal(t, map[string]interface{}{"title": "Test"}, item.Properties)
 }
+
+func TestParseWithHiddenProperty(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		name           string
+		content        string
+		hiddenProperty string
+		hiddenValue    bool
+		shouldBeHidden bool
+	}{
+		{
+			name:           "Hidden with truthy value and truthy config",
+			content:        "---\ntitle: Test\ndraft: true\n---\n# Test\n",
+			hiddenProperty: "draft",
+			hiddenValue:    true,
+			shouldBeHidden: true,
+		},
+		{
+			name:           "Not hidden with falsy value and truthy config",
+			content:        "---\ntitle: Test\ndraft: false\n---\n# Test\n",
+			hiddenProperty: "draft",
+			hiddenValue:    true,
+			shouldBeHidden: false,
+		},
+		{
+			name:           "Hidden with falsy value and falsy config",
+			content:        "---\ntitle: Test\ndraft: false\n---\n# Test\n",
+			hiddenProperty: "draft",
+			hiddenValue:    false,
+			shouldBeHidden: true,
+		},
+		{
+			name:           "Not hidden with truthy value and falsy config",
+			content:        "---\ntitle: Test\ndraft: true\n---\n# Test\n",
+			hiddenProperty: "draft",
+			hiddenValue:    false,
+			shouldBeHidden: false,
+		},
+		{
+			name:           "Hidden with string truthy value",
+			content:        "---\ntitle: Test\nstatus: draft\n---\n# Test\n",
+			hiddenProperty: "status",
+			hiddenValue:    true,
+			shouldBeHidden: false, // "draft" is not considered truthy
+		},
+		{
+			name:           "Not hidden when property doesn't exist",
+			content:        "---\ntitle: Test\n---\n# Test\n",
+			hiddenProperty: "draft",
+			hiddenValue:    true,
+			shouldBeHidden: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			// Arrange
+			source := NewMockSource("test", tc.content)
+			config := parser.Config{
+				HiddenProperty: tc.hiddenProperty,
+				HiddenValue:    tc.hiddenValue,
+			}
+
+			// Act
+			item, err := parser.ParseWithConfig(source, config)
+
+			// Assert
+			if tc.shouldBeHidden {
+				assert.Nil(t, item, "Item should be nil when hidden")
+				assert.ErrorIs(t, err, parser.ErrItemHidden, "Error should be ErrItemHidden when item is hidden")
+			} else {
+				assert.NotNil(t, item, "Item should not be nil when not hidden")
+				assert.NoError(t, err, "Error should be nil when item is not hidden")
+			}
+		})
+	}
+}

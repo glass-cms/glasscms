@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/glass-cms/glasscms/internal/parser"
 	"github.com/glass-cms/glasscms/internal/sourcer/fs"
 	"github.com/glass-cms/glasscms/internal/sync"
 	"github.com/glass-cms/glasscms/pkg/api"
@@ -214,7 +215,7 @@ func TestSyncer_Sync(t *testing.T) {
 			sourcer, err := fs.NewSourcer("../../docs/commands")
 			require.NoError(t, err)
 
-			syncer := sync.NewSyncer(sourcer, client, log.NoopLogger())
+			syncer := sync.NewSyncer(sourcer, client, log.NoopLogger(), parser.Config{})
 
 			// Act
 			err = syncer.Sync(context.Background(), tt.livemode)

@@ -19,21 +19,21 @@ var (
 	ErrUnexpectedStatusCode = errors.New("unexpected status code")
 )
 
-// TODO: Only do item level logging if th verbose flag is set.
-
 // Syncer synchronizes items from a source to the server.
 type Syncer struct {
 	sourcer sourcer.Sourcer
 	client  *api.ClientWithResponses
 	logger  *slog.Logger
+	config  parser.Config
 }
 
 // NewSyncer returns a new syncer.
-func NewSyncer(s sourcer.Sourcer, c *api.ClientWithResponses, l *slog.Logger) *Syncer {
+func NewSyncer(s sourcer.Sourcer, c *api.ClientWithResponses, l *slog.Logger, config parser.Config) *Syncer {
 	return &Syncer{
 		sourcer: s,
 		client:  c,
 		logger:  l,
+		config:  config,
 	}
 }
 
@@ -136,7 +136,12 @@ func (s *Syncer) collectSourceItems(ctx context.Context) ([]*api.Item, error) {
 		}
 
 		var i *api.Item
-		i, err = parser.Parse(src)
+		i, err = parser.ParseWithConfig(src, s.config)
+		if errors.Is(err, parser.ErrItemHidden) {
+			// Item is hidden, skip it
+			s.logger.DebugContext(ctx, "skipping hidden item", "name", src.Name())
+			continue
+		}
 		if err != nil {
 			s.logger.WarnContext(ctx, "failed to parse item from source", "name", src.Name(), "error", err)
 			continue
