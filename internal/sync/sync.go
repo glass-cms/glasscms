@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"maps"
 	"net/http"
 	"time"
 
@@ -15,26 +16,49 @@ import (
 	"github.com/glass-cms/glasscms/pkg/api"
 )
 
+const (
+	MetadataKeySyncID     = "sync_id"
+	MetadataKeySyncSource = "sync_source"
+)
+
 var (
 	ErrUnexpectedStatusCode = errors.New("unexpected status code")
 )
 
 // Syncer synchronizes items from a source to the server.
 type Syncer struct {
-	sourcer sourcer.Sourcer
+	id *ID
+
 	client  *api.ClientWithResponses
-	logger  *slog.Logger
 	config  parser.Config
+	logger  *slog.Logger
+	sourcer sourcer.Sourcer
 }
 
 // NewSyncer returns a new syncer.
-func NewSyncer(s sourcer.Sourcer, c *api.ClientWithResponses, l *slog.Logger, config parser.Config) *Syncer {
+func NewSyncer(
+	id *ID,
+	sourcer sourcer.Sourcer,
+	c *api.ClientWithResponses,
+	l *slog.Logger,
+	config *parser.Config,
+) (*Syncer, error) {
+	// TODO: Add MetadataKeySyncSource to the config.
+
+	// Merge the additional metadata from the config with the default metadata.
+	config.AdditionalMetadata = maps.Clone(config.AdditionalMetadata)
+	if config.AdditionalMetadata == nil {
+		config.AdditionalMetadata = make(map[string]any)
+	}
+	config.AdditionalMetadata[MetadataKeySyncID] = id.String()
+
 	return &Syncer{
-		sourcer: s,
+		id:      id,
+		sourcer: sourcer,
 		client:  c,
 		logger:  l,
-		config:  config,
-	}
+		config:  *config,
+	}, nil
 }
 
 // Sync synchronizes items from a source to the server.
@@ -82,12 +106,14 @@ func (s *Syncer) createUpsertSlice(ctx context.Context, sourceMap, serverMap map
 
 	// Iterate over the source items and compare them to the server items.
 	for name, sourceItem := range sourceMap {
-		serverItem, ok := serverMap[name]
-		if !ok {
+		serverItem, exists := serverMap[name]
+		if !exists {
 			s.logger.DebugContext(ctx, "creating item", "name", name)
 			upsertItems = append(upsertItems, sourceItem)
 			continue
 		}
+
+		// TODO: Add option to ignore update time.
 
 		if sourceItem.Hash != serverItem.Hash && sourceItem.UpdateTime.After(serverItem.UpdateTime) {
 			s.logger.DebugContext(ctx, "updating item", "name", name)
@@ -186,14 +212,14 @@ func (s *Syncer) upsertItems(ctx context.Context, items []*api.Item) error {
 	upsertItems := make([]api.ItemUpsert, len(items))
 	for i, item := range items {
 		upsertItems[i] = api.ItemUpsert{
-			Name:        item.Name,
-			UpdateTime:  item.UpdateTime,
-			CreateTime:  item.CreateTime,
 			Content:     item.Content,
+			CreateTime:  item.CreateTime,
+			DeleteTime:  item.DeleteTime,
 			DisplayName: item.DisplayName,
 			Metadata:    item.Metadata,
+			Name:        item.Name,
 			Properties:  item.Properties,
-			DeleteTime:  item.DeleteTime,
+			UpdateTime:  item.UpdateTime,
 		}
 	}
 

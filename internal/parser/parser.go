@@ -4,12 +4,14 @@ import (
 	"bytes"
 	"errors"
 	"io"
+	"maps"
 	"path/filepath"
 	"strings"
 
 	"github.com/glass-cms/glasscms/internal/sourcer"
 	"github.com/glass-cms/glasscms/pkg/api"
 	"github.com/glass-cms/glasscms/pkg/slug"
+	"github.com/glass-cms/glasscms/pkg/wikilink"
 	"gopkg.in/yaml.v3"
 )
 
@@ -33,11 +35,19 @@ type Config struct {
 	// If true, truthy values (true, "true", "yes", "1", etc.) indicate the item is hidden.
 	// If false, falsy values (false, "false", "no", "0", etc.) indicate the item is hidden.
 	HiddenValue bool
+
+	// ParseWikilinks determines if wikilinks should be parsed.
+	ParseWikilinks bool
+
+	// AdditionalMetadata is a map of additional metadata to be added to the item.
+	AdditionalMetadata map[string]any
 }
 
 // Parse reads the content of a source and extracts the front matter and markdown content.
 func Parse(src sourcer.Source) (*api.Item, error) {
-	return ParseWithConfig(src, Config{})
+	return ParseWithConfig(src, Config{
+		ParseWikilinks: true,
+	})
 }
 
 // ParseWithConfig reads the content of a source and extracts the front matter and markdown content,
@@ -68,18 +78,28 @@ func ParseWithConfig(src sourcer.Source, config Config) (*api.Item, error) {
 		if propValue, exists := properties[config.HiddenProperty]; exists {
 			isHidden := isTruthy(propValue)
 
-			// If HiddenValue is false, we invert the logic (falsy values mean hidden)
 			if (!config.HiddenValue && !isHidden) || (config.HiddenValue && isHidden) {
-				// This item is hidden, return a sentinel error
 				return nil, ErrItemHidden
 			}
 		}
 	}
 
+	metadata := make(map[string]any)
+	if config.ParseWikilinks {
+		links := wikilink.ParseLinks(contentStr)
+		if len(links) > 0 {
+			metadata["wikilinks"] = links
+		}
+	}
+
+	if config.AdditionalMetadata != nil {
+		maps.Copy(metadata, config.AdditionalMetadata)
+	}
+
 	pathname := src.Name()
 	name := slug.Slug(pathname, slug.AllowSlashesOption())
 
-	hash, err := api.HashItem(contentStr, properties, nil)
+	hash, err := api.HashItem(contentStr, properties, metadata)
 	if err != nil {
 		return nil, err
 	}
@@ -92,6 +112,7 @@ func ParseWithConfig(src sourcer.Source, config Config) (*api.Item, error) {
 		CreateTime:  src.CreateTime(),
 		UpdateTime:  src.UpdateTime(),
 		Properties:  properties,
+		Metadata:    metadata,
 	}, nil
 }
 

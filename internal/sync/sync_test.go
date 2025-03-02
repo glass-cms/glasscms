@@ -215,7 +215,8 @@ func TestSyncer_Sync(t *testing.T) {
 			sourcer, err := fs.NewSourcer("../../docs/commands")
 			require.NoError(t, err)
 
-			syncer := sync.NewSyncer(sourcer, client, log.NoopLogger(), parser.Config{})
+			syncer, err := sync.NewSyncer(sync.NewSyncID(), sourcer, client, log.NoopLogger(), &parser.Config{})
+			require.NoError(t, err)
 
 			// Act
 			err = syncer.Sync(context.Background(), tt.livemode)

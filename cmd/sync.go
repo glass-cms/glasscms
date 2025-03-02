@@ -25,6 +25,7 @@ const (
 	ArgToken          = "token"
 	ArgHiddenProperty = "hidden-property"
 	ArgHiddenValue    = "hidden-value"
+	ArgParseWikilinks = "parse-wikilinks"
 )
 
 type SyncCommand struct {
@@ -39,6 +40,7 @@ type SyncCommandOptions struct {
 	Token          string
 	HiddenProperty string
 	HiddenValue    bool
+	ParseWikilinks bool
 }
 
 // NewSyncCommand returns a new sync command.
@@ -111,16 +113,20 @@ func NewSyncCommand() *SyncCommand {
 		`Value of the hidden property that indicates an item is hidden 
 		(true = truthy values are hidden, false = falsy values are hidden)`)
 
+	flagset.BoolVar(&syncCommand.opts.ParseWikilinks, ArgParseWikilinks, true, "Parse wikilinks in the content")
+
 	return syncCommand
 }
 
 func (c *SyncCommand) RunE(cmd *cobra.Command, args []string) error {
+	syncID := sync.NewSyncID()
+
 	logger, err := log.NewLogger()
 	if err != nil {
 		return err
 	}
 
-	sr, err := c.initSourcer(args)
+	sourcer, err := c.initSourcer(args)
 	if err != nil {
 		return err
 	}
@@ -134,22 +140,33 @@ func (c *SyncCommand) RunE(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// Create client with token authentication
-	cl, err := api.NewClientWithResponses(c.opts.ServerURL,
+	client, err := api.NewClientWithResponses(c.opts.ServerURL,
 		api.WithHTTPClient(httpClient),
 		api.WithRequestEditorFn(bearerAuth.Intercept),
+		api.WithRequestEditorFn(syncID.Intercept),
 	)
 	if err != nil {
 		return err
 	}
 
-	// Create a parser config with the hidden property settings
 	parserConfig := parser.Config{
 		HiddenProperty: c.opts.HiddenProperty,
 		HiddenValue:    c.opts.HiddenValue,
+		ParseWikilinks: c.opts.ParseWikilinks,
 	}
 
-	return sync.NewSyncer(sr, cl, logger, parserConfig).Sync(cmd.Context(), c.opts.LiveMode)
+	syncer, err := sync.NewSyncer(
+		syncID,
+		sourcer,
+		client,
+		logger,
+		&parserConfig,
+	)
+	if err != nil {
+		return err
+	}
+
+	return syncer.Sync(cmd.Context(), c.opts.LiveMode)
 }
 
 // initSourcer initializes a sourcer based on the provided arguments.
