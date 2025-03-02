@@ -143,6 +143,7 @@ func (c *SyncCommand) RunE(cmd *cobra.Command, args []string) error {
 	client, err := api.NewClientWithResponses(c.opts.ServerURL,
 		api.WithHTTPClient(httpClient),
 		api.WithRequestEditorFn(bearerAuth.Intercept),
+		api.WithRequestEditorFn(syncID.Intercept),
 	)
 	if err != nil {
 		return err
