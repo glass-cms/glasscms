@@ -83,8 +83,8 @@ func (c *DocsCommand) Execute(_ *cobra.Command, _ []string) error {
 
 func DocFilePrepender(filename string) string {
 	type FrontMatter struct {
-		Title           string `yaml:"title"`
-		CreateTimestamp int64  `yaml:"createTime"`
+		Title      string `yaml:"title"`
+		CreateTime int64  `yaml:"create_time"`
 	}
 
 	name := filepath.Base(filename)
@@ -95,8 +95,8 @@ func DocFilePrepender(filename string) string {
 	title = cases.Title(language.English).String(title)
 
 	frontMatter := FrontMatter{
-		Title:           title,
-		CreateTimestamp: time.Now().Unix(),
+		Title:      title,
+		CreateTime: time.Now().Unix(),
 	}
 
 	yamlFrontMatter, err := yaml.Marshal(&frontMatter)

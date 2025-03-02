@@ -7,12 +7,12 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/MakeNowJust/heredoc"
 	"github.com/glass-cms/glasscms/internal/sourcer"
 	"github.com/glass-cms/glasscms/internal/sourcer/fs"
 	"github.com/glass-cms/glasscms/internal/sync"
 	"github.com/glass-cms/glasscms/pkg/api"
 	"github.com/glass-cms/glasscms/pkg/log"
-	"github.com/lithammer/dedent"
 	"github.com/oapi-codegen/oapi-codegen/v2/pkg/securityprovider"
 	"github.com/spf13/cobra"
 )
@@ -44,15 +44,36 @@ func NewSyncCommand() *SyncCommand {
 
 	syncCommand.Command = &cobra.Command{
 		Use:   "sync [source-type] [source-path]",
-		Short: "Synchronize items from a source to the server",
-		Long: dedent.Dedent(`
-			Synchronises content items from a source to the server.
+		Short: "Synchronize content items from a source to the GlassCMS server",
+		Long: heredoc.Doc(`
+			Synchronize content items from a source to the GlassCMS API server.
 
-			Source types:
-			- filesystem: Read items from a directory on the local filesystem.
+			The sync command allows you to import and update content items from external 
+			sources into your GlassCMS instance. It compares the items in the source with 
+			those on the server and performs the necessary create, update, or delete operations 
+			to keep them in sync.
 
-			Example:
+			Sources are external content repositories that contain structured content items.
+			Each source has a specific format and organization, which GlassCMS can interpret
+			and import into its content management system.
+
+			Supported source types:
+			- filesystem: Read items from a directory on the local filesystem. Items should be
+			  organized in a directory structure with JSON or YAML files representing content items.
+			  Each file should contain metadata and content according to the GlassCMS schema.
+
+			When run in preview mode (default), the command will show what changes would be made
+			without actually applying them. Use the --live flag to apply the changes.
+		`),
+		Example: heredoc.Doc(`
+			# Preview synchronization from a filesystem source
 			glasscms sync filesystem /path/to/items
+
+			# Perform live synchronization with server authentication
+			glasscms sync filesystem /path/to/items --live --token "your-auth-token"
+
+			# Synchronize to a specific server
+			glasscms sync filesystem /path/to/items --server "https://cms.example.com" --token "your-auth-token"
 		`),
 		RunE: syncCommand.RunE,
 		Args: cobra.ExactArgs(2),

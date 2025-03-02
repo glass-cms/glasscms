@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/user"
 
+	"github.com/MakeNowJust/heredoc"
 	"github.com/glass-cms/glasscms/internal/auth"
 	authRepository "github.com/glass-cms/glasscms/internal/auth/repository"
 	"github.com/glass-cms/glasscms/internal/database"
@@ -35,8 +36,17 @@ func NewStartCommand() *StartCommand {
 
 	sc.Command = &cobra.Command{
 		Use:   "start",
-		Short: "Start the CMS server",
-		RunE:  sc.Execute,
+		Short: "Start the GlassCMS API server",
+		Long: heredoc.Doc(`
+			Start the GlassCMS API server with the specified configuration.
+
+			This command initializes and starts the CMS server with database connectivity
+			and all required services. It sets up the HTTP server with appropriate middleware
+			for authentication, content negotiation, and request tracking.
+
+			The server will continue running until it receives a termination signal.
+		`),
+		RunE: sc.Execute,
 	}
 
 	flagset := sc.Command.Flags()

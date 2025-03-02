@@ -1,6 +1,7 @@
 package server
 
 import (
+	"github.com/MakeNowJust/heredoc"
 	"github.com/glass-cms/glasscms/internal/database"
 	"github.com/spf13/cobra"
 )
@@ -13,15 +14,18 @@ type Command struct {
 	Command *cobra.Command
 }
 
-// TODO: Find a way to omit this command from the help command and docs, whilst still allowing its children to be shown.
-
 func NewCommand() *Command {
 	cmd := &Command{
 		Command: &cobra.Command{
-			Use: "server",
+			Use:   "server",
+			Short: "Server management commands",
+			Long: heredoc.Doc(`
+				Server management commands for the GlassCMS API.
+				This command provides subcommands for managing the GlassCMS API server,
+				including starting the server and other server-related operations.
+			`),
 		},
 	}
-
 	cmd.Command.AddCommand(NewStartCommand().Command)
 	return cmd
 }
