@@ -25,6 +25,7 @@ const (
 	ArgToken          = "token"
 	ArgHiddenProperty = "hidden-property"
 	ArgHiddenValue    = "hidden-value"
+	ArgParseWikilinks = "parse-wikilinks"
 )
 
 type SyncCommand struct {
@@ -39,6 +40,7 @@ type SyncCommandOptions struct {
 	Token          string
 	HiddenProperty string
 	HiddenValue    bool
+	ParseWikilinks bool
 }
 
 // NewSyncCommand returns a new sync command.
@@ -111,6 +113,8 @@ func NewSyncCommand() *SyncCommand {
 		`Value of the hidden property that indicates an item is hidden 
 		(true = truthy values are hidden, false = falsy values are hidden)`)
 
+	flagset.BoolVar(&syncCommand.opts.ParseWikilinks, ArgParseWikilinks, true, "Parse wikilinks in the content")
+
 	return syncCommand
 }
 
@@ -147,6 +151,7 @@ func (c *SyncCommand) RunE(cmd *cobra.Command, args []string) error {
 	parserConfig := parser.Config{
 		HiddenProperty: c.opts.HiddenProperty,
 		HiddenValue:    c.opts.HiddenValue,
+		ParseWikilinks: c.opts.ParseWikilinks,
 	}
 
 	return sync.NewSyncer(sr, cl, logger, parserConfig).Sync(cmd.Context(), c.opts.LiveMode)

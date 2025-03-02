@@ -13,9 +13,9 @@ var (
 
 // Link represents a WikiLink with its target and optional display text.
 type Link struct {
-	Target      string
-	DisplayText string
-	Original    string
+	Target      string `json:"target"`
+	DisplayText string `json:"display_text"`
+	Original    string `json:"original"`
 }
 
 // ParseLinks extracts all WikiLinks from the given markdown content.

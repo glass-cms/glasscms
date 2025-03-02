@@ -186,14 +186,14 @@ func (s *Syncer) upsertItems(ctx context.Context, items []*api.Item) error {
 	upsertItems := make([]api.ItemUpsert, len(items))
 	for i, item := range items {
 		upsertItems[i] = api.ItemUpsert{
-			Name:        item.Name,
-			UpdateTime:  item.UpdateTime,
-			CreateTime:  item.CreateTime,
 			Content:     item.Content,
+			CreateTime:  item.CreateTime,
+			DeleteTime:  item.DeleteTime,
 			DisplayName: item.DisplayName,
 			Metadata:    item.Metadata,
+			Name:        item.Name,
 			Properties:  item.Properties,
-			DeleteTime:  item.DeleteTime,
+			UpdateTime:  item.UpdateTime,
 		}
 	}
 

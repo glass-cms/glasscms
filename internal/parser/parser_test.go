@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/glass-cms/glasscms/internal/parser"
+	"github.com/glass-cms/glasscms/pkg/wikilink"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -134,4 +135,25 @@ func TestParseWithHiddenProperty(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestParseWikilinks(t *testing.T) {
+	t.Parallel()
+
+	source := NewMockSource("test", "---\ntitle: Test\n---\n# Test [[link1]] [[link2|Link Two]]")
+	item, err := parser.Parse(source)
+
+	require.NoError(t, err)
+	// Assert that there is a wikilinks property in metadata
+	assert.NotNil(t, item.Metadata["wikilinks"])
+	// Assert that there are two wikilinks
+	links, ok := item.Metadata["wikilinks"].([]wikilink.Link)
+	require.True(t, ok)
+	assert.Len(t, links, 2)
+
+	// Assert that the wikilinks are correct
+	assert.Equal(t, "link1", links[0].Target)
+	assert.Equal(t, "link2", links[1].Target)
+	assert.Equal(t, "Link Two", links[1].DisplayText)
+	assert.Equal(t, "[[link2|Link Two]]", links[1].Original)
 }
