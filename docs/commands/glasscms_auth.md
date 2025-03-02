@@ -1,9 +1,16 @@
 ---
 title: Glasscms Auth
-createTime: 1740854897
+create_time: 1740900092
 ---
 ## glasscms auth
 
+
+
+### Synopsis
+
+Authentication commands for the GlassCMS API.
+
+This command provides subcommands for managing authentication tokens for the GlassCMS API.
 
 
 ### Options

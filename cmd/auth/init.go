@@ -3,11 +3,11 @@ package auth
 import (
 	"time"
 
+	"github.com/MakeNowJust/heredoc"
 	"github.com/glass-cms/glasscms/internal/auth"
 	"github.com/glass-cms/glasscms/internal/auth/repository"
 	"github.com/glass-cms/glasscms/internal/database"
 	"github.com/glass-cms/glasscms/pkg/log"
-	"github.com/lithammer/dedent"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -23,7 +23,7 @@ func NewInitCommand() *InitCommand {
 	cmd.Command = &cobra.Command{
 		Use:   "init",
 		Short: "Initialize a new authentication token",
-		Long: dedent.Dedent(`
+		Long: heredoc.Doc(`
 			Initialize a new authentication token for API access.
 
 			This command creates a new authentication token that can be used to authenticate 
@@ -32,7 +32,7 @@ func NewInitCommand() *InitCommand {
 			The token is displayed only once upon creation and should be stored securely.
 			It cannot be retrieved later, so make sure to save it in a secure location.
 		`),
-		Example: dedent.Dedent(`
+		Example: heredoc.Doc(`
 			# Create a new token with default settings
 			glasscms auth init
 

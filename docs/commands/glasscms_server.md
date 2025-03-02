@@ -1,9 +1,16 @@
 ---
 title: Glasscms Server
-createTime: 1740854897
+create_time: 1740900092
 ---
 ## glasscms server
 
+Server management commands
+
+### Synopsis
+
+Server management commands for the GlassCMS API.
+This command provides subcommands for managing the GlassCMS API server,
+including starting the server and other server-related operations.
 
 
 ### Options
@@ -23,5 +30,5 @@ createTime: 1740854897
 ### SEE ALSO
 
 * [glasscms](glasscms.md)	 - glasscms is a headless CMS powered by markdown
-* [glasscms server start](glasscms_server_start.md)	 - Start the CMS server
+* [glasscms server start](glasscms_server_start.md)	 - Start the GlassCMS API server
 

@@ -7,12 +7,12 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/MakeNowJust/heredoc"
 	"github.com/glass-cms/glasscms/internal/sourcer"
 	"github.com/glass-cms/glasscms/internal/sourcer/fs"
 	"github.com/glass-cms/glasscms/internal/sync"
 	"github.com/glass-cms/glasscms/pkg/api"
 	"github.com/glass-cms/glasscms/pkg/log"
-	"github.com/lithammer/dedent"
 	"github.com/oapi-codegen/oapi-codegen/v2/pkg/securityprovider"
 	"github.com/spf13/cobra"
 )
@@ -45,8 +45,8 @@ func NewSyncCommand() *SyncCommand {
 	syncCommand.Command = &cobra.Command{
 		Use:   "sync [source-type] [source-path]",
 		Short: "Synchronize content items from a source to the GlassCMS server",
-		Long: dedent.Dedent(`
-			Synchronizes content items from a source to the GlassCMS API server.
+		Long: heredoc.Doc(`
+			Synchronize content items from a source to the GlassCMS API server.
 
 			The sync command allows you to import and update content items from external 
 			sources into your GlassCMS instance. It compares the items in the source with 
@@ -65,7 +65,7 @@ func NewSyncCommand() *SyncCommand {
 			When run in preview mode (default), the command will show what changes would be made
 			without actually applying them. Use the --live flag to apply the changes.
 		`),
-		Example: dedent.Dedent(`
+		Example: heredoc.Doc(`
 			# Preview synchronization from a filesystem source
 			glasscms sync filesystem /path/to/items
 

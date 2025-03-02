@@ -1,8 +1,8 @@
 package server
 
 import (
+	"github.com/MakeNowJust/heredoc"
 	"github.com/glass-cms/glasscms/internal/database"
-	"github.com/lithammer/dedent"
 	"github.com/spf13/cobra"
 )
 
@@ -19,7 +19,7 @@ func NewCommand() *Command {
 		Command: &cobra.Command{
 			Use:   "server",
 			Short: "Server management commands",
-			Long: dedent.Dedent(`
+			Long: heredoc.Doc(`
 				Server management commands for the GlassCMS API.
 				This command provides subcommands for managing the GlassCMS API server,
 				including starting the server and other server-related operations.

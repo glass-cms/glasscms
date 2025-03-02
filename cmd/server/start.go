@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/user"
 
+	"github.com/MakeNowJust/heredoc"
 	"github.com/glass-cms/glasscms/internal/auth"
 	authRepository "github.com/glass-cms/glasscms/internal/auth/repository"
 	"github.com/glass-cms/glasscms/internal/database"
@@ -18,7 +19,6 @@ import (
 	"github.com/glass-cms/glasscms/pkg/log"
 	"github.com/glass-cms/glasscms/pkg/mediatype"
 	"github.com/glass-cms/glasscms/pkg/middleware"
-	"github.com/lithammer/dedent"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -37,7 +37,7 @@ func NewStartCommand() *StartCommand {
 	sc.Command = &cobra.Command{
 		Use:   "start",
 		Short: "Start the GlassCMS API server",
-		Long: dedent.Dedent(`
+		Long: heredoc.Doc(`
 			Start the GlassCMS API server with the specified configuration.
 
 			This command initializes and starts the CMS server with database connectivity
