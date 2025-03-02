@@ -17,6 +17,9 @@ func NewSyncID() *ID {
 }
 
 func ParseSyncID(id string) *ID {
+	if len(id) < 3 {
+		return nil
+	}
 	return &ID{id: uuid.MustParse(id[3:])}
 }
 
