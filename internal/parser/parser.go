@@ -15,14 +15,34 @@ import (
 
 var (
 	ErrInvalidFrontMatter = errors.New("invalid front matter yaml")
+	// ErrItemHidden is returned when an item is hidden based on the hidden property configuration.
+	ErrItemHidden = errors.New("item is hidden based on front matter property")
 )
 
 const (
 	seperatorBytes = 4
 )
 
+// Config holds configuration options for the parser.
+type Config struct {
+	// HiddenProperty is the name of the front matter property that determines if an item is hidden.
+	// If empty, no filtering based on visibility is performed.
+	HiddenProperty string
+
+	// HiddenValue determines how to interpret the hidden property value.
+	// If true, truthy values (true, "true", "yes", "1", etc.) indicate the item is hidden.
+	// If false, falsy values (false, "false", "no", "0", etc.) indicate the item is hidden.
+	HiddenValue bool
+}
+
 // Parse reads the content of a source and extracts the front matter and markdown content.
 func Parse(src sourcer.Source) (*api.Item, error) {
+	return ParseWithConfig(src, Config{})
+}
+
+// ParseWithConfig reads the content of a source and extracts the front matter and markdown content,
+// applying the provided configuration options.
+func ParseWithConfig(src sourcer.Source, config Config) (*api.Item, error) {
 	c, err := io.ReadAll(src)
 	if err != nil {
 		return nil, err
@@ -43,6 +63,19 @@ func Parse(src sourcer.Source) (*api.Item, error) {
 		}
 	}
 
+	// Check if the item should be considered hidden based on the config
+	if config.HiddenProperty != "" && properties != nil {
+		if propValue, exists := properties[config.HiddenProperty]; exists {
+			isHidden := isTruthy(propValue)
+
+			// If HiddenValue is false, we invert the logic (falsy values mean hidden)
+			if (!config.HiddenValue && !isHidden) || (config.HiddenValue && isHidden) {
+				// This item is hidden, return a sentinel error
+				return nil, ErrItemHidden
+			}
+		}
+	}
+
 	pathname := src.Name()
 	name := slug.Slug(pathname, slug.AllowSlashesOption())
 
@@ -60,6 +93,22 @@ func Parse(src sourcer.Source) (*api.Item, error) {
 		UpdateTime:  src.UpdateTime(),
 		Properties:  properties,
 	}, nil
+}
+
+func isTruthy(value interface{}) bool {
+	switch v := value.(type) {
+	case bool:
+		return v
+	case string:
+		lv := strings.ToLower(v)
+		return lv == "true" || lv == "yes" || lv == "1" || lv == "on"
+	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
+		return v != 0
+	case float32, float64:
+		return v != 0
+	default:
+		return false
+	}
 }
 
 func nameFromPath(path string) string {

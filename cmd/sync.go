@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/MakeNowJust/heredoc"
+	"github.com/glass-cms/glasscms/internal/parser"
 	"github.com/glass-cms/glasscms/internal/sourcer"
 	"github.com/glass-cms/glasscms/internal/sourcer/fs"
 	"github.com/glass-cms/glasscms/internal/sync"
@@ -18,10 +19,12 @@ import (
 )
 
 const (
-	ArgSourceType = "source-type"
-	ArgLiveMode   = "live"
-	ArgServerURL  = "server"
-	ArgToken      = "token"
+	ArgSourceType     = "source-type"
+	ArgLiveMode       = "live"
+	ArgServerURL      = "server"
+	ArgToken          = "token"
+	ArgHiddenProperty = "hidden-property"
+	ArgHiddenValue    = "hidden-value"
 )
 
 type SyncCommand struct {
@@ -31,9 +34,11 @@ type SyncCommand struct {
 }
 
 type SyncCommandOptions struct {
-	LiveMode  bool
-	ServerURL string
-	Token     string
+	LiveMode       bool
+	ServerURL      string
+	Token          string
+	HiddenProperty string
+	HiddenValue    bool
 }
 
 // NewSyncCommand returns a new sync command.
@@ -74,6 +79,9 @@ func NewSyncCommand() *SyncCommand {
 
 			# Synchronize to a specific server
 			glasscms sync filesystem /path/to/items --server "https://cms.example.com" --token "your-auth-token"
+
+			# Specify a front matter property to determine if an item is hidden
+			glasscms sync filesystem /path/to/items --hidden-property "draft" --hidden-value true
 		`),
 		RunE: syncCommand.RunE,
 		Args: cobra.ExactArgs(2),
@@ -95,6 +103,13 @@ func NewSyncCommand() *SyncCommand {
 
 	flagset.StringVar(&syncCommand.opts.Token, ArgToken, "",
 		"Bearer token for server authentication")
+
+	flagset.StringVar(&syncCommand.opts.HiddenProperty, ArgHiddenProperty, "",
+		"Front matter property name to determine if an item is hidden (e.g., 'draft', 'hidden', 'private')")
+
+	flagset.BoolVar(&syncCommand.opts.HiddenValue, ArgHiddenValue, true,
+		`Value of the hidden property that indicates an item is hidden 
+		(true = truthy values are hidden, false = falsy values are hidden)`)
 
 	return syncCommand
 }
@@ -128,7 +143,13 @@ func (c *SyncCommand) RunE(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	return sync.NewSyncer(sr, cl, logger).Sync(cmd.Context(), c.opts.LiveMode)
+	// Create a parser config with the hidden property settings
+	parserConfig := parser.Config{
+		HiddenProperty: c.opts.HiddenProperty,
+		HiddenValue:    c.opts.HiddenValue,
+	}
+
+	return sync.NewSyncer(sr, cl, logger, parserConfig).Sync(cmd.Context(), c.opts.LiveMode)
 }
 
 // initSourcer initializes a sourcer based on the provided arguments.
