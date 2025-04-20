@@ -134,6 +134,28 @@ func (s *Server) ItemsList(w http.ResponseWriter, r *http.Request, params api.It
 	SerializeJSONResponse(w, http.StatusOK, applyItemFieldMask(apiItems, fm))
 }
 
+func (s *Server) ItemsDeleteMany(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	s.logger.DebugContext(ctx, "deleting items")
+
+	deleteRequest, err := DeserializeJSONRequestBody[api.ItemsDeleteManyJSONRequestBody](r)
+	if err != nil {
+		s.logger.ErrorContext(ctx, fmt.Errorf("failed to read request body: %w", err).Error())
+		s.errorHandler.HandleError(w, r, err)
+		return
+	}
+
+	// TODO: Add valdidation for empty slice of request.
+
+	if deleteErr := s.itemService.DeleteItems(ctx, deleteRequest.Names); deleteErr != nil {
+		s.logger.ErrorContext(ctx, fmt.Errorf("failed to delete items: %w", deleteErr).Error())
+		s.errorHandler.HandleError(w, r, deleteErr)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func getFieldmask(r *[]string) []string {
 	if r == nil {
 		return make([]string, 0)

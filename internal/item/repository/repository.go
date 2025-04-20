@@ -275,3 +275,7 @@ func (r *ItemRepository) UpsertItem(ctx context.Context, tx *sql.Tx, item item.I
 
 	return newItem, nil
 }
+
+func (r *ItemRepository) DeleteItems(ctx context.Context, tx *sql.Tx, names []string) error {
+	return r.queries.WithTx(tx).DeleteItems(ctx, names)
+}

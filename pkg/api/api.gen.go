@@ -105,6 +105,12 @@ type ItemUpsert struct {
 // ItemKey defines model for ItemKey.
 type ItemKey = string
 
+// ItemsDeleteManyJSONBody defines parameters for ItemsDeleteMany.
+type ItemsDeleteManyJSONBody struct {
+	// Names A list of item names to delete.
+	Names []string `json:"names"`
+}
+
 // ItemsListParams defines parameters for ItemsList.
 type ItemsListParams struct {
 	Fields *[]string `form:"fields,omitempty" json:"fields,omitempty"`
@@ -112,6 +118,9 @@ type ItemsListParams struct {
 
 // ItemsUpsertJSONBody defines parameters for ItemsUpsert.
 type ItemsUpsertJSONBody = []ItemUpsert
+
+// ItemsDeleteManyJSONRequestBody defines body for ItemsDeleteMany for application/json ContentType.
+type ItemsDeleteManyJSONRequestBody ItemsDeleteManyJSONBody
 
 // ItemsUpsertJSONRequestBody defines body for ItemsUpsert for application/json ContentType.
 type ItemsUpsertJSONRequestBody = ItemsUpsertJSONBody
@@ -195,6 +204,11 @@ func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
 
 // The interface specification for the client above.
 type ClientInterface interface {
+	// ItemsDeleteManyWithBody request with any body
+	ItemsDeleteManyWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	ItemsDeleteMany(ctx context.Context, body ItemsDeleteManyJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ItemsList request
 	ItemsList(ctx context.Context, params *ItemsListParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -215,6 +229,30 @@ type ClientInterface interface {
 	ItemsUpdateWithBody(ctx context.Context, name ItemKey, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	ItemsUpdate(ctx context.Context, name ItemKey, body ItemsUpdateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+}
+
+func (c *Client) ItemsDeleteManyWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewItemsDeleteManyRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ItemsDeleteMany(ctx context.Context, body ItemsDeleteManyJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewItemsDeleteManyRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
 }
 
 func (c *Client) ItemsList(ctx context.Context, params *ItemsListParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -311,6 +349,46 @@ func (c *Client) ItemsUpdate(ctx context.Context, name ItemKey, body ItemsUpdate
 		return nil, err
 	}
 	return c.Client.Do(req)
+}
+
+// NewItemsDeleteManyRequest calls the generic ItemsDeleteMany builder with application/json body
+func NewItemsDeleteManyRequest(server string, body ItemsDeleteManyJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewItemsDeleteManyRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewItemsDeleteManyRequestWithBody generates requests for ItemsDeleteMany with any type of body
+func NewItemsDeleteManyRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/items")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
 }
 
 // NewItemsListRequest generates requests for ItemsList
@@ -566,6 +644,11 @@ func WithBaseURL(baseURL string) ClientOption {
 
 // ClientWithResponsesInterface is the interface specification for the client with responses above.
 type ClientWithResponsesInterface interface {
+	// ItemsDeleteManyWithBodyWithResponse request with any body
+	ItemsDeleteManyWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ItemsDeleteManyResponse, error)
+
+	ItemsDeleteManyWithResponse(ctx context.Context, body ItemsDeleteManyJSONRequestBody, reqEditors ...RequestEditorFn) (*ItemsDeleteManyResponse, error)
+
 	// ItemsListWithResponse request
 	ItemsListWithResponse(ctx context.Context, params *ItemsListParams, reqEditors ...RequestEditorFn) (*ItemsListResponse, error)
 
@@ -586,6 +669,28 @@ type ClientWithResponsesInterface interface {
 	ItemsUpdateWithBodyWithResponse(ctx context.Context, name ItemKey, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ItemsUpdateResponse, error)
 
 	ItemsUpdateWithResponse(ctx context.Context, name ItemKey, body ItemsUpdateJSONRequestBody, reqEditors ...RequestEditorFn) (*ItemsUpdateResponse, error)
+}
+
+type ItemsDeleteManyResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r ItemsDeleteManyResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ItemsDeleteManyResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
 }
 
 type ItemsListResponse struct {
@@ -704,6 +809,23 @@ func (r ItemsUpdateResponse) StatusCode() int {
 	return 0
 }
 
+// ItemsDeleteManyWithBodyWithResponse request with arbitrary body returning *ItemsDeleteManyResponse
+func (c *ClientWithResponses) ItemsDeleteManyWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ItemsDeleteManyResponse, error) {
+	rsp, err := c.ItemsDeleteManyWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseItemsDeleteManyResponse(rsp)
+}
+
+func (c *ClientWithResponses) ItemsDeleteManyWithResponse(ctx context.Context, body ItemsDeleteManyJSONRequestBody, reqEditors ...RequestEditorFn) (*ItemsDeleteManyResponse, error) {
+	rsp, err := c.ItemsDeleteMany(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseItemsDeleteManyResponse(rsp)
+}
+
 // ItemsListWithResponse request returning *ItemsListResponse
 func (c *ClientWithResponses) ItemsListWithResponse(ctx context.Context, params *ItemsListParams, reqEditors ...RequestEditorFn) (*ItemsListResponse, error) {
 	rsp, err := c.ItemsList(ctx, params, reqEditors...)
@@ -771,6 +893,32 @@ func (c *ClientWithResponses) ItemsUpdateWithResponse(ctx context.Context, name 
 		return nil, err
 	}
 	return ParseItemsUpdateResponse(rsp)
+}
+
+// ParseItemsDeleteManyResponse parses an HTTP response from a ItemsDeleteManyWithResponse call
+func ParseItemsDeleteManyResponse(rsp *http.Response) (*ItemsDeleteManyResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ItemsDeleteManyResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
 }
 
 // ParseItemsListResponse parses an HTTP response from a ItemsListWithResponse call
@@ -947,6 +1095,9 @@ func ParseItemsUpdateResponse(rsp *http.Response) (*ItemsUpdateResponse, error) 
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
+	// Delete many items
+	// (DELETE /items)
+	ItemsDeleteMany(w http.ResponseWriter, r *http.Request)
 	// List all items
 	// (GET /items)
 	ItemsList(w http.ResponseWriter, r *http.Request, params ItemsListParams)
@@ -972,6 +1123,23 @@ type ServerInterfaceWrapper struct {
 }
 
 type MiddlewareFunc func(http.Handler) http.Handler
+
+// ItemsDeleteMany operation middleware
+func (siw *ServerInterfaceWrapper) ItemsDeleteMany(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ItemsDeleteMany(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
 
 // ItemsList operation middleware
 func (siw *ServerInterfaceWrapper) ItemsList(w http.ResponseWriter, r *http.Request) {
@@ -1207,6 +1375,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 		ErrorHandlerFunc:   options.ErrorHandlerFunc,
 	}
 
+	m.HandleFunc("DELETE "+options.BaseURL+"/items", wrapper.ItemsDeleteMany)
 	m.HandleFunc("GET "+options.BaseURL+"/items", wrapper.ItemsList)
 	m.HandleFunc("PATCH "+options.BaseURL+"/items", wrapper.ItemsUpsert)
 	m.HandleFunc("POST "+options.BaseURL+"/items", wrapper.ItemsCreate)

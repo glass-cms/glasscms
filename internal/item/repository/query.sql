@@ -38,6 +38,14 @@ SET
 WHERE
     name = ?;
 
+-- name: DeleteItems :exec
+UPDATE
+    items 
+SET 
+    delete_time = CURRENT_TIMESTAMP
+WHERE 
+    name in (sqlc.slice(names));
+
 -- name: GetItem :one
 SELECT
     *

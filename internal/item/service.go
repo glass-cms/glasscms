@@ -98,3 +98,10 @@ func (s *Service) UpsertItems(ctx context.Context, items []Item) ([]*Item, error
 
 	return upsertedItems, nil
 }
+
+// DeleteItems deletes a list of items by the unique names.
+func (s *Service) DeleteItems(ctx context.Context, names []string) error {
+	return database.Transactionally(ctx, s.db, func(tx *sql.Tx) error {
+		return s.repo.DeleteItems(ctx, tx, names)
+	})
+}
