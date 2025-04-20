@@ -102,6 +102,34 @@ paths:
               type: array
               items:
                 $ref: '#/components/schemas/ItemUpsert'
+    delete:
+      tags: ['Items']
+      operationId: Items_delete_many
+      summary: Delete many items
+      description: Deletes multiple items based on their names.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - names
+              properties:
+                names:
+                  type: array
+                  items:
+                    type: string
+                  description: A list of item names to delete.
+      responses:
+        '204':
+          description: The items were successfully deleted.
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /items/{name}:
     get:
       tags: ['Items']
