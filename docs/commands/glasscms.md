@@ -1,10 +1,14 @@
 ---
 title: Glasscms
-create_time: 1740900092
+create_time: 1751798081
 ---
 ## glasscms
 
 glasscms is a headless CMS powered by markdown
+
+```
+glasscms <command> [flags]
+```
 
 ### Options
 
@@ -13,6 +17,7 @@ glasscms is a headless CMS powered by markdown
       --logger.format string   Log format (default "TEXT")
       --logger.level string    Log level (default "INFO")
   -v, --verbose                Enable verbose output
+      --version                Show version information
 ```
 
 ### SEE ALSO
@@ -22,4 +27,5 @@ glasscms is a headless CMS powered by markdown
 * [glasscms convert](glasscms_convert.md)	 - Convert source files
 * [glasscms server](glasscms_server.md)	 - Server management commands
 * [glasscms sync](glasscms_sync.md)	 - Synchronize content items from a source to the GlassCMS server
+* [glasscms version](glasscms_version.md)	 - Print version information
 

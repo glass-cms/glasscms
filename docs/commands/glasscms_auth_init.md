@@ -1,6 +1,6 @@
 ---
 title: Glasscms Auth Init
-create_time: 1740900092
+create_time: 1751798081
 ---
 ## glasscms auth init
 
@@ -48,6 +48,7 @@ glasscms auth init --driver postgres --dsn "postgres://user:password@localhost:5
       --logger.format string   Log format (default "TEXT")
       --logger.level string    Log level (default "INFO")
   -v, --verbose                Enable verbose output
+      --version                Show version information
 ```
 
 ### SEE ALSO

@@ -8,6 +8,7 @@ import (
 
 	"github.com/glass-cms/glasscms/cmd/auth"
 	"github.com/glass-cms/glasscms/cmd/server"
+	"github.com/glass-cms/glasscms/internal/version"
 	"github.com/glass-cms/glasscms/pkg/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -30,6 +31,16 @@ var rootCmd = &cobra.Command{
 		return initializeConfig(cmd)
 	},
 	DisableAutoGenTag: true,
+	RunE: func(cmd *cobra.Command, _ []string) error {
+		// If --version flag is used, show version and exit
+		if viper.GetBool("version") {
+			info := version.Get()
+			fmt.Println(info.String())
+			return nil
+		}
+		// Otherwise show help
+		return cmd.Help()
+	},
 }
 
 func Execute() {
@@ -45,12 +56,16 @@ func init() {
 	rootCmd.AddCommand(NewMigrateCommand().Command)
 	rootCmd.AddCommand(NewSyncCommand().Command)
 	rootCmd.AddCommand(auth.NewAuthCommand().Command)
+	rootCmd.AddCommand(NewVersionCommand().Command)
 
 	// Register flags.
 	pflags := rootCmd.PersistentFlags()
 
 	pflags.BoolP(ArgsVerbose, ArgsVerboseShorthand, false, "Enable verbose output")
 	_ = viper.BindPFlag(ArgsVerbose, pflags.Lookup(ArgsVerbose))
+
+	pflags.Bool("version", false, "Show version information")
+	_ = viper.BindPFlag("version", pflags.Lookup("version"))
 
 	pflags.String(log.ArgLevel, "INFO", "Log level")
 	_ = viper.BindPFlag(log.ArgLevel, pflags.Lookup(log.ArgLevel))

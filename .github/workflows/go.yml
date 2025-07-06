@@ -24,7 +24,10 @@ jobs:
       uses: golangci/golangci-lint-action@v6.0.0
             
     - name: Build
-      run: go build -v ./...
+      run: |
+        # Build with version info for testing
+        LDFLAGS="-X main.Version=dev -X main.Commit=$(git rev-parse HEAD) -X main.Date=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+        go build -ldflags="${LDFLAGS}" -v ./...
 
     - name: Test
       run: go test -v ./...

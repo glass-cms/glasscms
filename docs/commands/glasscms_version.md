@@ -1,22 +1,24 @@
 ---
-title: Glasscms Auth
+title: Glasscms Version
 create_time: 1751798081
 ---
-## glasscms auth
+## glasscms version
 
-
+Print version information
 
 ### Synopsis
 
-Authentication commands for the GlassCMS API.
+Print version information including version, commit hash, build date, Go version, and platform
 
-This command provides subcommands for managing authentication tokens for the GlassCMS API.
-
+```
+glasscms version [flags]
+```
 
 ### Options
 
 ```
-  -h, --help   help for auth
+  -f, --format string   Output format (text, json) (default "text")
+  -h, --help            help for version
 ```
 
 ### Options inherited from parent commands
@@ -31,5 +33,4 @@ This command provides subcommands for managing authentication tokens for the Gla
 ### SEE ALSO
 
 * [glasscms](glasscms.md)	 - glasscms is a headless CMS powered by markdown
-* [glasscms auth init](glasscms_auth_init.md)	 - Initialize a new authentication token
 

@@ -1,6 +1,6 @@
 ---
 title: Glasscms Completion Bash
-create_time: 1740900092
+create_time: 1751798081
 ---
 ## glasscms completion bash
 
@@ -47,6 +47,7 @@ glasscms completion bash
       --logger.format string   Log format (default "TEXT")
       --logger.level string    Log level (default "INFO")
   -v, --verbose                Enable verbose output
+      --version                Show version information
 ```
 
 ### SEE ALSO
