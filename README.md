@@ -15,7 +15,7 @@ A headless CMS powered by markdown that seamlessly turns your markdown files int
 ## Installation
 
 ```bash
-go install github.com/glass-cms/glasscms@latest
+curl -sSfL https://raw.githubusercontent.com/glass-cms/glasscms/main/install.sh | sh
 ```
 
 ## Quick Start
