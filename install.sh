@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 set -e
 
 # Configuration
@@ -7,23 +7,30 @@ BINARY_NAME="glasscms"
 INSTALL_DIR="${INSTALL_DIR:-/usr/local/bin}"
 USE_SUDO="${USE_SUDO:-true}"
 
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[0;33m'
-NC='\033[0m' # No Color
+# Colors for output (only if terminal supports it)
+if [ -t 1 ]; then
+    RED='\033[0;31m'
+    GREEN='\033[0;32m'
+    YELLOW='\033[0;33m'
+    NC='\033[0m'
+else
+    RED=''
+    GREEN=''
+    YELLOW=''
+    NC=''
+fi
 
 # Helper functions
 log_info() {
-    echo -e "${GREEN}[INFO]${NC} $1"
+    printf "${GREEN}[INFO]${NC} %s\n" "$1" >&2
 }
 
 log_warn() {
-    echo -e "${YELLOW}[WARN]${NC} $1"
+    printf "${YELLOW}[WARN]${NC} %s\n" "$1" >&2
 }
 
 log_error() {
-    echo -e "${RED}[ERROR]${NC} $1"
+    printf "${RED}[ERROR]${NC} %s\n" "$1" >&2
 }
 
 # Detect OS
@@ -57,9 +64,9 @@ get_latest_version() {
 
 # Download binary
 download_binary() {
-    local binary_name="${BINARY_NAME}-${OS}-${ARCH}"
-    local download_url="https://github.com/$REPO/releases/download/$VERSION/$binary_name"
-    local tmp_file="/tmp/$binary_name"
+    binary_name="${BINARY_NAME}-${OS}-${ARCH}"
+    download_url="https://github.com/$REPO/releases/download/$VERSION/$binary_name"
+    tmp_file="/tmp/$binary_name"
     
     log_info "Downloading $binary_name..."
     if ! curl -sL "$download_url" -o "$tmp_file"; then
@@ -68,16 +75,26 @@ download_binary() {
     fi
     
     chmod +x "$tmp_file"
-    echo "$tmp_file"
+    printf "%s" "$tmp_file"
 }
 
 # Install binary
 install_binary() {
-    local tmp_file="$1"
-    local install_path="$INSTALL_DIR/$BINARY_NAME"
+    tmp_file="$1"
+    install_path="$INSTALL_DIR/$BINARY_NAME"
     
     log_info "Installing to $install_path..."
     
+    # Create install directory if it doesn't exist
+    if [ ! -d "$INSTALL_DIR" ]; then
+        if [ "$USE_SUDO" = "true" ]; then
+            sudo mkdir -p "$INSTALL_DIR"
+        else
+            mkdir -p "$INSTALL_DIR"
+        fi
+    fi
+    
+    # Install the binary
     if [ "$USE_SUDO" = "true" ] && [ ! -w "$INSTALL_DIR" ]; then
         sudo mv "$tmp_file" "$install_path"
     else
@@ -105,7 +122,6 @@ main() {
     detect_arch
     get_latest_version
     
-    local tmp_file
     tmp_file=$(download_binary)
     install_binary "$tmp_file"
     verify_installation
@@ -113,7 +129,5 @@ main() {
     log_info "🎉 $BINARY_NAME has been successfully installed!"
 }
 
-# Check if running as script (not sourced)
-if [ "${BASH_SOURCE[0]}" = "${0}" ]; then
-    main "$@"
-fi
+# Always run main when script is executed directly
+main "$@"
