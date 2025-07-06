@@ -9,8 +9,32 @@ permissions:
   contents: write
 
 jobs:
-  release:
-    runs-on: ubuntu-latest
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            goos: linux
+            goarch: amd64
+            cc: gcc
+            artifact_name: glasscms-linux-amd64
+          - os: ubuntu-latest
+            goos: linux
+            goarch: arm64
+            cc: aarch64-linux-gnu-gcc
+            artifact_name: glasscms-linux-arm64
+          - os: macos-latest
+            goos: darwin
+            goarch: amd64
+            cc: clang
+            artifact_name: glasscms-darwin-amd64
+          - os: macos-latest
+            goos: darwin
+            goarch: arm64
+            cc: clang
+            artifact_name: glasscms-darwin-arm64
+    
+    runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v4
       with:
@@ -41,36 +65,55 @@ jobs:
         echo "COMMIT=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
         echo "DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_OUTPUT
 
-    - name: Build binaries
+    - name: Install cross-compilation tools (Linux only)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y gcc-aarch64-linux-gnu
+
+    - name: Build binary
       run: |
         mkdir -p dist
         
-        # Build for multiple platforms
         LDFLAGS="-s -w -X main.Version=${{ steps.get_version.outputs.VERSION }} -X main.Commit=${{ steps.build_info.outputs.COMMIT }} -X main.Date=${{ steps.build_info.outputs.DATE }}"
         
-        # Linux AMD64
-        GOOS=linux GOARCH=amd64 go build -ldflags="${LDFLAGS}" -o dist/glasscms-linux-amd64 .
-        
-        # Linux ARM64
-        GOOS=linux GOARCH=arm64 go build -ldflags="${LDFLAGS}" -o dist/glasscms-linux-arm64 .
-        
-        # macOS AMD64
-        GOOS=darwin GOARCH=amd64 go build -ldflags="${LDFLAGS}" -o dist/glasscms-darwin-amd64 .
-        
-        # macOS ARM64
-        GOOS=darwin GOARCH=arm64 go build -ldflags="${LDFLAGS}" -o dist/glasscms-darwin-arm64 .
+        CGO_ENABLED=1 GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} CC=${{ matrix.cc }} go build -ldflags="${LDFLAGS}" -o dist/${{ matrix.artifact_name }} .
 
-    - name: Create checksums
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ matrix.artifact_name }}
+        path: dist/${{ matrix.artifact_name }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Get version from tag
+      id: get_version
       run: |
-        cd dist
+        VERSION=${GITHUB_REF#refs/tags/}
+        echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
+
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: dist
+
+    - name: Prepare release files
+      run: |
+        # Move all binaries to a single directory
+        mkdir -p release
+        find dist -name "glasscms-*" -type f -exec mv {} release/ \;
+        
+        # Create checksums
+        cd release
         sha256sum * > checksums.txt
 
     - name: Create release
       uses: softprops/action-gh-release@v1
       with:
-        files: |
-          dist/glasscms-*
-          dist/checksums.txt
+        files: release/*
         generate_release_notes: true
         draft: false
         prerelease: ${{ contains(steps.get_version.outputs.VERSION, 'alpha') || contains(steps.get_version.outputs.VERSION, 'beta') || contains(steps.get_version.outputs.VERSION, 'rc') }}
