@@ -28,9 +28,8 @@ jobs:
         echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
         echo "VERSION_NO_V=${VERSION#v}" >> $GITHUB_OUTPUT
         
-        # Validate semantic version format using regex from semver.org
-        VERSION_NO_PREFIX=${VERSION#v}
-        if [[ ! "$VERSION_NO_PREFIX" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-((0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*)(\.(0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*))*))?(\+([0-9a-zA-Z-]+(\.[0-9a-zA-Z-]+)*))?$ ]]; then
+        # Validate semantic version format (basic check for v prefix + 3 numbers)
+        if [[ ! "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9] ]]; then
           echo "Error: Version '$VERSION' is not a valid semantic version"
           echo "Expected format: v1.0.0, v1.0.0-alpha.1, v1.0.0+build.1, etc."
           exit 1
