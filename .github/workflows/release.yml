@@ -1,0 +1,84 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.23'
+
+    - name: Get version from tag
+      id: get_version
+      run: |
+        VERSION=${GITHUB_REF#refs/tags/}
+        echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
+        echo "VERSION_NO_V=${VERSION#v}" >> $GITHUB_OUTPUT
+        
+        # Validate semantic version format using regex from semver.org
+        if [[ ! "$VERSION" =~ ^v?(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*|[0-9a-zA-Z-]+)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*|[0-9a-zA-Z-]+))*)|(-?(?:[0-9a-zA-Z-]+\.)*[0-9a-zA-Z-]+))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$ ]]; then
+          echo "Error: Version '$VERSION' is not a valid semantic version"
+          echo "Expected format: v1.0.0, v1.0.0-alpha.1, v1.0.0+build.1, etc."
+          exit 1
+        fi
+
+    - name: Get build info
+      id: build_info
+      run: |
+        echo "COMMIT=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+        echo "DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_OUTPUT
+
+    - name: Build binaries
+      run: |
+        mkdir -p dist
+        
+        # Build for multiple platforms
+        LDFLAGS="-s -w -X main.Version=${{ steps.get_version.outputs.VERSION }} -X main.Commit=${{ steps.build_info.outputs.COMMIT }} -X main.Date=${{ steps.build_info.outputs.DATE }}"
+        
+        # Linux AMD64
+        GOOS=linux GOARCH=amd64 go build -ldflags="${LDFLAGS}" -o dist/glasscms-linux-amd64 .
+        
+        # Linux ARM64
+        GOOS=linux GOARCH=arm64 go build -ldflags="${LDFLAGS}" -o dist/glasscms-linux-arm64 .
+        
+        # macOS AMD64
+        GOOS=darwin GOARCH=amd64 go build -ldflags="${LDFLAGS}" -o dist/glasscms-darwin-amd64 .
+        
+        # macOS ARM64
+        GOOS=darwin GOARCH=arm64 go build -ldflags="${LDFLAGS}" -o dist/glasscms-darwin-arm64 .
+        
+        # Windows AMD64
+        GOOS=windows GOARCH=amd64 go build -ldflags="${LDFLAGS}" -o dist/glasscms-windows-amd64.exe .
+        
+        # Windows ARM64
+        GOOS=windows GOARCH=arm64 go build -ldflags="${LDFLAGS}" -o dist/glasscms-windows-arm64.exe .
+
+    - name: Create checksums
+      run: |
+        cd dist
+        sha256sum * > checksums.txt
+
+    - name: Create release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          dist/glasscms-*
+          dist/checksums.txt
+        generate_release_notes: true
+        draft: false
+        prerelease: ${{ contains(steps.get_version.outputs.VERSION, 'alpha') || contains(steps.get_version.outputs.VERSION, 'beta') || contains(steps.get_version.outputs.VERSION, 'rc') }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
