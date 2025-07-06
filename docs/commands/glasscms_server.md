@@ -1,6 +1,6 @@
 ---
 title: Glasscms Server
-create_time: 1740900092
+create_time: 1751798081
 ---
 ## glasscms server
 
@@ -25,6 +25,7 @@ including starting the server and other server-related operations.
       --logger.format string   Log format (default "TEXT")
       --logger.level string    Log level (default "INFO")
   -v, --verbose                Enable verbose output
+      --version                Show version information
 ```
 
 ### SEE ALSO

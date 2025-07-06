@@ -1,6 +1,6 @@
 ---
 title: Glasscms Sync
-create_time: 1740900092
+create_time: 1751798081
 ---
 ## glasscms sync
 
@@ -8,7 +8,7 @@ Synchronize content items from a source to the GlassCMS server
 
 ### Synopsis
 
-Synchronizes content items from a source to the GlassCMS API server.
+Synchronize content items from a source to the GlassCMS API server.
 
 The sync command allows you to import and update content items from external 
 sources into your GlassCMS instance. It compares the items in the source with 
@@ -44,15 +44,22 @@ glasscms sync filesystem /path/to/items --live --token "your-auth-token"
 # Synchronize to a specific server
 glasscms sync filesystem /path/to/items --server "https://cms.example.com" --token "your-auth-token"
 
+# Specify a front matter property to determine if an item is hidden
+glasscms sync filesystem /path/to/items --hidden-property "draft" --hidden-value true
+
 ```
 
 ### Options
 
 ```
-  -h, --help            help for sync
-      --live            When live mode is enabled, items are synchronized to the server, otherwise changes are only previewed
-      --server string   The URL of the server to synchronize items to (default "http://localhost:8080")
-      --token string    Bearer token for server authentication
+  -h, --help                     help for sync
+      --hidden-property string   Front matter property name to determine if an item is hidden (e.g., 'draft', 'hidden', 'private')
+      --hidden-value             Value of the hidden property that indicates an item is hidden 
+                                 		(true = truthy values are hidden, false = falsy values are hidden) (default true)
+      --live                     When live mode is enabled, items are synchronized to the server, otherwise changes are only previewed
+      --parse-wikilinks          Parse wikilinks in the content (default true)
+      --server string            The URL of the server to synchronize items to (default "http://localhost:8080")
+      --token string             Bearer token for server authentication
 ```
 
 ### Options inherited from parent commands
@@ -61,6 +68,7 @@ glasscms sync filesystem /path/to/items --server "https://cms.example.com" --tok
       --logger.format string   Log format (default "TEXT")
       --logger.level string    Log level (default "INFO")
   -v, --verbose                Enable verbose output
+      --version                Show version information
 ```
 
 ### SEE ALSO
