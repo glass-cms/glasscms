@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/MakeNowJust/heredoc"
@@ -26,6 +27,7 @@ const (
 	ArgHiddenProperty = "hidden-property"
 	ArgHiddenValue    = "hidden-value"
 	ArgParseWikilinks = "parse-wikilinks"
+	ArgIgnorePatterns = "ignore-patterns"
 )
 
 type SyncCommand struct {
@@ -41,6 +43,7 @@ type SyncCommandOptions struct {
 	HiddenProperty string
 	HiddenValue    bool
 	ParseWikilinks bool
+	IgnorePatterns string
 }
 
 // NewSyncCommand returns a new sync command.
@@ -84,6 +87,9 @@ func NewSyncCommand() *SyncCommand {
 
 			# Specify a front matter property to determine if an item is hidden
 			glasscms sync filesystem /path/to/items --hidden-property "draft" --hidden-value true
+
+			# Ignore specific directories during synchronization
+			glasscms sync filesystem /path/to/vault --ignore-patterns ".obsidian,.trash,Templates,Drafts"
 		`),
 		RunE: syncCommand.RunE,
 		Args: cobra.ExactArgs(2),
@@ -114,6 +120,9 @@ func NewSyncCommand() *SyncCommand {
 		(true = truthy values are hidden, false = falsy values are hidden)`)
 
 	flagset.BoolVar(&syncCommand.opts.ParseWikilinks, ArgParseWikilinks, true, "Parse wikilinks in the content")
+
+	flagset.StringVar(&syncCommand.opts.IgnorePatterns, ArgIgnorePatterns, "",
+		"Comma-separated glob patterns to ignore directories (e.g., '.obsidian,.trash,Templates,Drafts')")
 
 	return syncCommand
 }
@@ -187,8 +196,29 @@ func (c *SyncCommand) initSourcer(args []string) (sourcer.Sourcer, error) {
 	case sourcer.SourceTypeUnspecified:
 		return nil, errors.New("source type is required")
 	case sourcer.SourceTypeFilesystem:
-		return fs.NewSourcer(args[1])
+		ignorePatterns := ParseIgnorePatterns(c.opts.IgnorePatterns)
+		return fs.NewSourcer(args[1], ignorePatterns)
 	}
 
 	return nil, errors.New("unrecognized source type")
+}
+
+// ParseIgnorePatterns parses a comma-separated string of ignore patterns
+// and returns a slice of trimmed, non-empty patterns.
+func ParseIgnorePatterns(patternsStr string) []string {
+	if patternsStr == "" {
+		return nil
+	}
+
+	patterns := strings.Split(patternsStr, ",")
+	var ignorePatterns []string
+
+	for _, pattern := range patterns {
+		trimmed := strings.TrimSpace(pattern)
+		if trimmed != "" {
+			ignorePatterns = append(ignorePatterns, trimmed)
+		}
+	}
+
+	return ignorePatterns
 }
