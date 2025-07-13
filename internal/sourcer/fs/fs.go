@@ -13,13 +13,14 @@ var _ sourcer.Sourcer = &FileSystemSourcer{}
 
 // FileSystemSourcer is a DataSourcer that reads files from the file system.
 type FileSystemSourcer struct {
-	files    []string
-	cursor   int // cursor is the index of the next file to be read
-	rootPath string
+	files          []string
+	cursor         int // cursor is the index of the next file to be read
+	rootPath       string
+	ignorePatterns []string
 }
 
 // NewSourcer creates a new FileSystemSourcer.
-func NewSourcer(rootPath string) (*FileSystemSourcer, error) {
+func NewSourcer(rootPath string, ignorePatterns []string) (*FileSystemSourcer, error) {
 	var files []string
 
 	absRootPath, err := filepath.Abs(rootPath)
@@ -30,6 +31,11 @@ func NewSourcer(rootPath string) (*FileSystemSourcer, error) {
 	err = filepath.WalkDir(absRootPath, func(path string, dirEntry os.DirEntry, err error) error {
 		if err != nil {
 			return err
+		}
+
+		// Skip directories that match ignore patterns
+		if dirEntry.IsDir() && shouldIgnoreDirectory(dirEntry.Name(), ignorePatterns) {
+			return filepath.SkipDir
 		}
 
 		if !dirEntry.IsDir() && strings.HasSuffix(dirEntry.Name(), ".md") {
@@ -43,8 +49,9 @@ func NewSourcer(rootPath string) (*FileSystemSourcer, error) {
 	}
 
 	return &FileSystemSourcer{
-		files:    files,
-		rootPath: absRootPath,
+		files:          files,
+		rootPath:       absRootPath,
+		ignorePatterns: ignorePatterns,
 	}, nil
 }
 
@@ -83,4 +90,14 @@ func IsValidFileSystemSource(fp string) error {
 	}
 
 	return nil
+}
+
+// shouldIgnoreDirectory checks if a directory name matches any of the ignore patterns.
+func shouldIgnoreDirectory(dirName string, patterns []string) bool {
+	for _, pattern := range patterns {
+		if matched, _ := filepath.Match(pattern, dirName); matched {
+			return true
+		}
+	}
+	return false
 }

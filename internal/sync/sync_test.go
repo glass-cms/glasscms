@@ -212,7 +212,7 @@ func TestSyncer_Sync(t *testing.T) {
 			client, err := api.NewClientWithResponses(server.URL)
 			require.NoError(t, err)
 
-			sourcer, err := fs.NewSourcer("../../docs/commands")
+			sourcer, err := fs.NewSourcer("../../docs/commands", nil)
 			require.NoError(t, err)
 
 			syncer, err := sync.NewSyncer(sync.NewSyncID(), sourcer, client, log.NoopLogger(), &parser.Config{})

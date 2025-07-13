@@ -122,7 +122,7 @@ func (c *ConvertCommand) Execute(_ *cobra.Command, args []string) error {
 		return err
 	}
 
-	fileSystemSourcer, err := fs.NewSourcer(sourcePath)
+	fileSystemSourcer, err := fs.NewSourcer(sourcePath, nil)
 	if err != nil {
 		return err
 	}
